@@ -6,25 +6,20 @@ import requests
 TOKEN = "Token 2b92117b410cad8708fff3bfd7473340a69bfaac"  # Eliisan token
 AUTH =  {'Authorization': TOKEN}
 
-
-EXERCISE_ID = 4565
+COURSE = 34      # summer en
+EXERCISE = 5302  # melumittaus
+BASE_URL = "https://plus.cs.tut.fi/api/v2/courses"
 
 
 def index(request):
-    subs = []
-    subs_url = f"https://plus.cs.tut.fi/api/v2/exercises/{EXERCISE_ID}/submissions/"
+    url = f"{BASE_URL}/{COURSE}/submissiondata/?exercise_id={EXERCISE}&format=json"
     
-    while True:
-        req = requests.get(subs_url, headers=AUTH)
-        subs_json = req.json()
-        
-        for result in subs_json["results"]:
-            subs.append(result)
-        
-        if not subs_json["next"]:
-            break
-        else:
-            subs_url = subs_json["next"]
+    req = requests.get(url, headers=AUTH)
+    subsdata = req.json()
+    
+    return render(request, "submissions/index.html", {"subs": subsdata})
 
-    return render(request, "submissions/index.html", {"subs": subs})
-
+# Homma jatkuu...
+# tee templateen linkki, josta voi avata opiskelijan koodin
+# koodi pitänee hakea getillä täällä views-tiedoston puolella
+# esitä koodi jotenkin jossain näkymässä
