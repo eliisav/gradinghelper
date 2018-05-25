@@ -1,0 +1,9 @@
+{% if subs %}
+    <ul style="list-style-type:none">
+    {% for sub in subs %}
+        <li>{{ sub.id }}</li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No submissions available.</p>
+{% endif %}
