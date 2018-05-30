@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from .forms import FeedbackForm
+
 import requests
 import os
 
@@ -34,14 +36,19 @@ def index(request):
 
 
 def get_sub_info(request, sub_id):
-    sub_code = ""
-    
-    try:
-        with open(f"sub_files/{sub_id}.py", "r") as file:
-            sub_code = file.read()
+    if request.method == "GET":
+        sub_code = ""
+        
+        try:
+            with open(f"sub_files/{sub_id}.py", "r") as file:
+                sub_code = file.read()
+                
+        except Error as e:
+            return HttpResponse(e)
             
-    except Error as e:
-        return HttpResponse(e)
+        form = FeedbackForm()
+
     
-    return render(request, "submissions/sub_code.html", {"sub_code": sub_code})
-    
+    return render(request, "submissions/sub_code.html", {"sub_code": sub_code,
+                                                         "form": form})
+                                                         

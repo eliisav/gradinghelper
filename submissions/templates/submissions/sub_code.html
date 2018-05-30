@@ -1,1 +1,10 @@
 <pre>{{sub_code}}</pre>
+
+<form action="" method="post">
+    {% csrf_token %}
+    <p> Kirjoita palaute tähän:
+    <br>
+    {{ form }}
+    <br>
+    <input type="submit" value="Lähetä" />
+</form>
