@@ -1,7 +1,7 @@
 {% if subs %}
     <ul style="list-style-type:none">
     {% for sub in subs %}
-        <li>{{ sub.SubmissionID }} {{sub.Email}}</li>
+        <li><a href="{%url 'submissions:sub_info' sub.SubmissionID %}">{{sub.SubmissionID}}</a> {{sub.Email}}</li>
     {% endfor %}
     </ul>
 {% else %}
