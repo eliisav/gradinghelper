@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from .models import Feedback
 from .forms import FeedbackForm
 
 import requests
@@ -36,7 +37,21 @@ def index(request):
 
 
 def get_sub_info(request, sub_id):
-    if request.method == "GET":
+    if request.method == "POST":
+        feedback = None
+        
+        try:
+            feedback = Feedback.objects.get(sub_id=sub_id)
+            
+        except Feedback.DoesNotExist:
+            feedback = Feedback(sub_id=sub_id)
+            
+        filled_form = FeedbackForm(request.POST, instance=feedback)
+        filled_form.save()
+        print(filled_form)
+        return HttpResponse("Kiitti")
+        
+    else:
         sub_code = ""
         
         try:
@@ -45,10 +60,15 @@ def get_sub_info(request, sub_id):
                 
         except Error as e:
             return HttpResponse(e)
+        
+        try:
+            feedback = Feedback.objects.get(sub_id=sub_id)
+            form = FeedbackForm(instance=feedback)
             
-        form = FeedbackForm()
-
+        except Feedback.DoesNotExist:
+            form = FeedbackForm()
     
     return render(request, "submissions/sub_code.html", {"sub_code": sub_code,
-                                                         "form": form})
+                                                         "form": form,
+                                                         "sub_id": sub_id})
                                                          
