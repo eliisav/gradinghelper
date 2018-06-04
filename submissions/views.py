@@ -1,5 +1,7 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.views import generic
 
 from .models import Feedback
 from .forms import FeedbackForm
@@ -11,8 +13,8 @@ import os
 TOKEN = "Token 2b92117b410cad8708fff3bfd7473340a69bfaac"  # Eliisan token
 AUTH =  {'Authorization': TOKEN}
 
-COURSE = 34      # summer en
-EXERCISE = 5302  # melumittaus
+COURSE = 31      # summer en 34, summer fi 31
+EXERCISE = 5113  # melumittaus en 5302, fi 5113
 BASE_URL = "https://plus.cs.tut.fi/api/v2/courses"
 
 
@@ -22,53 +24,46 @@ def index(request):
     req = requests.get(url, headers=AUTH)
     subsdata = req.json()
     
-    if "sub_files" not in os.listdir():
-        os.mkdir("sub_files")
+    exercise_name = subsdata[0]["Exercise"]
     
     for sub in subsdata:
-        sub_url = sub["ohjelma.py"]
-        req = requests.get(sub_url, headers=AUTH)
-        req.encoding = "utf-8"
-        filename = f"sub_files/{sub['SubmissionID']}.py"
-        with open(filename, "w") as file:
-            file.write(req.text)
+        try:
+            feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
+            
+        except Feedback.DoesNotExist:
+            feedback = Feedback(sub_id=sub["SubmissionID"], 
+                                sub_url=sub["ohjelma.py"],
+                                submitter=sub["Email"])
+            feedback.save()
+            
+    return render(request, "submissions/index.html", {"name": exercise_name})
+
+
+class ExerciseView(generic.ListView):
+    template_name = 'submissions/exercise.html'
+    context_object_name = 'submissions'
     
-    return render(request, "submissions/index.html", {"subs": subsdata})
+    def get_queryset(self):
+        return Feedback.objects.order_by('done')
 
 
 def get_sub_info(request, sub_id):
     if request.method == "POST":
-        feedback = None
-        
-        try:
-            feedback = Feedback.objects.get(sub_id=sub_id)
-            
-        except Feedback.DoesNotExist:
-            feedback = Feedback(sub_id=sub_id)
-            
+        feedback = get_object_or_404(Feedback, sub_id=sub_id)
+        feedback.done = True
         filled_form = FeedbackForm(request.POST, instance=feedback)
         filled_form.save()
-        print(filled_form)
-        return HttpResponse("Kiitti")
+        return HttpResponseRedirect(reverse('submissions:exercise'))
         
     else:
-        sub_code = ""
-        
-        try:
-            with open(f"sub_files/{sub_id}.py", "r") as file:
-                sub_code = file.read()
-                
-        except Error as e:
-            return HttpResponse(e)
-        
-        try:
-            feedback = Feedback.objects.get(sub_id=sub_id)
-            form = FeedbackForm(instance=feedback)
-            
-        except Feedback.DoesNotExist:
-            form = FeedbackForm()
-    
-    return render(request, "submissions/sub_code.html", {"sub_code": sub_code,
-                                                         "form": form,
-                                                         "sub_id": sub_id})
+        feedback = get_object_or_404(Feedback, sub_id=sub_id)
+        #print(feedback.sub_url)
+        req = requests.get(feedback.sub_url, headers=AUTH)
+        req.encoding = "utf-8"
+        sub_code = req.text
+        form = FeedbackForm(instance=feedback)
+
+        return render(request, "submissions/sub_code.html", {"sub_code": sub_code,
+                                                             "form": form,
+                                                             "sub_id": sub_id})
                                                          

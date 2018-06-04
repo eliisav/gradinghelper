@@ -4,7 +4,7 @@ from submissions.models import Feedback
 class FeedbackForm(ModelForm):
     class Meta:
         model = Feedback
-        fields = ['assistant', 'points', 'feedback']
+        fields = ['grader', 'points', 'feedback']
         
         #feedback = forms.CharField(label='', widget=forms.Textarea)
 

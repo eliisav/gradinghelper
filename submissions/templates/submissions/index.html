@@ -1,9 +1,1 @@
-{% if subs %}
-    <ul style="list-style-type:none">
-    {% for sub in subs %}
-        <li><a href="{%url 'submissions:sub_info' sub.SubmissionID %}">{{sub.SubmissionID}}</a> {{sub.Email}}</li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No submissions available.</p>
-{% endif %}
+<h1><a href="{% url 'submissions:exercise' %}">{{name}}</a></h1>

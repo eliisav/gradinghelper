@@ -1,19 +1,17 @@
 from django.db import models
 
 
-class Submission(models.Model):
-    sub_id = models.CharField(max_length=20)
-    student_id = models.CharField(max_length=6)
-    student_email = models.CharField(max_length=50)
-    sub_url = models.CharField(max_length=200)
-
-
-class Grader(models.Model):
-    email = models.CharField(max_length=50)
+class Exercise(models.Model):
+    exercise_id = models.CharField(max_length=4, unique=True)
+    name = models.CharField(max_length=200)
 
 
 class Feedback(models.Model):
+    #exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     sub_id = models.CharField(max_length=20, unique=True)
-    assistant = models.CharField(max_length=6)
+    sub_url = models.URLField()
+    submitter = models.EmailField()
+    grader = models.EmailField()
     feedback = models.TextField()
     points = models.IntegerField(default=0)
+    done = models.BooleanField(default=False)

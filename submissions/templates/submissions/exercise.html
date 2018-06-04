@@ -1,0 +1,13 @@
+{% if submissions %}
+    <ul style="list-style-type:none">
+    {% for sub in submissions %}
+        <li><a href="{%url 'submissions:sub_info' sub.sub_id %}">{{sub.sub_id}}</a> {{sub.submitter}}
+            {% if sub.done %} 
+                ARVOSTELTU!
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No submissions available.</p>
+{% endif %}
