@@ -1,1 +1,20 @@
-<h1><a href="{% url 'submissions:exercise' %}">{{name}}</a></h1>
+{% extends 'submissions/base.html' %}
+
+{% block content %}
+
+    <p> Lisää tehtävä
+    <a href="{% url 'submissions:create' %}" class="btn btn-primary">Uusi tehtävä</a>
+    </p>
+    
+    {% if exercises %}
+        <ul style="list-style-type:none">
+        {% for exercise in exercises %}
+            <li><a href="{%url 'submissions:get_subs' exercise.exercise_id %}">{{exercise.exercise_id}}</a></li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Yhtään tehtävää ei ole vielä lisätty.</p>
+    {% endif %}
+        
+{% endblock %}
+
