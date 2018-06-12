@@ -9,7 +9,7 @@
     {% if exercises %}
         <ul style="list-style-type:none">
         {% for exercise in exercises %}
-            <li><a href="{%url 'submissions:get_subs' exercise.exercise_id %}">{{exercise.exercise_id}}</a></li>
+            <li><a href="{%url 'submissions:submissions' exercise.exercise_id %}">{{exercise.exercise_id}}</a></li>
         {% endfor %}
         </ul>
     {% else %}

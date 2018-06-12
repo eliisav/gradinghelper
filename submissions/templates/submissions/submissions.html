@@ -1,9 +1,11 @@
 {% extends 'submissions/base.html' %}
 
 {% block content %}
+
+{{ exercise }}
         <ul style="list-style-type:none">
-        {% for sub in exercise.feedback_set.all %}
-            <li><a href="{%url 'submissions:feedback' exercise.exercise_id sub.sub_id %}">{{sub.sub_id}}</a> {{sub.submitter}}
+        {% for sub in object_list %}
+            <li><a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">{{sub.sub_id}}</a> {{sub.submitter}}
                 {% if sub.done %} 
                     ARVOSTELTU!
                 {% endif %}
