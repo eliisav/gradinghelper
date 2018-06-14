@@ -1,0 +1,20 @@
+
+{% extends 'submissions/base.html' %}
+
+{% block content %}
+
+    <h1> Valitse tehtävät </h1>
+    
+    {% if exercises %}
+        <ul style="list-style-type:none">
+        {% for exercise in exercises %}
+            <li> {{ exercise.display_name }}
+                 <a href="{% url 'submissions:create' course_id exercise.id %}" class="btn btn-default btn-xs">Lisää tehtävä</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Yhtään tehtävää ei löytynyt.</p>
+    {% endif %}
+        
+{% endblock %}

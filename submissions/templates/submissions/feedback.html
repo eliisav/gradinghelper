@@ -3,7 +3,7 @@
 {% block content %}
     <pre>{{sub_code}}</pre>
 
-    <form action="{% url 'submissions:feedback' exercise sub_id %}" method="post" class="form">
+    <form action="{% url 'submissions:feedback' course_id exercise sub_id %}" method="post" class="form">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">Submit</button>

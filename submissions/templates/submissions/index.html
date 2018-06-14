@@ -1,15 +1,14 @@
+
 {% extends 'submissions/base.html' %}
 
 {% block content %}
 
-    <p> Lisää tehtävä
-    <a href="{% url 'submissions:create' %}" class="btn btn-primary">Uusi tehtävä</a>
-    </p>
+    <h1> Valitse kurssi </h1>
     
-    {% if exercises %}
+    {% if courses %}
         <ul style="list-style-type:none">
-        {% for exercise in exercises %}
-            <li><a href="{%url 'submissions:submissions' exercise.exercise_id %}">{{exercise.exercise_id}}</a></li>
+        {% for course in courses %}
+            <li><a href="{% url 'submissions:exercises' course.id %}">{{ course.name }} {{ course.instance_name }}</a></li>
         {% endfor %}
         </ul>
     {% else %}
@@ -17,4 +16,3 @@
     {% endif %}
         
 {% endblock %}
-

@@ -11,10 +11,49 @@ AUTH =  {'Authorization': TOKEN}
 API_URL = "https://plus.cs.tut.fi/api/v2/"
 
 
+def get_json(url):
+    req = requests.get(url, headers=AUTH)
+    return req.json()
+
+
+def get_courses():
+    """
+    Hakee kaikki TUT+ -sivustolla olevat kurssi-instanssit.
+    return: lista kursseista
+    """
+    courses_url = f"{API_URL}courses/"
+    
+    # HUOM! Tämä ei toimi pelkästään näin, jos kursseja on useita sivuja!!!!
+    course_list = get_json(courses_url)["results"]
+    return course_list
+    
+    
+def get_exercises(course_id):
+    """
+    Hakee kaikki yhden kurssi-instanssin tehtävät.
+    param course_id: (int) kurssin tunnus TUT+ -palvelussa
+    return: lista tehtävistä
+    """
+    #course_url = f"{API_URL}courses/{course_id}/"
+    #course_info = get_json(course_url)
+    #exercises_url = course_info["exercises"]
+    exercises_url = f"{API_URL}courses/{course_id}/exercises/"
+    modules = get_json(exercises_url)["results"]
+    
+    exercises = []
+    for module in modules:
+        #for exercise in module["exercises"]:
+        #    details = get_json(exercise["url"])
+        #    print(details)
+        exercises += module["exercises"]
+    
+    return exercises
+    
+
 def get_submissions(exercise_id):
-    # Etsitään tehtävän id:n perusteella url, jolla saadaa pyydettyä tiedot
+    # Etsitään tehtävän id:n perusteella url, jolla saadaan pyydettyä tiedot
     # tämän tehtävän viimeisimmistä/parhaista palautuksista.
-    exercise_url = f"{API_URL}exercises/{exercise_id}"
+    exercise_url = f"{API_URL}exercises/{exercise_id}/"
     req = requests.get(exercise_url, headers=AUTH)
     exercise_info = req.json()
     course_url = exercise_info["course"]["url"]
