@@ -41,12 +41,19 @@ def get_exercises(course_id):
     modules = get_json(exercises_url)["results"]
     
     exercises = []
-    for module in modules:
-        #for exercise in module["exercises"]:
-        #    details = get_json(exercise["url"])
-        #    print(details)
-        exercises += module["exercises"]
     
+    # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
+    for module in modules:
+        # Käydään läpi jokainen materiaali/tehtävä ja tutkitaan onko kyseessä
+        # palautetava tehtävä. Jos on, niin lisätään listaan.
+        for exercise in module["exercises"]:
+            details = get_json(exercise["url"])
+            if "is_submittable" in details and details["is_submittable"] == True:
+                print("Laitetaan talteen")
+                exercises.append(details)
+                
+        #exercises += module["exercises"]
+        
     return exercises
     
 
@@ -59,7 +66,7 @@ def get_submissions(exercise_id):
     course_url = exercise_info["course"]["url"]
     data_url = f"{course_url}submissiondata/?exercise_id={exercise_id}&format=json"
     
-    print("SUB_DATA_URL:", data_url)
+    # print("SUB_DATA_URL:", data_url)
     
     req = requests.get(data_url, headers=AUTH)
     return req.json()
