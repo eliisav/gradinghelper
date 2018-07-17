@@ -1,7 +1,9 @@
-
 {% extends 'submissions/base.html' %}
+{% load bootstrap4 %}
 
 {% block content %}
+
+  <div class="col-md-6">
 
     <h1> Valitse kurssi </h1>
     
@@ -14,5 +16,7 @@
     {% else %}
         <p>Yhtään tehtävää ei ole vielä lisätty.</p>
     {% endif %}
+        
+  </div>
         
 {% endblock %}

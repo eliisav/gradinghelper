@@ -1,8 +1,7 @@
-
 {% extends 'submissions/base.html' %}
+{% load bootstrap4 %}
 
 {% block content %}
-
 
   <div class="col-md-6">
 
@@ -18,8 +17,30 @@
           
           <div class="collapse" id="{{ exercise.id }}">
             <div class="card card-body">
-            
-              <form action={% url "submissions:create" course_id exercise.id %}>
+              <form action={% url "submissions:create" course_id exercise.id %} method="post" class="form">
+                  {% csrf_token %}
+                  {% bootstrap_form form %}
+                  <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+          
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+        <p>Yhtään tehtävää ei löytynyt.</p>
+    {% endif %}
+        
+  </div>
+        
+{% endblock %}
+
+
+
+<!-- href="{% url 'submissions:create' course_id exercise.id %}" 
+
+      <form action={% url "submissions:create" course_id exercise.id %}>
                 <div class="form-group">
                   <label for="minpoints">Min points</label>
                   <input type="number" class="form-control" id="minpoints" placeholder="Min points to inspect">
@@ -38,21 +59,6 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
               </form>
-              
-            </div>
-          </div>
-          
-        </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-        <p>Yhtään tehtävää ei löytynyt.</p>
-    {% endif %}
-        
-  </div>
-        
-{% endblock %}
 
 
-
-<!-- href="{% url 'submissions:create' course_id exercise.id %}" -->
+-->

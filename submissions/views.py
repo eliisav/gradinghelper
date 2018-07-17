@@ -4,7 +4,7 @@ from django.urls import reverse, reverse_lazy
 from django.views import generic
 
 from .models import Feedback, Exercise
-from .forms import FeedbackForm
+from .forms import FeedbackForm, ExerciseForm
 from .utils import *
 
 
@@ -35,10 +35,12 @@ class ExerciseListView(generic.ListView):
     def get(self, request, course_id):
         self.object_list = get_exercises(course_id)
         context = self.get_context_data()
-        context['course_id'] = course_id
+        context["course_id"] = course_id
+        context["form"] = ExerciseForm()
         return self.render_to_response(context)
         
-
+        
+"""
 class ExerciseCreate(generic.edit.CreateView):
     model = Exercise
     fields = ["min_points", "max_points", "deadline"]
@@ -48,23 +50,32 @@ class ExerciseCreate(generic.edit.CreateView):
     # MITEN TÄN SAA TOIMIMAAN?!
     def get(self, request, course_id, exercise_id):
         return super().get(request)
-    
+"""    
 
 
 def create_exercise(request, course_id, exercise_id):
     """
     Lisää tehtävän tietokantaan.
     """
-    try:
-        exercise = Exercise.objects.get(exercise_id=exercise_id)
-
-    except Exercise.DoesNotExist:
-        exercise = Exercise(course_id=course_id, exercise_id=exercise_id)
-        exercise.save()
+    
+    if request.method == "POST":
+        form = ExerciseForm(request.POST)
         
-    return HttpResponseRedirect(reverse("submissions:submissions", 
-                                        kwargs={ 'course_id': course_id,
-                                                 'exercise_id': exercise_id }))
+        if form.is_valid():
+            try:
+                exercise = Exercise.objects.get(exercise_id=exercise_id)
+
+            except Exercise.DoesNotExist:
+                exercise = Exercise(course_id=course_id, 
+                                    exercise_id=exercise_id,
+                                    min_points=form.cleaned_data["min_points"],
+                                    max_points=form.cleaned_data["max_points"],
+                                    deadline=form.cleaned_data["deadline"],
+                                    consent_exercise=form.cleaned_data["consent_exercise"])
+                exercise.save()
+        
+    return HttpResponseRedirect(reverse("submissions:exercises", 
+                                        kwargs={ 'course_id': course_id }))
 
 
 class SubmissionsView(generic.ListView):
