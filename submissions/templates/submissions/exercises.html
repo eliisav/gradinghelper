@@ -3,18 +3,56 @@
 
 {% block content %}
 
+
+  <div class="col-md-6">
+
     <h1> Valitse tehtävät </h1>
     
     {% if exercises %}
-        <ul style="list-style-type:none">
+      <ul class="list-group">
         {% for exercise in exercises %}
-            <li> {{ exercise.display_name }}
-                 <a href="{% url 'submissions:create' course_id exercise.id %}" class="btn btn-default btn-xs">Lisää tehtävä</a>
-            </li>
+        <li class="list-group-item"> {{ exercise.display_name }}
+          <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#{{ exercise.id }}">
+              Lisää tehtävä
+          </button>
+          
+          <div class="collapse" id="{{ exercise.id }}">
+            <div class="card card-body">
+            
+              <form action={% url "submissions:create" course_id exercise.id %}>
+                <div class="form-group">
+                  <label for="minpoints">Min points</label>
+                  <input type="number" class="form-control" id="minpoints" placeholder="Min points to inspect">
+                </div>
+                <div class="form-group">
+                  <label for="maxpoints">Max points</label>
+                  <input type="number" class="form-control" id="maxpoints" placeholder="Max points to inspect">
+                </div>
+                <div class="form-group">
+                  <label for="deadline">Deadline</label>
+                  <input type="datetime" class="form-control" id="deadline" placeholder="Exercise deadline">
+                </div>
+                <div class="form-group">
+                  <label for="consent">Consent exercise id/name</label>
+                  <input type="text" class="form-control" id="consent" placeholder="Consent to inspection">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+              
+            </div>
+          </div>
+          
+        </li>
         {% endfor %}
-        </ul>
+      </ul>
     {% else %}
         <p>Yhtään tehtävää ei löytynyt.</p>
     {% endif %}
         
+  </div>
+        
 {% endblock %}
+
+
+
+<!-- href="{% url 'submissions:create' course_id exercise.id %}" -->

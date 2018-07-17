@@ -40,6 +40,14 @@ def get_exercises(course_id):
     exercises_url = f"{API_URL}courses/{course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
     
+    
+    """
+        tulos = cache.get(avaimen)
+    if not tulos:
+      tulos = {}    
+      cache.set(avaimen, tulos)
+    """
+    
     exercises = []
     
     # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.

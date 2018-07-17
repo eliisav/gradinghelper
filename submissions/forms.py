@@ -8,3 +8,7 @@ class FeedbackForm(ModelForm):
         model = Feedback
         fields = ["grader", "points", "feedback"]
 
+class ExerciseForm(ModelForm):
+    class Meta:
+        model = Exercise
+        fields =  ["min_points", "max_points", "deadline"]

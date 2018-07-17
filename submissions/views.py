@@ -8,9 +8,9 @@ from .forms import FeedbackForm
 from .utils import *
 
 
-COURSE = 31      # summer en 34, summer fi 31
-EXERCISE = 5113  # melumittaus en 5302, fi 5113
-    
+#COURSE = 31      # summer en 34, summer fi 31
+#EXERCISE = 5113  # melumittaus en 5302, fi 5113
+
 
 class IndexView(generic.ListView):
     """
@@ -39,23 +39,18 @@ class ExerciseListView(generic.ListView):
         return self.render_to_response(context)
         
 
-"""
-class ExercisesView(generic.ListView):
-    model = Exercise
-    template_name = "submissions/index.html"
-    context_object_name = "exercises"
-    
-    def get_queryset(self):
-        return Exercise.objects.order_by("exercise_id")
-        
-        
 class ExerciseCreate(generic.edit.CreateView):
     model = Exercise
-    fields = ["exercise_id", "min_points", "max_points", "deadline"]
-    success_url = reverse_lazy("submissions:index")
-"""
+    fields = ["min_points", "max_points", "deadline"]
+    success_url = reverse_lazy("submissions:exercises")
     
+
+    # MITEN TÄN SAA TOIMIMAAN?!
+    def get(self, request, course_id, exercise_id):
+        return super().get(request)
     
+
+
 def create_exercise(request, course_id, exercise_id):
     """
     Lisää tehtävän tietokantaan.
@@ -84,11 +79,15 @@ class SubmissionsView(generic.ListView):
         subsdata = get_submissions(exercise_id)
         
         for sub in subsdata:
+        
+            print(sub)
+        
             try:
                 feedback = exercise.feedback_set.get(sub_id=sub["SubmissionID"])
                 
             except Feedback.DoesNotExist:
-                if "ohjelma.py" in sub:
+                # Laitetaan talteen palautukset, jotka ovat läpäisseet testit
+                if sub["Grade"] > 0 and "ohjelma.py" in sub:
                     exercise.feedback_set.create(sub_id=sub["SubmissionID"], 
                                                  sub_url=sub["ohjelma.py"],
                                                  submitter=sub["Email"])
@@ -124,4 +123,15 @@ def get_feedback(request, course_id, exercise_id, sub_id):
                                                              "sub_id": sub_id,
                                                              "exercise": exercise_id,
                                                              "course_id": course_id})
-                                                             
+
+
+"""
+class ExercisesView(generic.ListView):
+    model = Exercise
+    template_name = "submissions/index.html"
+    context_object_name = "exercises"
+    
+    def get_queryset(self):
+        return Exercise.objects.order_by("exercise_id")
+"""
+
