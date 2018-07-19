@@ -2,15 +2,32 @@
 {% load bootstrap4 %}
 
 {% block content %}
-
   <div class="col-md-6">
+  
+  {% if messages %}
+    <ul class="list-group list-group-flush messages">
+      {% for message in messages %}
+        <li {% if message.tags == "error" %} 
+              class="list-group-item list-group-item-danger" 
+            {% elif message.tags == "success" %}
+              class="list-group-item list-group-item-success"
+            {% else %}
+              class="list-group-item list-group-item-info" {% endif %}>
+            
+          {{ message }}
+            
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
 
     <h1> Valitse tehtävät </h1>
     
     {% if exercises %}
-      <ul class="list-group">
+      <ul class="list-group exercises">
         {% for exercise in exercises %}
-          <li class="list-group-item">
+          <li class="list-group-item {{ exercise.id }}">
           
           
             <div class="d-flex align-items-center">
@@ -33,7 +50,7 @@
                   <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
               </div>
-            </div>
+            </div> <!-- collapse -->
             
             
           </li>
@@ -43,7 +60,6 @@
       <p>Yhtään tehtävää ei löytynyt.</p>
     {% endif %}
         
-  </div>
-        
+  </div> <!-- column -->
 {% endblock %}
 
