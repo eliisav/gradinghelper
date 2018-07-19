@@ -2,6 +2,8 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic
+from django.core.cache import cache
+from django.contrib import messages
 
 from .models import Feedback, Exercise
 from .forms import FeedbackForm, ExerciseForm
@@ -31,9 +33,16 @@ class ExerciseListView(generic.ListView):
     """
     template_name = "submissions/exercises.html"
     context_object_name = "exercises"
+    #extra_context = Exercise.objects.all()
     
     def get(self, request, course_id):
-        self.object_list = get_exercises(course_id)
+      
+        self.object_list = cache.get(course_id)
+        
+        if not self.object_list:
+            self.object_list = get_exercises(course_id)
+            cache.set(course_id, self.object_list)
+            
         context = self.get_context_data()
         context["course_id"] = course_id
         context["form"] = ExerciseForm()
@@ -57,13 +66,13 @@ def create_exercise(request, course_id, exercise_id):
     """
     Lisää tehtävän tietokantaan.
     """
-    
     if request.method == "POST":
         form = ExerciseForm(request.POST)
         
         if form.is_valid():
             try:
                 exercise = Exercise.objects.get(exercise_id=exercise_id)
+                messages.error(request, "Tehtävä oli jo lisätty.")
 
             except Exercise.DoesNotExist:
                 exercise = Exercise(course_id=course_id, 
@@ -73,9 +82,10 @@ def create_exercise(request, course_id, exercise_id):
                                     deadline=form.cleaned_data["deadline"],
                                     consent_exercise=form.cleaned_data["consent_exercise"])
                 exercise.save()
+                messages.success(request, "Tehtävän lisääminen onnistui.")
         
     return HttpResponseRedirect(reverse("submissions:exercises", 
-                                        kwargs={ 'course_id': course_id }))
+                                        kwargs={ "course_id": course_id }))
 
 
 class SubmissionsView(generic.ListView):
@@ -98,7 +108,7 @@ class SubmissionsView(generic.ListView):
                 
             except Feedback.DoesNotExist:
                 # Laitetaan talteen palautukset, jotka ovat läpäisseet testit
-                if sub["Grade"] > 0 and "ohjelma.py" in sub:
+                if sub["Grade"] >= exercise.min_points and "ohjelma.py" in sub:
                     exercise.feedback_set.create(sub_id=sub["SubmissionID"], 
                                                  sub_url=sub["ohjelma.py"],
                                                  submitter=sub["Email"])
