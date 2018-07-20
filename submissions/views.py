@@ -71,21 +71,24 @@ def create_exercise(request, course_id, exercise_id):
     """
     if request.method == "POST":
         form = ExerciseForm(request.POST)
-        
+        print(form)
         if form.is_valid():
             try:
                 exercise = Exercise.objects.get(exercise_id=exercise_id)
                 messages.error(request, "Tehtävä oli jo lisätty.")
+                
 
             except Exercise.DoesNotExist:
                 exercise = Exercise(course_id=course_id, 
                                     exercise_id=exercise_id,
+                                    name=form.cleaned_data["name"],
                                     min_points=form.cleaned_data["min_points"],
                                     max_points=form.cleaned_data["max_points"],
                                     deadline=form.cleaned_data["deadline"],
                                     consent_exercise=form.cleaned_data["consent_exercise"])
                 exercise.save()
                 messages.success(request, "Tehtävän lisääminen onnistui.")
+        print("Lomake ei ole validi!")
         
     return HttpResponseRedirect(reverse("submissions:exercises", 
                                         kwargs={ "course_id": course_id }))

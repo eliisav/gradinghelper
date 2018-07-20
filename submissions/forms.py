@@ -11,4 +11,4 @@ class FeedbackForm(ModelForm):
 class ExerciseForm(ModelForm):
     class Meta:
         model = Exercise
-        fields =  ["min_points", "max_points", "deadline", "consent_exercise"]
+        fields =  ["name", "min_points", "max_points", "deadline", "consent_exercise"]
