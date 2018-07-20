@@ -29,23 +29,26 @@ class IndexView(generic.ListView):
 
 class ExerciseListView(generic.ListView):
     """
-    Listaa yhden kurssin kaikki materiaalit
+    Listaa yhden kurssin kaikki tehtävät
     """
+    model = Exercise
     template_name = "submissions/exercises.html"
     context_object_name = "exercises"
-    #extra_context = Exercise.objects.all()
-    
-    def get(self, request, course_id):
-      
-        self.object_list = cache.get(course_id)
         
-        if not self.object_list:
-            self.object_list = get_exercises(course_id)
-            cache.set(course_id, self.object_list)
-            
+    def get(self, request, course_id):
+        self.object_list = self.get_queryset()
+      
+        all_exercises = cache.get(course_id)
+        if not all_exercises:
+            all_exercises = get_exercises(course_id)
+            cache.set(course_id, all_exercises)
+        
         context = self.get_context_data()
+        
         context["course_id"] = course_id
         context["form"] = ExerciseForm()
+        context["all_exercises"] = all_exercises
+        
         return self.render_to_response(context)
         
         

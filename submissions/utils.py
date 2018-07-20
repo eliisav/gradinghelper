@@ -40,14 +40,6 @@ def get_exercises(course_id):
     exercises_url = f"{API_URL}courses/{course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
     
-    
-    """
-        tulos = cache.get(avaimen)
-    if not tulos:
-      tulos = {}    
-      cache.set(avaimen, tulos)
-    """
-    
     exercises = []
     
     # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
@@ -56,8 +48,8 @@ def get_exercises(course_id):
         # palautetava tehtävä. Jos on, niin lisätään listaan.
         for exercise in module["exercises"]:
             details = get_json(exercise["url"])
+            print(details)
             if "is_submittable" in details and details["is_submittable"] == True:
-                print("Laitetaan talteen")
                 exercises.append(details)
                 
         #exercises += module["exercises"]

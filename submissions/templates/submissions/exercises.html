@@ -4,29 +4,44 @@
 {% block content %}
   <div class="col-md-6">
   
-  {% if messages %}
-    <ul class="list-group list-group-flush messages">
-      {% for message in messages %}
-        <li {% if message.tags == "error" %} 
-              class="list-group-item list-group-item-danger" 
-            {% elif message.tags == "success" %}
-              class="list-group-item list-group-item-success"
-            {% else %}
-              class="list-group-item list-group-item-info" {% endif %}>
-            
-          {{ message }}
-            
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    {% if messages %}
+      <ul class="list-group list-group-flush messages">
+        {% for message in messages %}
+          <li {% if message.tags == "error" %} 
+                class="list-group-item list-group-item-danger" 
+              {% elif message.tags == "success" %}
+                class="list-group-item list-group-item-success"
+              {% else %}
+                class="list-group-item list-group-item-info" {% endif %}>
+              
+            {{ message }}
+              
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 
 
-    <h1> Valitse tehtävät </h1>
+    <h1> Tarkastukseen lisätyt tehtävät </h1>
     
     {% if exercises %}
       <ul class="list-group exercises">
         {% for exercise in exercises %}
+          <li class="list-group-item {{ exercise.exercise_id }}">
+            {{ exercise.exercise_id }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      Yhtään tehtävää ei ole vielä lisätty.
+    {% endif %}
+
+
+    <h1> Kaikki tehtävät </h1>
+    
+    {% if all_exercises %}
+      <ul class="list-group all_exercises">
+        {% for exercise in all_exercises %}
           <li class="list-group-item {{ exercise.id }}">
           
           
