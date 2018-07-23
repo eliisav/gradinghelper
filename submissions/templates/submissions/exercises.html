@@ -41,7 +41,7 @@
     
     {% if all_exercises %}
       <ul class="list-group all_exercises">
-        {% for exercise in all_exercises %}
+        {% for exercise in all_exercises%}
           <li class="list-group-item {{ exercise.id }}">
           
           
@@ -65,14 +65,30 @@
                   {% csrf_token %}
                   {% for field in form %}
                     <div class="form-group">
+                    
                       {{ field.label_tag }}
+                      
+                      
                       {% if field.name == "name" %}
                         <input id="id_name" name="name" value="{{ exercise.display_name }}" type="text" readonly>
+                        
+                        
+                      {% elif field.name == "consent_exercise" %}
+                        <input id="id_consent_exercise" name="consent_exercise" list="all_exercises">
+                        <datalist id=all_exercises>
+                          {% for exercise in all_exercises %}
+                            <option value="{{ exercise.display_name }}">
+                          {% endfor %}
+                        </datalist>
+                        
+                        
                       {% else %}
+                      
                         {{ field }}
+                        
                       {% endif %}
                       
-                    </div>
+                    </div> <!-- form group -->
                   {% endfor %}
                   <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
