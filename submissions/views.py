@@ -14,18 +14,34 @@ from .utils import *
 #EXERCISE = 5113  # melumittaus en 5302, fi 5113
 
 
-class IndexView(generic.ListView):
+class IndexView(generic.TemplateView):
+    template_name = "submissions/index.html"
+
+
+class CourseListView(generic.ListView):
     """
     Listaa kaikki kurssit, jotka rajapinnasta on saatavilla.
     return: Lista kaikista kursseista
     """
-    template_name = "submissions/index.html"
+    template_name = "submissions/courses.html"
     context_object_name = "courses"
     
-    def get(self, request):
-        self.object_list = get_courses()
-        return self.render_to_response(self.get_context_data())
+    def get_queryset(self):
+        return get_courses()
+        
 
+class GradingListView(generic.ListView):
+    """
+    Listataan kaikki tarkastettavat tehtävät (toistaiseksi kurssista riippumatta).
+    """
+    model = Exercise
+    template_name = "submissions/grading.html"
+    context_object_name = "exercises"
+
+    def get_queryset(self):
+        return Exercise.objects.all().filter(trace=True)
+
+    
 
 class ExerciseListView(generic.ListView):
     """
@@ -36,16 +52,19 @@ class ExerciseListView(generic.ListView):
     context_object_name = "exercises"
     
     def get(self, request, course_id):
-        self.object_list = self.get_queryset().filter(course_id=course_id, trace=False)
-        tracing = self.get_queryset().filter(course_id=course_id, trace=True)
+        queryset = self.get_queryset().filter(course_id=course_id)
+        self.object_list = queryset.filter(trace=False)
+        tracing = queryset.filter(trace=True)
         
         for exercise in self.object_list:
+            print("Luodaan lomake tehtävälle:", exercise)
             exercise.form = ExerciseForm(instance=exercise)
         
         context = self.get_context_data()
         context["tracing"] = tracing
         context["course_id"] = course_id
         
+        print("Renderöidään html...")
         return self.render_to_response(context)
 
 
@@ -97,7 +116,8 @@ def enable_exercise_trace(request, course_id, exercise_id):
             
         else:
             messages.error(request, "Virheellinen lomakekenttä.")
-        
+    
+    #print("Tehtävä lisätty, palataan listaukseen...")    
     return HttpResponseRedirect(reverse("submissions:exercises", 
                                         kwargs={ "course_id": course_id }))
 
@@ -115,7 +135,7 @@ class SubmissionsView(generic.ListView):
         
         for sub in subsdata:
         
-            print(sub)
+            #print(sub)
         
             try:
                 feedback = exercise.feedback_set.get(sub_id=sub["SubmissionID"])

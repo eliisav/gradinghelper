@@ -2,7 +2,12 @@ from django.db import models
 from django.utils import timezone
 
 
+class Course(models.Model):
+    course_id = models.PositiveIntegerField()
+
+
 class Exercise(models.Model):
+    #course_id = models.ForeignKey(Course, on_delete=models.CASCADE)
     course_id = models.PositiveIntegerField()
     exercise_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)

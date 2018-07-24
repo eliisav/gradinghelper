@@ -1,11 +1,19 @@
 {% extends 'submissions/base.html' %}
+{% load bootstrap4 %}
 
 {% block content %}
-    <pre>{{sub_code}}</pre>
 
+  <div class="col-md-6">
+    <pre>{{ sub_code }}</pre>
+  </div>
+  
+  
+  <div class="col-md-6">
     <form action="{% url 'submissions:feedback' course_id exercise sub_id %}" method="post" class="form">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Submit</button>
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+  </div>
+  
 {% endblock %}
