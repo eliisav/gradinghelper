@@ -22,25 +22,24 @@
     {% endif %}
 
 
-<!--     <h1> Tarkastukseen lisätyt tehtävät </h1>
+    <h1> Tarkastukseen lisätyt tehtävät </h1>
     
-    {% if exercises %}
+    {% if tracing %}
       <ul class="list-group exercises">
-        {% for exercise in exercises %}
+        {% for exercise in tracing %}
           <li class="list-group-item {{ exercise.exercise_id }}">
-            {{ exercise.name }}
+            {{ exercise }}
           </li>
         {% endfor %}
       </ul>
     {% else %}
       Yhtään tehtävää ei ole vielä lisätty.
-    {% endif %} -->
-
-
-    <a class="btn btn-primary" href={% url "submissions:update" course_id %} role="button">Päivitä kurssin sisältö</a> 
+    {% endif %}
 
 
     <h1> Kaikki tehtävät </h1>
+    
+    <a class="btn btn-primary" href={% url "submissions:update" course_id %} role="button">Päivitä kurssin sisältö</a>
     
     {% if exercises %}
       <ul class="list-group all_exercises">
@@ -50,7 +49,7 @@
           
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
-               {{ exercise.name }}
+               {{ exercise }}
               </div>
               <div class="ml-auto">
                 <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
@@ -62,10 +61,26 @@
              
             <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
               <div class="card card-body">
-              
-              
                 <form action={% url "submissions:trace" exercise.course_id exercise.exercise_id %} method="post" class="form">
                   {% csrf_token %}
+                  {% bootstrap_form exercise.form %}
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+              </div>
+            </div> <!-- collapse -->
+            
+            
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Yhtään tehtävää ei löytynyt. Hae tehtäviä valitsemalla "Päivitä kurssin sisältö".</p>
+    {% endif %}
+        
+  </div> <!-- column -->
+{% endblock %}
+
+
                   <!-- {% for field in form %}
                     <div class="form-group">
                     
@@ -93,22 +108,3 @@
                       
                     </div>
                   {% endfor %} -->
-                  {% bootstrap_form exercise.form %}
-                  <button type="submit" class="btn btn-primary">Submit</button>
-                </form>
-                
-                
-              </div>
-            </div> <!-- collapse -->
-            
-            
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>Yhtään tehtävää ei löytynyt.</p>
-    {% endif %}
-        
-  </div> <!-- column -->
-{% endblock %}
-

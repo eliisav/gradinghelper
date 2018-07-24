@@ -36,32 +36,26 @@ class ExerciseListView(generic.ListView):
     context_object_name = "exercises"
     
     def get(self, request, course_id):
-        self.object_list = self.get_queryset().filter(course_id=course_id)
+        self.object_list = self.get_queryset().filter(course_id=course_id, trace=False)
+        tracing = self.get_queryset().filter(course_id=course_id, trace=True)
         
         for exercise in self.object_list:
             exercise.form = ExerciseForm(instance=exercise)
-            
+        
         context = self.get_context_data()
+        context["tracing"] = tracing
         context["course_id"] = course_id
         
         return self.render_to_response(context)
-    
+
+
 """        
-    def get(self, request, course_id):
-        self.object_list = self.get_queryset()
-      
-        all_exercises = cache.get(course_id)
-        if not all_exercises:
-            all_exercises = get_exercises(course_id)
-            cache.set(course_id, all_exercises)
+    
+        exercises = cache.get(course_id)
+        if not exercises:
+            exercises = get_exercises(course_id)
+            cache.set(course_id, exercises)
         
-        context = self.get_context_data()
-        
-        context["course_id"] = course_id
-        context["form"] = ExerciseForm()
-        context["all_exercises"] = all_exercises
-        
-        return self.render_to_response(context)
 """
         
         
@@ -87,9 +81,7 @@ def update_exercise_view(request, course_id):
     
     return HttpResponseRedirect(reverse("submissions:exercises", 
                                         kwargs={ "course_id": course_id }))
-        
-    
-
+                                        
 
 def enable_exercise_trace(request, course_id, exercise_id):
     
@@ -167,14 +159,4 @@ def get_feedback(request, course_id, exercise_id, sub_id):
                                                              "exercise": exercise_id,
                                                              "course_id": course_id})
 
-
-"""
-class ExercisesView(generic.ListView):
-    model = Exercise
-    template_name = "submissions/index.html"
-    context_object_name = "exercises"
-    
-    def get_queryset(self):
-        return Exercise.objects.order_by("exercise_id")
-"""
 
