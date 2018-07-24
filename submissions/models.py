@@ -6,10 +6,14 @@ class Exercise(models.Model):
     course_id = models.PositiveIntegerField()
     exercise_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
-    consent_exercise = models.CharField(max_length=200)
+    consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE, null=True)
     min_points = models.PositiveSmallIntegerField(default=1)
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
     deadline = models.DateTimeField(default=timezone.now)
+    trace = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return self.name
 
 
 class Feedback(models.Model):

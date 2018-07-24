@@ -4,6 +4,7 @@ Module for various utility functions
 
 
 import requests
+from .models import Exercise
 
 
 TOKEN = "Token 2b92117b410cad8708fff3bfd7473340a69bfaac"  # Eliisan token
@@ -40,7 +41,7 @@ def get_exercises(course_id):
     exercises_url = f"{API_URL}courses/{course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
     
-    exercises = []
+    #exercises = []
     
     # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
     for module in modules:
@@ -48,13 +49,23 @@ def get_exercises(course_id):
         # palautetava tehtävä. Jos on, niin lisätään listaan.
         for exercise in module["exercises"]:
             details = get_json(exercise["url"])
-            print(details)
+            #print(details)
             if "is_submittable" in details and details["is_submittable"] == True:
-                exercises.append(details)
+            
+                try:
+                    exercise = Exercise.objects.get(exercise_id=details["id"])
+                    
+                except Exercise.DoesNotExist:
+                    exercise = Exercise(course_id=course_id, 
+                                        exercise_id=details["id"]) 
+                                    
+                exercise.name = details["display_name"]
+                exercise.save()
+                #exercises.append(details)
                 
         #exercises += module["exercises"]
         
-    return exercises
+    #return exercises
     
 
 def get_submissions(exercise_id):

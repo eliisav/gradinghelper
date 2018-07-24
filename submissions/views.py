@@ -34,7 +34,19 @@ class ExerciseListView(generic.ListView):
     model = Exercise
     template_name = "submissions/exercises.html"
     context_object_name = "exercises"
+    
+    def get(self, request, course_id):
+        self.object_list = self.get_queryset().filter(course_id=course_id)
         
+        for exercise in self.object_list:
+            exercise.form = ExerciseForm(instance=exercise)
+            
+        context = self.get_context_data()
+        context["course_id"] = course_id
+        
+        return self.render_to_response(context)
+    
+"""        
     def get(self, request, course_id):
         self.object_list = self.get_queryset()
       
@@ -50,6 +62,7 @@ class ExerciseListView(generic.ListView):
         context["all_exercises"] = all_exercises
         
         return self.render_to_response(context)
+"""
         
         
 """
@@ -65,30 +78,33 @@ class ExerciseCreate(generic.edit.CreateView):
 """    
 
 
-def create_exercise(request, course_id, exercise_id):
+def update_exercise_view(request, course_id):
     """
-    Lisää tehtävän tietokantaan.
+    Lisätään/päivitetään kurssin tehtävät tietokantaan.
     """
-    if request.method == "POST":
-        form = ExerciseForm(request.POST)
-        print(form)
-        if form.is_valid():
-            try:
-                exercise = Exercise.objects.get(exercise_id=exercise_id)
-                messages.error(request, "Tehtävä oli jo lisätty.")
-                
+    
+    get_exercises(course_id)
+    
+    return HttpResponseRedirect(reverse("submissions:exercises", 
+                                        kwargs={ "course_id": course_id }))
+        
+    
 
-            except Exercise.DoesNotExist:
-                exercise = Exercise(course_id=course_id, 
-                                    exercise_id=exercise_id,
-                                    name=form.cleaned_data["name"],
-                                    min_points=form.cleaned_data["min_points"],
-                                    max_points=form.cleaned_data["max_points"],
-                                    deadline=form.cleaned_data["deadline"],
-                                    consent_exercise=form.cleaned_data["consent_exercise"])
-                exercise.save()
-                messages.success(request, "Tehtävän lisääminen onnistui.")
-        print("Lomake ei ole validi!")
+
+def enable_exercise_trace(request, course_id, exercise_id):
+    
+    if request.method == "POST":
+        exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
+        filled_form = ExerciseForm(request.POST, instance=exercise)
+        
+        if filled_form.is_valid():
+            exercise.trace = True
+            exercise.save()
+            filled_form.save()
+            messages.success(request, "Tehtävän lisääminen onnistui.")
+            
+        else:
+            messages.error(request, "Virheellinen lomakekenttä.")
         
     return HttpResponseRedirect(reverse("submissions:exercises", 
                                         kwargs={ "course_id": course_id }))

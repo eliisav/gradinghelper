@@ -22,7 +22,7 @@
     {% endif %}
 
 
-    <h1> Tarkastukseen lisätyt tehtävät </h1>
+<!--     <h1> Tarkastukseen lisätyt tehtävät </h1>
     
     {% if exercises %}
       <ul class="list-group exercises">
@@ -34,36 +34,39 @@
       </ul>
     {% else %}
       Yhtään tehtävää ei ole vielä lisätty.
-    {% endif %}
+    {% endif %} -->
+
+
+    <a class="btn btn-primary" href={% url "submissions:update" course_id %} role="button">Päivitä kurssin sisältö</a> 
 
 
     <h1> Kaikki tehtävät </h1>
     
-    {% if all_exercises %}
+    {% if exercises %}
       <ul class="list-group all_exercises">
-        {% for exercise in all_exercises%}
-          <li class="list-group-item {{ exercise.id }}">
+        {% for exercise in exercises%}
+          <li class="list-group-item {{ exercise.exercise_id }}">
           
           
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
-               {{ exercise.display_name }}
+               {{ exercise.name }}
               </div>
               <div class="ml-auto">
-                <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.id }}">
+                <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
                   Lisää tehtävä
                 </button>
               </div>
             </div> <!-- d-flex -->
              
              
-            <div class="collapse mt-4" id="{{ exercise.id }}">
+            <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
               <div class="card card-body">
               
               
-                <form action={% url "submissions:create" course_id exercise.id %} method="post" class="form">
+                <form action={% url "submissions:trace" exercise.course_id exercise.exercise_id %} method="post" class="form">
                   {% csrf_token %}
-                  {% for field in form %}
+                  <!-- {% for field in form %}
                     <div class="form-group">
                     
                       {{ field.label_tag }}
@@ -88,8 +91,9 @@
                         
                       {% endif %}
                       
-                    </div> <!-- form group -->
-                  {% endfor %}
+                    </div>
+                  {% endfor %} -->
+                  {% bootstrap_form exercise.form %}
                   <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
                 
