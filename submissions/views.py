@@ -5,7 +5,7 @@ from django.views import generic
 from django.core.cache import cache
 from django.contrib import messages
 
-from .models import Feedback, Exercise
+from .models import Feedback, Exercise, Course
 from .forms import FeedbackForm, ExerciseForm
 from .utils import *
 
@@ -23,11 +23,9 @@ class CourseListView(generic.ListView):
     Listaa kaikki kurssit, jotka rajapinnasta on saatavilla.
     return: Lista kaikista kursseista
     """
+    model = Course
     template_name = "submissions/courses.html"
     context_object_name = "courses"
-    
-    def get_queryset(self):
-        return get_courses()
         
 
 class GradingListView(generic.ListView):
@@ -52,7 +50,8 @@ class ExerciseListView(generic.ListView):
     context_object_name = "exercises"
     
     def get(self, request, course_id):
-        queryset = self.get_queryset().filter(course_id=course_id)
+        course = get_object_or_404(Course, course_id=course_id)
+        queryset = self.get_queryset().filter(course=course)
         self.object_list = queryset.filter(trace=False)
         tracing = queryset.filter(trace=True)
         
@@ -95,8 +94,8 @@ def update_exercise_view(request, course_id):
     """
     Lisätään/päivitetään kurssin tehtävät tietokantaan.
     """
-    
-    get_exercises(course_id)
+    course = get_object_or_404(Course, course_id=course_id)
+    get_exercises(course)
     
     return HttpResponseRedirect(reverse("submissions:exercises", 
                                         kwargs={ "course_id": course_id }))

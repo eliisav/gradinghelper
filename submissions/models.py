@@ -3,12 +3,16 @@ from django.utils import timezone
 
 
 class Course(models.Model):
-    course_id = models.PositiveIntegerField()
+    course_id = models.PositiveIntegerField(unique=True)
+    name = models.CharField(max_length=200)
+    
+    def __str__(self):
+        return self.name
 
 
 class Exercise(models.Model):
-    #course_id = models.ForeignKey(Course, on_delete=models.CASCADE)
-    course_id = models.PositiveIntegerField()
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    #course_id = models.PositiveIntegerField()
     exercise_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
     consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE, null=True)

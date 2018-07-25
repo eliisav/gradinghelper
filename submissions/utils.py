@@ -19,7 +19,7 @@ def get_json(url):
 
 def get_courses():
     """
-    Hakee kaikki TUT+ -sivustolla olevat kurssi-instanssit.
+    Hakee kaikki TUT+ -sivustolla olevat kurssi-instanssit. TARPEETON!?!?
     return: lista kursseista
     """
     courses_url = f"{API_URL}courses/"
@@ -29,19 +29,17 @@ def get_courses():
     return course_list
     
     
-def get_exercises(course_id):
+def get_exercises(course):
     """
     Hakee kaikki yhden kurssi-instanssin tehtävät.
-    param course_id: (int) kurssin tunnus TUT+ -palvelussa
+    param course: (Course) kurssiobjekti
     return: lista tehtävistä
     """
     #course_url = f"{API_URL}courses/{course_id}/"
     #course_info = get_json(course_url)
     #exercises_url = course_info["exercises"]
-    exercises_url = f"{API_URL}courses/{course_id}/exercises/"
+    exercises_url = f"{API_URL}courses/{course.course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
-    
-    #exercises = []
     
     # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
     for module in modules:
@@ -53,19 +51,13 @@ def get_exercises(course_id):
             if "is_submittable" in details and details["is_submittable"] == True:
             
                 try:
-                    exercise = Exercise.objects.get(exercise_id=details["id"])
+                    exercise = course.exercise_set.get(exercise_id=details["id"])
                     
                 except Exercise.DoesNotExist:
-                    exercise = Exercise(course_id=course_id, 
-                                        exercise_id=details["id"]) 
+                    exercise = course.exercise_set.create(exercise_id=details["id"])
                                     
                 exercise.name = details["display_name"]
                 exercise.save()
-                #exercises.append(details)
-                
-        #exercises += module["exercises"]
-        
-    #return exercises
     
 
 def get_submissions(exercise_id):

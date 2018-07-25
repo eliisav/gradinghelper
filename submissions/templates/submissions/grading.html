@@ -12,7 +12,7 @@
       
         {% for exercise in exercises %}
           <li class="list-group-item"> 
-            <a href="{% url 'submissions:submissions' exercise.course_id exercise.exercise_id %}">
+            <a href="{% url 'submissions:submissions' exercise.course.course_id exercise.exercise_id %}">
               {{ exercise.name }}
             </a>
           </li>

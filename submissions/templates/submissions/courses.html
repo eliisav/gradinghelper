@@ -11,8 +11,8 @@
       <ul class="list-group">
         {% for course in courses %}
           <li class="list-group-item"> 
-            <a href="{% url 'submissions:exercises' course.id %}">
-              {{ course.name }} {{ course.instance_name }}
+            <a href="{% url 'submissions:exercises' course.course_id %}">
+              {{ course.name }}
             </a>
           </li>
         {% endfor %}

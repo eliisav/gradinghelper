@@ -5,7 +5,7 @@
 {{ exercise }}
         <ul style="list-style-type:none">
         {% for sub in object_list %}
-            <li><a href="{%url 'submissions:feedback' sub.exercise.course_id sub.exercise.exercise_id sub.sub_id %}">{{sub.sub_id}}</a> {{sub.submitter}}
+            <li><a href="{%url 'submissions:feedback' sub.exercise.course.course_id sub.exercise.exercise_id sub.sub_id %}">{{sub.sub_id}}</a> {{sub.submitter}}
                 {% if sub.done %} 
                     ARVOSTELTU!
                 {% endif %}
