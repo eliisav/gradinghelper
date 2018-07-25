@@ -135,18 +135,29 @@ class SubmissionsView(generic.ListView):
         
         for sub in subsdata:
         
-            #print(sub)
+            print(sub)
         
             try:
                 feedback = exercise.feedback_set.get(sub_id=sub["SubmissionID"])
                 
             except Feedback.DoesNotExist:
                 # Laitetaan talteen palautukset, jotka ovat läpäisseet testit
-                if sub["Grade"] >= exercise.min_points and "ohjelma.py" in sub:
+                #if sub["Grade"] >= exercise.min_points:
+                
+                
+                if "ohjelma.py" in sub:
+                    sub_url = sub["ohjelma.py"]
+                elif "git" in sub:
+                    sub_url = sub["git"]
+                else:
+                    sub_url = None
+                    
+                if sub_url is not None:
                     exercise.feedback_set.create(sub_id=sub["SubmissionID"], 
-                                                 sub_url=sub["ohjelma.py"],
-                                                 submitter=sub["Email"])
+                                                     sub_url=sub_url,
+                                                     submitter=sub["Email"])
                     exercise.save()
+            
                 
         self.object_list = exercise.feedback_set.all()
         
@@ -167,13 +178,20 @@ def get_feedback(request, course_id, exercise_id, sub_id):
         
     else:
         feedback = get_object_or_404(Feedback, sub_id=sub_id)
+        
         print(feedback.sub_url)
-        req = requests.get(feedback.sub_url, headers=AUTH)
-        req.encoding = "utf-8"
-        sub_code = req.text
+        
+        sub_code = ""
+        
+        if not "git" in feedback.sub_url:
+            resp = requests.get(feedback.sub_url, headers=AUTH)
+            resp.encoding = "utf-8"
+            sub_code = resp.text
+            
         form = FeedbackForm(instance=feedback)
 
-        return render(request, "submissions/feedback.html", {"sub_code": sub_code,
+        return render(request, "submissions/feedback.html", {"sub_url": feedback.sub_url,
+                                                             "sub_code": sub_code,
                                                              "form": form,
                                                              "sub_id": sub_id,
                                                              "exercise": exercise_id,

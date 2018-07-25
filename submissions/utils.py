@@ -13,8 +13,8 @@ API_URL = "https://plus.cs.tut.fi/api/v2/"
 
 
 def get_json(url):
-    req = requests.get(url, headers=AUTH)
-    return req.json()
+    resp = requests.get(url, headers=AUTH)
+    return resp.json()
 
 
 def get_courses():
@@ -72,13 +72,13 @@ def get_submissions(exercise_id):
     # Etsitään tehtävän id:n perusteella url, jolla saadaan pyydettyä tiedot
     # tämän tehtävän viimeisimmistä/parhaista palautuksista.
     exercise_url = f"{API_URL}exercises/{exercise_id}/"
-    req = requests.get(exercise_url, headers=AUTH)
-    exercise_info = req.json()
+    #req = requests.get(exercise_url, headers=AUTH)
+    exercise_info = get_json(exercise_url)
     course_url = exercise_info["course"]["url"]
     data_url = f"{course_url}submissiondata/?exercise_id={exercise_id}&format=json"
     
     # print("SUB_DATA_URL:", data_url)
     
-    req = requests.get(data_url, headers=AUTH)
-    return req.json()
+    #req = requests.get(data_url, headers=AUTH)
+    return get_json(data_url)
     
