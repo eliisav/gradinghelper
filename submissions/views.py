@@ -17,12 +17,18 @@ from .utils import *
 #EXERCISE = 5113  # melumittaus en 5302, fi 5113
 
 
-class IndexView(LoginRequiredMixin, generic.TemplateView):
+def kirjautumistesti(request):
+    if request.user.is_authenticated:
+        print("Kirjautunut käyttäjä:", request.user.email)
+    else:
+        print("Ei ketään!")
 
+
+class IndexView(LoginRequiredMixin, generic.TemplateView):
     template_name = "submissions/index.html"
 
 
-class CourseListView(generic.ListView):
+class CourseListView(LoginRequiredMixin, generic.ListView):
     """
     Listaa kaikki kurssit, jotka rajapinnasta on saatavilla.
     return: Lista kaikista kursseista
@@ -32,7 +38,7 @@ class CourseListView(generic.ListView):
     context_object_name = "courses"
         
 
-class GradingListView(generic.ListView):
+class GradingListView(LoginRequiredMixin, generic.ListView):
     """
     Listataan kaikki tarkastettavat tehtävät (toistaiseksi kurssista riippumatta).
     """
@@ -45,7 +51,7 @@ class GradingListView(generic.ListView):
 
     
 
-class ExerciseListView(generic.ListView):
+class ExerciseListView(LoginRequiredMixin, generic.ListView):
     """
     Listaa yhden kurssin kaikki tehtävät
     """
@@ -54,11 +60,8 @@ class ExerciseListView(generic.ListView):
     context_object_name = "exercises"
     
     def get(self, request, course_id):
-        if request.user.is_authenticated:
-            print("kirjautunut käyttäjä:", request.user.email)
-        else:
-            print("ei ketään")
-            
+        kirjautumistesti(request)
+    
         course = get_object_or_404(Course, course_id=course_id)
         queryset = self.get_queryset().filter(course=course)
         self.object_list = queryset.filter(trace=False)
@@ -103,6 +106,11 @@ def update_exercise_view(request, course_id):
     """
     Lisätään/päivitetään kurssin tehtävät tietokantaan.
     """
+    
+    # TODO: Kirjautuminen pitäisi vaatia myös tähän???
+    # TODO: Pitäisikö tämän olla RedirectView???
+    kirjautumistesti(request)
+    
     course = get_object_or_404(Course, course_id=course_id)
     get_exercises(course)
     
@@ -111,6 +119,13 @@ def update_exercise_view(request, course_id):
                                         
 
 def enable_exercise_trace(request, course_id, exercise_id):
+    """
+    Lisätään tehtävä tarkastukseen.
+    """
+    
+    # TODO: Kirjautuminen pitäisi vaatia myös tähän???
+    # TODO: Pitäisikö tämän olla RedirectView???
+    kirjautumistesti(request)
     
     if request.method == "POST":
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
@@ -130,7 +145,7 @@ def enable_exercise_trace(request, course_id, exercise_id):
                                         kwargs={ "course_id": course_id }))
 
 
-class SubmissionsView(generic.ListView):
+class SubmissionsView(LoginRequiredMixin, generic.ListView):
     """
     Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
     """
@@ -138,6 +153,9 @@ class SubmissionsView(generic.ListView):
     context_object_name = "submissions"
     
     def get(self, request, course_id, exercise_id):
+    
+        kirjautumistesti(request)
+    
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
         subsdata = get_submissions(exercise_id)
         
@@ -176,6 +194,11 @@ def get_feedback(request, course_id, exercise_id, sub_id):
     """
     Näyttää yhden palautuksen koodin ja lomakkeen palautetta varten.
     """
+    
+    # TODO: kirjautuminen pitäisi vaatia myös tähän näkymään.
+    # TODO: pitäisikö tästäkin tehdä jokin CBV???
+    kirjautumistesti(request)
+    
     if request.method == "POST":
         feedback = get_object_or_404(Feedback, sub_id=sub_id)
         feedback.done = True
