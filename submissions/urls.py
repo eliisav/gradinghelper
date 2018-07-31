@@ -17,7 +17,7 @@ else:
 urlpatterns = [
     path('auth/', include('django_lti_login.urls')), # XXX: for django-lti-login
     path('auth/login/', auth_login, {'template_name': 'login.html'}, name='login'),
-    path('auth/logout/', auth_logout, {'next_page': '/'}, name='logout'),
+    path('auth/logout/', auth_logout, {'template_name': 'logged_out.html'}, name='logout'),
     path('', views.IndexView.as_view(), name='index'),
     path('courses/', views.CourseListView.as_view(), name='courses'),
     path('grading/', views.GradingListView.as_view(), name='grading'),
