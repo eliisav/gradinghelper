@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'bootstrap4',
     'crispy_forms',
+    'django_lti_login',
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'django_lti_login.backends.LTIAuthBackend'
+]
+
+LOGIN_URL = '/submissions/auth/login/'
 
 ROOT_URLCONF = 'gradinghelper.urls'
 
@@ -128,3 +136,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
+
+

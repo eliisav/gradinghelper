@@ -4,6 +4,9 @@ from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.core.cache import cache
 from django.contrib import messages
+from django.contrib.auth import authenticate
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 from .models import Feedback, Exercise, Course
 from .forms import FeedbackForm, ExerciseForm
@@ -14,7 +17,8 @@ from .utils import *
 #EXERCISE = 5113  # melumittaus en 5302, fi 5113
 
 
-class IndexView(generic.TemplateView):
+class IndexView(LoginRequiredMixin, generic.TemplateView):
+
     template_name = "submissions/index.html"
 
 
@@ -50,6 +54,11 @@ class ExerciseListView(generic.ListView):
     context_object_name = "exercises"
     
     def get(self, request, course_id):
+        if request.user.is_authenticated:
+            print("kirjautunut käyttäjä:", request.user.email)
+        else:
+            print("ei ketään")
+            
         course = get_object_or_404(Course, course_id=course_id)
         queryset = self.get_queryset().filter(course=course)
         self.object_list = queryset.filter(trace=False)

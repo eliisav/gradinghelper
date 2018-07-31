@@ -5,10 +5,10 @@ Module for various utility functions
 
 import requests
 from .models import Exercise
+from django.conf import settings
 
 
-TOKEN = "Token 2b92117b410cad8708fff3bfd7473340a69bfaac"  # Eliisan token
-AUTH =  {'Authorization': TOKEN}
+AUTH = {'Authorization': settings.TOKEN}
 API_URL = "https://plus.cs.tut.fi/api/v2/"
 
 

@@ -5,6 +5,7 @@ from django.utils import timezone
 class Course(models.Model):
     course_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
+    # teachers = models.ForeignKey(User, related_name="my_courses", ....)
     
     def __str__(self):
         return self.name

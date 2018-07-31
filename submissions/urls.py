@@ -1,10 +1,23 @@
-from django.urls import path
+from django.urls import path, include
+from django.contrib.auth import views as auth
 
 from . import views
 
 app_name = 'submissions'
 
+
+if hasattr(auth, 'LoginView'):
+    auth_login = auth.LoginView.as_view()
+    auth_logout = auth.LogoutView.as_view()
+else:
+    auth_login = auth.login
+    auth_logout = auth.logout
+
+
 urlpatterns = [
+    path('auth/', include('django_lti_login.urls')), # XXX: for django-lti-login
+    path('auth/login/', auth_login, {'template_name': 'login.html'}, name='login'),
+    path('auth/logout/', auth_logout, {'next_page': '/'}, name='logout'),
     path('', views.IndexView.as_view(), name='index'),
     path('courses/', views.CourseListView.as_view(), name='courses'),
     path('grading/', views.GradingListView.as_view(), name='grading'),
