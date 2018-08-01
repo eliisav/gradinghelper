@@ -36,6 +36,12 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     model = Course
     template_name = "submissions/courses.html"
     context_object_name = "courses"
+    
+    def get(self, request):
+        self.object_list = request.user.my_courses.all()
+        kirjautumistesti(request)
+        print(self.object_list)
+        return self.render_to_response(self.get_context_data())
         
 
 class GradingListView(LoginRequiredMixin, generic.ListView):
