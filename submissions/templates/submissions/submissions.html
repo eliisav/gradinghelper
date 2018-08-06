@@ -1,15 +1,29 @@
 {% extends 'submissions/base.html' %}
+{% load bootstrap4 %}
 
 {% block content %}
 
-{{ exercise }}
-        <ul style="list-style-type:none">
-        {% for sub in object_list %}
-            <li><a href="{%url 'submissions:feedback' sub.exercise.course.course_id sub.exercise.exercise_id sub.sub_id %}">{{sub.sub_id}}</a> {{sub.submitter}}
-                {% if sub.done %} 
-                    ARVOSTELTU!
-                {% endif %}
-            </li>
-        {% endfor %}
-        </ul>
+  {% if submissions %}
+    <ul clas="list-group">
+      {% for sub in submissions %}
+      
+        <li class="list-group-item">
+        
+          <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
+            {{ sub }}
+          </a>
+          
+          {% for student in sub.students.all %}
+            {{ student }}
+          {% endfor %}
+          
+          {% if sub.done %} 
+            ARVOSTELTU!
+          {% endif %}
+          
+        </li>
+        
+      {% endfor %}
+    </ul>
+  {% endif %}
 {% endblock %}

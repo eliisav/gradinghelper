@@ -5,22 +5,22 @@
 
   <div class="col-md-6">
 
-    <h1> Valitse kurssi </h1>
+    <h1>Kurssit</h1>
     
     {% if courses %}
       <ul class="list-group">
         {% for course in courses %}
           <li class="list-group-item"> 
             <a href="{% url 'submissions:exercises' course.course_id %}">
-              {{ course.name }}
+              {{ course }}
             </a>
           </li>
         {% endfor %}
       </ul>
     {% else %}
-        <p>Yhtään kurssia ei löytynyt.</p>
+      <p>Käyttäjälle {{ user.first_name }} ei löytynyt yhtään kurssia.</p>
     {% endif %}
-        
+    
   </div>
         
 {% endblock %}

@@ -4,7 +4,7 @@ Module for various utility functions
 
 
 import requests
-from .models import Exercise
+from .models import Exercise, Feedback, Student
 from django.conf import settings
 
 
@@ -60,17 +60,47 @@ def get_exercises(course):
                 exercise.save()
     
 
-def get_submissions(exercise_id):
+def get_submissions(exercise_id, exercise):
     # Etsitään tehtävän id:n perusteella url, jolla saadaan pyydettyä tiedot
     # tämän tehtävän viimeisimmistä/parhaista palautuksista.
     exercise_url = f"{API_URL}exercises/{exercise_id}/"
-    #req = requests.get(exercise_url, headers=AUTH)
     exercise_info = get_json(exercise_url)
     course_url = exercise_info["course"]["url"]
     data_url = f"{course_url}submissiondata/?exercise_id={exercise_id}&format=json"
     
     # print("SUB_DATA_URL:", data_url)
+    subsdata = get_json(data_url)
     
-    #req = requests.get(data_url, headers=AUTH)
-    return get_json(data_url)
-    
+    for sub in subsdata:
+        print(sub)
+        # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
+        # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
+        #       on jo arvioitu.
+        if sub["Grade"] < exercise.min_points:
+            continue
+        
+        try:
+            feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
+            
+        except Feedback.DoesNotExist:
+            # Etsitään palautetun tiedoston/gitrepon url. HUOM! Kaikilla 
+            # tehtävillä ei ole mitään urlia ja kentät voivat olla eri nimisiä!!!
+            if "ohjelma.py" in sub:
+                sub_url = sub["ohjelma.py"]
+            elif "git" in sub:
+                sub_url = sub["git"]
+            else:
+                sub_url = ""
+
+            feedback = Feedback(exercise=exercise, sub_id=sub["SubmissionID"], 
+                                sub_url=sub_url)
+            feedback.save()
+
+        try:
+            student = Student.objects.get(email=sub["Email"])
+        except Student.DoesNotExist:
+            student = Student(email=sub["Email"])
+            student.save()
+            
+        student.my_feedbacks.add(feedback)
+

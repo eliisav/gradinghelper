@@ -30,15 +30,18 @@ class IndexView(LoginRequiredMixin, generic.TemplateView):
 
 class CourseListView(LoginRequiredMixin, generic.ListView):
     """
-    Listaa kaikki kurssit, jotka rajapinnasta on saatavilla.
-    return: Lista kaikista kursseista
+    Listaa kaikki kurssit, joihin käyttäjä on liitetty.
+    return: Lista käyttäjän kursseista.
     """
     model = Course
     template_name = "submissions/courses.html"
     context_object_name = "courses"
     
     def get(self, request):
-        self.object_list = request.user.my_courses.all()
+        if request.user.is_staff:
+            self.object_list = self.get_queryset()
+        else:
+            self.object_list = request.user.my_courses.all()
         kirjautumistesti(request)
         print(self.object_list)
         return self.render_to_response(self.get_context_data())
@@ -154,49 +157,27 @@ def enable_exercise_trace(request, course_id, exercise_id):
 class SubmissionsView(LoginRequiredMixin, generic.ListView):
     """
     Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
+    TODO: mieti, miten työt saadaan jaettua assareille sekä automaagisesti että 
+    tarvittaessa manuaalisesti.
+    TODO: tarkastettavien tehtävien listaus, silloin jos "hyväksyntä"-tehtävää ei ole?!?!
+    Siis tässä näkymässä pitäisi näyttää vain kirjautuneelle assarille kuuluvat 
+    viimeisimmät/parhaat palautukset.
     """
     template_name = "submissions/submissions.html"
     context_object_name = "submissions"
     
-    def get(self, request, course_id, exercise_id):
+    def get(self, request, exercise_id):
     
         kirjautumistesti(request)
     
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
-        subsdata = get_submissions(exercise_id)
-        
-        for sub in subsdata:
-        
-            print(sub)
-        
-            try:
-                feedback = exercise.feedback_set.get(sub_id=sub["SubmissionID"])
-                
-            except Feedback.DoesNotExist:
-                # Laitetaan talteen palautukset, jotka ovat läpäisseet testit
-                #if sub["Grade"] >= exercise.min_points:
-                
-                
-                if "ohjelma.py" in sub:
-                    sub_url = sub["ohjelma.py"]
-                elif "git" in sub:
-                    sub_url = sub["git"]
-                else:
-                    sub_url = None
-                    
-                if sub_url is not None:
-                    exercise.feedback_set.create(sub_id=sub["SubmissionID"], 
-                                                     sub_url=sub_url,
-                                                     submitter=sub["Email"])
-                    exercise.save()
-            
-                
+        get_submissions(exercise_id, exercise)    
         self.object_list = exercise.feedback_set.all()
         
         return self.render_to_response(self.get_context_data())
 
 
-def get_feedback(request, course_id, exercise_id, sub_id):
+def get_feedback(request, exercise_id, sub_id):
     """
     Näyttää yhden palautuksen koodin ja lomakkeen palautetta varten.
     """
@@ -211,7 +192,7 @@ def get_feedback(request, course_id, exercise_id, sub_id):
         filled_form = FeedbackForm(request.POST, instance=feedback)
         filled_form.save()
         return HttpResponseRedirect(reverse("submissions:submissions", 
-                                            args=(course_id, exercise_id)))
+                                            args=(exercise_id)))
         
     else:
         feedback = get_object_or_404(Feedback, sub_id=sub_id)
@@ -220,7 +201,7 @@ def get_feedback(request, course_id, exercise_id, sub_id):
         
         sub_code = ""
         
-        if not "git" in feedback.sub_url:
+        if feedback.sub_url != "" and not "git" in feedback.sub_url:
             resp = requests.get(feedback.sub_url, headers=AUTH)
             resp.encoding = "utf-8"
             sub_code = resp.text
@@ -231,7 +212,6 @@ def get_feedback(request, course_id, exercise_id, sub_id):
                                                              "sub_code": sub_code,
                                                              "form": form,
                                                              "sub_id": sub_id,
-                                                             "exercise": exercise_id,
-                                                             "course_id": course_id})
+                                                             "exercise": exercise_id})
 
 
