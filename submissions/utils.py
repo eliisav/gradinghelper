@@ -100,11 +100,29 @@ def get_submissions(exercise_id, exercise):
 
         try:
             student = Student.objects.get(email=sub["Email"])
+            
+            try:
+                old = student.my_feedbacks.get(exercise=exercise)
+                
+                if old != feedback:
+                    print("Ei ole samat! Poista vanha ja lisää uusi tilalle.")
+                    if not old.done:
+                        old.delete()
+                        student.my_feedbacks.add(feedback)
+                    else:
+                        print("Eipäs poisteta. Arvostelu oli jo tehty!")
+                        feedback.delete()
+                    
+                else:
+                    print("Ne on samat, ei tartte tehdä mitään.")
+                    
+            except Feedback.DoesNotExist:
+                student.my_feedbacks.add(feedback)
+                
         except Student.DoesNotExist:
             student = Student(email=sub["Email"])
             student.save()
-            
-        student.my_feedbacks.add(feedback)
+            student.my_feedbacks.add(feedback)
         
     divide_submissions(exercise)
         
