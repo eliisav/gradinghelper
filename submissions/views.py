@@ -25,7 +25,23 @@ def kirjautumistesti(request):
 
 
 class IndexView(LoginRequiredMixin, generic.TemplateView):
+    """
+    HUOM! Tämä sivu on aika turha tällä hetkellä.
+    """
     template_name = "submissions/index.html"
+
+
+class GradingListView(LoginRequiredMixin, generic.ListView):
+    """
+    Listataan kaikki tarkastettavat tehtävät kurssista riippumatta.
+    HUOM! Tätä ei varmaan tarvita mihinkään.
+    """
+    model = Exercise
+    template_name = "submissions/grading.html"
+    context_object_name = "exercises"
+
+    def get_queryset(self):
+        return Exercise.objects.all().filter(trace=True) 
 
 
 class CourseListView(LoginRequiredMixin, generic.ListView):
@@ -47,16 +63,6 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
         return self.render_to_response(self.get_context_data())
         
 
-class GradingListView(LoginRequiredMixin, generic.ListView):
-    """
-    Listataan kaikki tarkastettavat tehtävät (toistaiseksi kurssista riippumatta).
-    """
-    model = Exercise
-    template_name = "submissions/grading.html"
-    context_object_name = "exercises"
-
-    def get_queryset(self):
-        return Exercise.objects.all().filter(trace=True)
 
     
 
@@ -96,19 +102,6 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
             cache.set(course_id, exercises)
         
 """
-        
-        
-"""
-class ExerciseCreate(generic.edit.CreateView):
-    model = Exercise
-    fields = ["min_points", "max_points", "deadline"]
-    success_url = reverse_lazy("submissions:exercises")
-    
-
-    # MITEN TÄN SAA TOIMIMAAN?!
-    def get(self, request, course_id, exercise_id):
-        return super().get(request)
-"""    
 
 
 def update_exercise_view(request, course_id):
@@ -165,6 +158,7 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
     """
     template_name = "submissions/submissions.html"
     context_object_name = "submissions"
+    model = Feedback
     
     def get(self, request, exercise_id):
     
@@ -173,6 +167,11 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
         get_submissions(exercise_id, exercise)    
         self.object_list = exercise.feedback_set.all()
+        
+        if request.user.is_staff:
+            self.object_list = exercise.feedback_set.all()
+        else:
+            self.object_list = request.user.feedback_set.filter(exercise=exercise)
         
         return self.render_to_response(self.get_context_data())
 
@@ -192,7 +191,7 @@ def get_feedback(request, exercise_id, sub_id):
         filled_form = FeedbackForm(request.POST, instance=feedback)
         filled_form.save()
         return HttpResponseRedirect(reverse("submissions:submissions", 
-                                            args=(exercise_id)))
+                                            args=(exercise_id,)))
         
     else:
         feedback = get_object_or_404(Feedback, sub_id=sub_id)

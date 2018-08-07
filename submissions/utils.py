@@ -4,7 +4,7 @@ Module for various utility functions
 
 
 import requests
-from .models import Exercise, Feedback, Student
+from .models import Course, Exercise, Feedback, Student
 from django.conf import settings
 
 
@@ -72,7 +72,9 @@ def get_submissions(exercise_id, exercise):
     subsdata = get_json(data_url)
     
     for sub in subsdata:
-        print(sub)
+        
+        #print(sub)
+        
         # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
         # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
         #       on jo arvioitu.
@@ -103,4 +105,85 @@ def get_submissions(exercise_id, exercise):
             student.save()
             
         student.my_feedbacks.add(feedback)
+        
+    divide_submissions(exercise)
+        
+
+def choose_grader(exercise, graders):
+    """
+    Jonkinlainen algoritmi töiden jakamiseen. Ei vielä testattu ja saattaa 
+    toimia väärin.
+    """
+    min_sub_count = 0
+    first = True
+    grader_to_add = None
+    
+    for grader in graders:
+        if first:
+            min_sub_count = len(grader.feedback_set.filter(exercise=exercise))
+            grader_to_add = grader
+            first = False
+        elif len(grader.feedback_set.filter(exercise=exercise)) < min_sub_count:
+            min_sub_count = len(grader.feedback_set.filter(exercise=exercise))
+            grader_to_add = grader
+            
+    return grader_to_add
+    
+        
+def divide_submissions(exercise):
+    """
+    Jakaa palautukset kurssille merkittyjen assareiden kesken.
+    param exercise: (models.Exercise) Tehtäväobjekti
+    """
+    graders = Course.objects.get(course_id=exercise.course.course_id).teachers.all()
+    #assarit = kurssi.teachers.all()
+    subs = exercise.feedback_set.all()
+    sub_per_grader = len(subs) // len(graders)
+    res = len(subs) % len(graders)
+        
+    for sub in subs:
+        if sub.grader is None:
+            grader = choose_grader(exercise, graders)
+            grader.feedback_set.add(sub)
+        else:
+            print(sub, sub.grader)
+    
+    print("Palautusta per assari:", len(subs) / len(graders))
+    print("Assareilla arvostelussa:")
+    for grader in graders:
+        print(len(grader.feedback_set.filter(exercise=exercise)))
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
