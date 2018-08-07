@@ -114,19 +114,25 @@ def choose_grader(exercise, graders):
     Jonkinlainen algoritmi töiden jakamiseen. Ei vielä testattu ja saattaa 
     toimia väärin.
     """
+    
     min_sub_count = 0
-    first = True
     grader_to_add = None
+    first = True
     
     for grader in graders:
+        # Valitaan pienimmän arvostelumäärän omaavaksi ensimmäinen vastaantuleva
         if first:
             min_sub_count = len(grader.feedback_set.filter(exercise=exercise))
             grader_to_add = grader
             first = False
+        # Jos ensimmäinen alkio on jo käsitelty, tutkitaan löytyykö sitä pienempää
         elif len(grader.feedback_set.filter(exercise=exercise)) < min_sub_count:
             min_sub_count = len(grader.feedback_set.filter(exercise=exercise))
             grader_to_add = grader
             
+    # Tässä pitäisi ny olla se, jolla on vähiten arvosteltavaa, tai yksi niistä 
+    # jolla on vähiten, jos usealla yhtä vähän. Tasatilanteessa ei ole väliä 
+    # kuka valitaan.
     return grader_to_add
     
         
