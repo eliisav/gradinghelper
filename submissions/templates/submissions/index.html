@@ -4,10 +4,11 @@
 {% block content %}
 
   <div class="col-md-6">
+    <p> Moro {{ user.username }} {{ user.first_name }}! </p>
   
     <a class="btn btn-primary" href={% url "submissions:courses" %} role="button">Kurssit</a>
 
-    <a class="btn btn-primary" href={% url "submissions:grading" %} role="button">Arvosteltavat tehtävät</a>
+    <!-- <a class="btn btn-primary" href={% url "submissions:grading" %} role="button">Arvosteltavat tehtävät</a> -->
 
   </div>
   
