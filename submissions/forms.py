@@ -6,7 +6,7 @@ from submissions.models import Exercise
 class FeedbackForm(ModelForm):
     class Meta:
         model = Feedback
-        fields = ["grader", "points", "feedback"]
+        fields = ["points", "feedback"]
 
 class ExerciseForm(ModelForm):
     class Meta:
