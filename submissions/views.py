@@ -149,12 +149,13 @@ def enable_exercise_trace(request, course_id, exercise_id):
 
 class SubmissionsView(LoginRequiredMixin, generic.ListView):
     """
-    Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
-    TODO: mieti, miten työt saadaan jaettua assareille sekä automaagisesti että 
-    tarvittaessa manuaalisesti.
-    TODO: tarkastettavien tehtävien listaus, silloin jos "hyväksyntä"-tehtävää ei ole?!?!
-    Siis tässä näkymässä pitäisi näyttää vain kirjautuneelle assarille kuuluvat 
-    viimeisimmät/parhaat palautukset.
+    Listaa yhden tehtävän viimeisimmät/parhaat palautukset, staffille kaikki ja 
+    assareille vain heille osoitetut tehtävät.
+    TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa manuaalisesti.
+    TODO: "hyväksyntä"-tehtävän käyttäminen
+    TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
+          silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
+
     """
     template_name = "submissions/submissions.html"
     context_object_name = "submissions"
@@ -165,7 +166,7 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
         kirjautumistesti(request)
     
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
-        get_submissions(exercise_id, exercise)    
+        update_submissions(exercise_id, exercise)    
         self.object_list = exercise.feedback_set.all()
         
         if request.user.is_staff:

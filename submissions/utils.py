@@ -60,7 +60,7 @@ def get_exercises(course):
                 exercise.save()
     
 
-def get_submissions(exercise_id, exercise):
+def get_submissions(exercise_id):
     # Etsitään tehtävän id:n perusteella url, jolla saadaan pyydettyä tiedot
     # tämän tehtävän viimeisimmistä/parhaista palautuksista.
     exercise_url = f"{API_URL}exercises/{exercise_id}/"
@@ -69,16 +69,23 @@ def get_submissions(exercise_id, exercise):
     data_url = f"{course_url}submissiondata/?exercise_id={exercise_id}&format=json"
     
     # print("SUB_DATA_URL:", data_url)
-    subsdata = get_json(data_url)
-    
+    return get_json(data_url)
+
+
+def update_submissions(exercise_id, exercise):
+    subsdata = get_submissions(exercise_id)
+
     for sub in subsdata:
         
-        #print(sub)
+        print(sub)
         
         # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
         # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
-        #       on jo arvioitu.
+        #       on jo arvioitu. Toimii ehkä jo...?
         if sub["Grade"] < exercise.min_points:
+            continue
+        
+        if not check_consent_and_deadline(sub["Email"], exercise):
             continue
         
         try:
@@ -97,35 +104,77 @@ def get_submissions(exercise_id, exercise):
             feedback = Feedback(exercise=exercise, sub_id=sub["SubmissionID"], 
                                 sub_url=sub_url)
             feedback.save()
-
-        try:
-            student = Student.objects.get(email=sub["Email"])
-            
-            try:
-                old = student.my_feedbacks.get(exercise=exercise)
-                
-                if old != feedback:
-                    print("Ei ole samat! Poista vanha ja lisää uusi tilalle.")
-                    if not old.done:
-                        old.delete()
-                        student.my_feedbacks.add(feedback)
-                    else:
-                        print("Eipäs poisteta. Arvostelu oli jo tehty!")
-                        feedback.delete()
-                    
-                else:
-                    print("Ne on samat, ei tartte tehdä mitään.")
-                    
-            except Feedback.DoesNotExist:
-                student.my_feedbacks.add(feedback)
-                
-        except Student.DoesNotExist:
-            student = Student(email=sub["Email"])
-            student.save()
-            student.my_feedbacks.add(feedback)
+        
+        add_students(exercise, sub, feedback)
         
     divide_submissions(exercise)
+
+
+def check_consent_and_deadline(student_email, exercise):
+    if not exercise.consent_exercise:
+        return True
         
+    exercise_id = exercise.consent_exercise.exercise_id
+    subsdata = get_submissions(exercise_id)
+    
+    for sub in subsdata:
+        if sub["Email"] == student_email:
+            return True
+        
+    return False
+
+
+def add_students(exercise, sub, feedback):
+    try:
+        student = Student.objects.get(email=sub["Email"])
+        
+        try:
+            old = student.my_feedbacks.get(exercise=exercise)
+            
+            if old != feedback:
+                print("Ei ole samat! Poista vanha ja lisää uusi tilalle.")
+                if not old.done:
+                    old.delete()
+                    student.my_feedbacks.add(feedback)
+                else:
+                    print("Eipäs poisteta. Arvostelu oli jo tehty!")
+                    feedback.delete()
+                
+            else:
+                print("Ne on samat, ei tartte tehdä mitään.")
+                
+        except Feedback.DoesNotExist:
+            student.my_feedbacks.add(feedback)
+            
+    except Student.DoesNotExist:
+        student = Student(email=sub["Email"])
+        student.save()
+        student.my_feedbacks.add(feedback)
+
+
+def divide_submissions(exercise):
+    """
+    Jakaa palautukset kurssille merkittyjen assareiden kesken.
+    param exercise: (models.Exercise) Tehtäväobjekti
+    """
+    graders = Course.objects.get(course_id=exercise.course.course_id).teachers.all()
+    #assarit = kurssi.teachers.all()
+    subs = exercise.feedback_set.all()
+    sub_per_grader = len(subs) // len(graders)
+    res = len(subs) % len(graders)
+        
+    for sub in subs:
+        if sub.grader is None:
+            grader = choose_grader(exercise, graders)
+            grader.feedback_set.add(sub)
+        else:
+            print(sub, sub.grader)
+    
+    print("Palautusta per assari:", len(subs) / len(graders))
+    print("Assareilla arvostelussa:")
+    for grader in graders:
+        print(len(grader.feedback_set.filter(exercise=exercise)))
+
 
 def choose_grader(exercise, graders):
     """
@@ -153,61 +202,3 @@ def choose_grader(exercise, graders):
     # kuka valitaan.
     return grader_to_add
     
-        
-def divide_submissions(exercise):
-    """
-    Jakaa palautukset kurssille merkittyjen assareiden kesken.
-    param exercise: (models.Exercise) Tehtäväobjekti
-    """
-    graders = Course.objects.get(course_id=exercise.course.course_id).teachers.all()
-    #assarit = kurssi.teachers.all()
-    subs = exercise.feedback_set.all()
-    sub_per_grader = len(subs) // len(graders)
-    res = len(subs) % len(graders)
-        
-    for sub in subs:
-        if sub.grader is None:
-            grader = choose_grader(exercise, graders)
-            grader.feedback_set.add(sub)
-        else:
-            print(sub, sub.grader)
-    
-    print("Palautusta per assari:", len(subs) / len(graders))
-    print("Assareilla arvostelussa:")
-    for grader in graders:
-        print(len(grader.feedback_set.filter(exercise=exercise)))
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
