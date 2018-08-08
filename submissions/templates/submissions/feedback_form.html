@@ -4,13 +4,13 @@
 {% block content %}
 
   <div class="col-md-6">
-    <a href="{{ sub_url }}">{{ sub_url }}</a>
+    <a href="{{ feedback.sub_url }}">{{ feedback.sub_url }}</a>
     <pre>{{ sub_code }}</pre>
   </div>
   
   
   <div class="col-md-6">
-    <form action="{% url 'submissions:feedback' exercise sub_id %}" method="post" class="form">
+    <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
       <button type="submit" class="btn btn-primary">Submit</button>

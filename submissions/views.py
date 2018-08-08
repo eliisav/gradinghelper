@@ -9,12 +9,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 from .models import Feedback, Exercise, Course
-from .forms import FeedbackForm, ExerciseForm
+from .forms import ExerciseForm
 from .utils import *
-
-
-#COURSE = 31      # summer en 34, summer fi 31
-#EXERCISE = 5113  # melumittaus en 5302, fi 5113
 
 
 def kirjautumistesti(request):
@@ -59,13 +55,10 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
         else:
             self.object_list = request.user.my_courses.all()
         kirjautumistesti(request)
-        print(self.object_list)
+        #print(self.object_list)
         return self.render_to_response(self.get_context_data())
         
-
-
-    
-
+        
 class ExerciseListView(LoginRequiredMixin, generic.ListView):
     """
     Listaa yhden kurssin kaikki tehtävät
@@ -177,41 +170,33 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
         return self.render_to_response(self.get_context_data())
 
 
-def get_feedback(request, exercise_id, sub_id):
+class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
     """
     Näyttää yhden palautuksen koodin ja lomakkeen palautetta varten.
     """
+    model = Feedback
+    slug_field = "sub_id"
+    slug_url_kwarg = "sub_id"
+    fields = ["points", "feedback"]
     
-    # TODO: kirjautuminen pitäisi vaatia myös tähän näkymään.
-    # TODO: pitäisikö tästäkin tehdä jokin CBV???
-    kirjautumistesti(request)
-    
-    if request.method == "POST":
-        feedback = get_object_or_404(Feedback, sub_id=sub_id)
-        feedback.done = True
-        filled_form = FeedbackForm(request.POST, instance=feedback)
-        filled_form.save()
-        return HttpResponseRedirect(reverse("submissions:submissions", 
-                                            args=(exercise_id,)))
-        
-    else:
-        feedback = get_object_or_404(Feedback, sub_id=sub_id)
-        
-        print(feedback.sub_url)
-        
-        sub_code = ""
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        feedback = context["object"]
         
         if feedback.sub_url != "" and not "git" in feedback.sub_url:
             resp = requests.get(feedback.sub_url, headers=AUTH)
             resp.encoding = "utf-8"
-            sub_code = resp.text
-            
-        form = FeedbackForm(instance=feedback)
+            context["sub_code"] = resp.text
 
-        return render(request, "submissions/feedback.html", {"sub_url": feedback.sub_url,
-                                                             "sub_code": sub_code,
-                                                             "form": form,
-                                                             "sub_id": sub_id,
-                                                             "exercise": exercise_id})
-
+        return context
+        
+    def get_success_url(self):
+        exercise_id = self.kwargs["exercise_id"]
+        return reverse("submissions:submissions", args=(exercise_id,))
+    
+    def post(self, request, *args, **kwargs):
+        feedback = self.get_object()
+        feedback.done = True
+        feedback.save()
+        return super().post(request, *args, **kwargs)
 
