@@ -145,7 +145,6 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
     Listaa yhden tehtävän viimeisimmät/parhaat palautukset, staffille kaikki ja 
     assareille vain heille osoitetut tehtävät.
     TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa manuaalisesti.
-    TODO: "hyväksyntä"-tehtävän käyttäminen
     TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
           silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
 
@@ -153,17 +152,16 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
     template_name = "submissions/submissions.html"
     context_object_name = "submissions"
     model = Feedback
-    
+     
     def get(self, request, exercise_id):
     
         kirjautumistesti(request)
     
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
-        update_submissions(exercise_id, exercise)    
-        self.object_list = exercise.feedback_set.all()
+        update_submissions(exercise)    
         
         if request.user.is_staff:
-            self.object_list = exercise.feedback_set.all()
+            self.object_list = self.get_queryset().filter(exercise=exercise)
         else:
             self.object_list = request.user.feedback_set.filter(exercise=exercise)
         

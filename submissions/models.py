@@ -15,13 +15,17 @@ class Course(models.Model):
 class Exercise(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     exercise_id = models.PositiveIntegerField(unique=True)
+    module_id = models.PositiveIntegerField()
     name = models.CharField(max_length=200)
     consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE, 
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
-    max_points = models.PositiveSmallIntegerField(null=True, blank=True)  # Tarvitaanko tätä?
-    deadline = models.DateTimeField(default=timezone.now)
     trace = models.BooleanField(default=False)
+    
+    # Tarvitaanko näitä?
+    #max_points = models.PositiveSmallIntegerField(null=True, blank=True)  
+    #deadline = models.DateTimeField(default=timezone.now)
+    
     
     def __str__(self):
         return self.name

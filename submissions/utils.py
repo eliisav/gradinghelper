@@ -51,29 +51,40 @@ def get_exercises(course):
             if "is_submittable" in details and details["is_submittable"] == True:
             
                 try:
-                    exercise = course.exercise_set.get(exercise_id=details["id"])
+                    exercise = Exercise.objects.get(exercise_id=details["id"])
                     
                 except Exercise.DoesNotExist:
-                    exercise = course.exercise_set.create(exercise_id=details["id"])
+                    exercise = Exercise(course = course, 
+                                        exercise_id=details["id"],
+                                        module_id=module["id"])
                                     
                 exercise.name = details["display_name"]
                 exercise.save()
     
 
-def get_submissions(exercise_id):
-    # Etsitään tehtävän id:n perusteella url, jolla saadaan pyydettyä tiedot
-    # tämän tehtävän viimeisimmistä/parhaista palautuksista.
-    exercise_url = f"{API_URL}exercises/{exercise_id}/"
-    exercise_info = get_json(exercise_url)
-    course_url = exercise_info["course"]["url"]
-    data_url = f"{course_url}submissiondata/?exercise_id={exercise_id}&format=json"
+def get_submissions(exercise):
+    """
+    Askarrellaan kurssin ja tehtävän id:n perusteella url, jolla saadaan 
+    pyydettyä tiedot kyseisen tehtävän viimeisimmistä/parhaista palautuksista.
+    param exercise: (models.Exercise) tehtäväobjekti
+    """
+        
+    #exercise_url = f"{API_URL}exercises/{exercise_id}/"
+    #exercise_info = get_json(exercise_url)
+    #course_url = exercise_info["course"]["url"]
+    #data_url = f"{course_url}submissiondata/?exercise_id={exercise_id}&format=json"
+        
+    data_url = f"{API_URL}courses/{exercise.course.course_id}/submissiondata/"
+    query_url = f"{data_url}?exercise_id={exercise.exercise_id}&format=json"
     
     # print("SUB_DATA_URL:", data_url)
-    return get_json(data_url)
+    
+    return get_json(query_url)
 
 
-def update_submissions(exercise_id, exercise):
-    subsdata = get_submissions(exercise_id)
+def update_submissions(exercise):
+    subsdata = get_submissions(exercise)
+    deadline_passed = check_deadline(exercise)
 
     for sub in subsdata:
         
@@ -85,8 +96,9 @@ def update_submissions(exercise_id, exercise):
         if sub["Grade"] < exercise.min_points:
             continue
         
-        if not check_consent_and_deadline(sub["Email"], exercise):
-            continue
+        if not deadline_passed:
+            if not check_consent(sub["Email"], exercise):
+                continue
         
         try:
             feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
@@ -110,17 +122,28 @@ def update_submissions(exercise_id, exercise):
     divide_submissions(exercise)
 
 
-def check_consent_and_deadline(student_email, exercise):
-    if not exercise.consent_exercise:
-        return True
-        
-    exercise_id = exercise.consent_exercise.exercise_id
-    subsdata = get_submissions(exercise_id)
+def check_deadline(exercise):
+    course_url = f"{API_URL}courses/{exercise.course.course_id}/"
+    module_url = f"{course_url}exercises/{exercise.module_id}"
+    module = get_json(module_url)
     
-    for sub in subsdata:
-        if sub["Email"] == student_email:
-            return True
+    if module["is_open"]:
+        print("Moduuli on vielä auki!")
+        return False
         
+    return True
+
+
+def check_consent(student_email, exercise):
+    if exercise.consent_exercise is not None:
+        subsdata = get_submissions(exercise.consent_exercise)
+        
+        for sub in subsdata:
+            print(sub["Email"])
+            if sub["Email"] == student_email:
+                print("Hyväksyntä annettu", sub["Email"])
+                return True
+
     return False
 
 

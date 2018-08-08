@@ -5,5 +5,5 @@ from submissions.models import Exercise
 class ExerciseForm(ModelForm):
     class Meta:
         model = Exercise
-        fields =  ["min_points", "max_points", "deadline", "consent_exercise"]
+        fields =  ["min_points", "consent_exercise"]
 
