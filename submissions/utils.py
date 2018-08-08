@@ -105,7 +105,7 @@ def update_submissions(exercise_id, exercise):
                                 sub_url=sub_url)
             feedback.save()
         
-        add_students(exercise, sub, feedback)
+        add_students(sub["Email"], feedback)
         
     divide_submissions(exercise)
 
@@ -124,32 +124,32 @@ def check_consent_and_deadline(student_email, exercise):
     return False
 
 
-def add_students(exercise, sub, feedback):
+def add_students(student_email, new_feedback):
     try:
-        student = Student.objects.get(email=sub["Email"])
+        student = Student.objects.get(email=student_email)
         
         try:
-            old = student.my_feedbacks.get(exercise=exercise)
+            old_feedback = student.my_feedbacks.get(exercise=new_feedback.exercise)
             
-            if old != feedback:
+            if old_feedback != new_feedback:
                 print("Ei ole samat! Poista vanha ja lisää uusi tilalle.")
-                if not old.done:
-                    old.delete()
-                    student.my_feedbacks.add(feedback)
+                if not old_feedback.done:
+                    old_feedback.delete()
+                    student.my_feedbacks.add(new_feedback)
                 else:
                     print("Eipäs poisteta. Arvostelu oli jo tehty!")
-                    feedback.delete()
+                    new_feedback.delete()
                 
             else:
                 print("Ne on samat, ei tartte tehdä mitään.")
                 
         except Feedback.DoesNotExist:
-            student.my_feedbacks.add(feedback)
+            student.my_feedbacks.add(new_feedback)
             
     except Student.DoesNotExist:
-        student = Student(email=sub["Email"])
+        student = Student(email=student_email)
         student.save()
-        student.my_feedbacks.add(feedback)
+        student.my_feedbacks.add(new_feedback)
 
 
 def divide_submissions(exercise):
@@ -158,10 +158,7 @@ def divide_submissions(exercise):
     param exercise: (models.Exercise) Tehtäväobjekti
     """
     graders = Course.objects.get(course_id=exercise.course.course_id).teachers.all()
-    #assarit = kurssi.teachers.all()
     subs = exercise.feedback_set.all()
-    sub_per_grader = len(subs) // len(graders)
-    res = len(subs) % len(graders)
         
     for sub in subs:
         if sub.grader is None:
@@ -179,7 +176,8 @@ def divide_submissions(exercise):
 def choose_grader(exercise, graders):
     """
     Jonkinlainen algoritmi töiden jakamiseen. Ei vielä testattu ja saattaa 
-    toimia väärin.
+    toimia väärin. 
+    HUOM! Tällä hetkellä arvosteluun menee kaikki, myös testipalautukset.
     """
     
     min_sub_count = 0
