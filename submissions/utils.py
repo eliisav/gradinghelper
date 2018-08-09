@@ -88,7 +88,7 @@ def update_submissions(exercise):
 
     for sub in subsdata:
         
-        print(sub)
+        #print(sub)
         
         # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
         # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
@@ -96,9 +96,8 @@ def update_submissions(exercise):
         if sub["Grade"] < exercise.min_points:
             continue
         
-        if not deadline_passed:
-            if not check_consent(sub["Email"], exercise):
-                continue
+        if not deadline_passed and not check_consent(sub["Email"], exercise):
+            continue
         
         try:
             feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
@@ -139,9 +138,7 @@ def check_consent(student_email, exercise):
         subsdata = get_submissions(exercise.consent_exercise)
         
         for sub in subsdata:
-            print(sub["Email"])
             if sub["Email"] == student_email:
-                print("Hyväksyntä annettu", sub["Email"])
                 return True
 
     return False
