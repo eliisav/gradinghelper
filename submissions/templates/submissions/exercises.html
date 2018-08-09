@@ -35,7 +35,10 @@
         {% endfor %}
       </ul>
     {% else %}
+    <div class="alert alert-info" role="alert">
       Yhtään tehtävää ei ole vielä lisätty.
+    </div>
+      
     {% endif %}
 
 
@@ -77,7 +80,9 @@
           {% endfor %}
         </ul>
       {% else %}
-        <p>Yhtään tehtävää ei löytynyt. Hae tehtäviä valitsemalla "Päivitä kurssin sisältö".</p>
+        <div class="alert alert-info" role="alert">
+          Yhtään tehtävää ei löytynyt. Hae tehtäviä valitsemalla "Päivitä kurssin sisältö".
+        </div>
       {% endif %}
     {% endif %}
         

@@ -2,28 +2,48 @@
 {% load bootstrap4 %}
 
 {% block content %}
-
-  {% if submissions %}
-    <ul clas="list-group">
-      {% for sub in submissions %}
+  <div class="col-md-6">
+    {% if submissions %}
+      <ul clas="list-group">
+        {% for sub in submissions %}
+        
+          <li class="list-group-item">
+          
+            <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
+              {{ sub }}
+            </a>
+            
+            {% for student in sub.students.all %}
+              {{ student }}
+            {% endfor %}
+            
+            {% if sub.done %}
+              <div class="alert alert-warning" role="alert">
+                ARVOSTELTU!
+              </div>
+            {% endif %}
+            
+            {% if sub.released %}
+            <div class="alert alert-success" role="alert">
+              JULKAISTU!
+            </div>
+  
+            {% endif %}
+            
+          </li>
+          
+        {% endfor %}
+      </ul>
       
-        <li class="list-group-item">
-        
-          <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
-            {{ sub }}
-          </a>
-          
-          {% for student in sub.students.all %}
-            {{ student }}
-          {% endfor %}
-          
-          {% if sub.done %} 
-            ARVOSTELTU!
-          {% endif %}
-          
-        </li>
-        
-      {% endfor %}
-    </ul>
-  {% endif %}
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          Ei arvosteltavia palautuksia.
+        </div>
+    {% endif %}
+  </div>
+  
+  <div class="col-md-6">  
+    <a class="btn btn-primary" href={% url "submissions:release" exercise_id %} role="button">Julkaise arvostelut</a>
+  </div>
+  
 {% endblock %}
