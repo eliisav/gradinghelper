@@ -22,10 +22,10 @@ urlpatterns = [
     path('courses/', views.CourseListView.as_view(), name='courses'),
     path('grading/', views.GradingListView.as_view(), name='grading'),
     path('<int:course_id>/exercises/', views.ExerciseListView.as_view(), name='exercises'),
-    path('<int:course_id>/exercises/update/', views.update_exercise_view, name='update'),
-    path('<int:course_id>/exercises/<int:exercise_id>/trace/', views.enable_exercise_trace, name='trace'),
+    path('<int:course_id>/exercises/update/', views.UpdateExerciseListRedirectView.as_view(), name='update'),
+    path('<int:course_id>/exercises/<int:exercise_id>/trace/', views.EnableExerciseTraceRedirectView.as_view(), name='trace'),
     path('exercises/<int:exercise_id>/submissions/', views.SubmissionsView.as_view(), name='submissions'),
     path('exercises/<int:exercise_id>/submissions/<int:sub_id>/', views.FeedbackView.as_view(), name='feedback'),
-    path('exercises/<int:exercise_id>/submissions/release/', views.release, name='release'),
+    path('exercises/<int:exercise_id>/submissions/release/', views.ReleaseFeedbacksRedirectView.as_view(), name='release'),
 ]
 

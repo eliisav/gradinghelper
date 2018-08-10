@@ -97,33 +97,32 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
 """
 
 
-def update_exercise_view(request, course_id):
+class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
     """
     Lisätään/päivitetään kurssin tehtävät tietokantaan.
     """
+    pattern_name = "submissions:exercises"
     
-    # TODO: Kirjautuminen pitäisi vaatia myös tähän???
-    # TODO: Pitäisikö tämän olla RedirectView???
-    kirjautumistesti(request)
-    
-    course = get_object_or_404(Course, course_id=course_id)
-    get_exercises(course)
-    
-    return HttpResponseRedirect(reverse("submissions:exercises", 
-                                        kwargs={ "course_id": course_id }))
+    def get(self, request, *args, **kwargs):
+        course = get_object_or_404(Course, course_id=kwargs["course_id"])
+        get_exercises(course)
+        messages.success(request, "Kurssin sisältö päivitetty.")
+            
+        return super().get(request, *args, **kwargs)
                                         
 
-def enable_exercise_trace(request, course_id, exercise_id):
+class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
     """
     Lisätään tehtävä tarkastukseen.
     """
+    pattern_name = "submissions:exercises"
     
-    # TODO: Kirjautuminen pitäisi vaatia myös tähän???
-    # TODO: Pitäisikö tämän olla RedirectView???
-    kirjautumistesti(request)
+    def get_redirect_url(self, *args, **kwargs):
+        del kwargs["exercise_id"]
+        return super().get_redirect_url(*args, **kwargs)
     
-    if request.method == "POST":
-        exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
+    def post(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
         filled_form = ExerciseForm(request.POST, instance=exercise)
         
         if filled_form.is_valid():
@@ -132,12 +131,7 @@ def enable_exercise_trace(request, course_id, exercise_id):
             filled_form.save()
             messages.success(request, "Tehtävän lisääminen onnistui.")
             
-        else:
-            messages.error(request, "Virheellinen lomakekenttä.")
-    
-    #print("Tehtävä lisätty, palataan listaukseen...")    
-    return HttpResponseRedirect(reverse("submissions:exercises", 
-                                        kwargs={ "course_id": course_id }))
+        return self.get(request, *args, **kwargs)
 
 
 class SubmissionsView(LoginRequiredMixin, generic.ListView):
@@ -202,24 +196,22 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
         feedback.done = True
         feedback.save()
         return super().post(request, *args, **kwargs)
-        
-        
-def release(request, exercise_id):
-    exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
-    feedbacks = Exercise.objects.get(exercise_id=exercise_id).feedback_set.filter(grader=request.user, done=True, released=False)
-    
-    if create_json(feedbacks):
-        messages.success(request, "Palautteet julkaistu!")
-    else:
-        messages.info(request, "Julkaistavia palautteita ei löytynyt.")
-        
-    
-    return HttpResponseRedirect(reverse("submissions:submissions", 
-                                        kwargs={ "exercise_id": exercise_id }))
-    
+          
 
-
-
+class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
+    pattern_name = "submissions:submissions"
+    
+    def get(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
+        feedbacks = exercise.feedback_set.filter(grader=request.user, done=True, 
+                                                 released=False)
+        
+        if create_json(feedbacks):
+            messages.success(request, "Palautteet julkaistu!")
+        else:
+            messages.info(request, "Julkaistavia palautteita ei löytynyt.")
+            
+        return super().get(request, *args, **kwargs)
 
 
 
