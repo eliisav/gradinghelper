@@ -152,13 +152,18 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
     template_name = "submissions/submissions.html"
     context_object_name = "submissions"
     model = Feedback
-     
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["exercise_id"] = self.kwargs["exercise_id"]
+        return context
+    
     def get(self, request, exercise_id):
     
         kirjautumistesti(request)
     
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
-        update_submissions(exercise)    
+        update_submissions(exercise)
         
         if request.user.is_staff:
             self.object_list = self.get_queryset().filter(exercise=exercise)
@@ -197,4 +202,41 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
         feedback.done = True
         feedback.save()
         return super().post(request, *args, **kwargs)
+        
+        
+def release(request, exercise_id):
+    exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
+    feedbacks = Exercise.objects.get(exercise_id=exercise_id).feedback_set.filter(grader=request.user, done=True, released=False)
+    
+    if create_json(feedbacks):
+        messages.success(request, "Palautteet julkaistu!")
+    else:
+        messages.info(request, "Julkaistavia palautteita ei löytynyt.")
+        
+    
+    return HttpResponseRedirect(reverse("submissions:submissions", 
+                                        kwargs={ "exercise_id": exercise_id }))
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 

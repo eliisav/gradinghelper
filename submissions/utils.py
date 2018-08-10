@@ -127,7 +127,7 @@ def check_deadline(exercise):
     module = get_json(module_url)
     
     if module["is_open"]:
-        print("Moduuli on vielä auki!")
+        #print("Moduuli on vielä auki!")
         return False
         
     return True
@@ -152,24 +152,28 @@ def add_students(student_email, new_feedback):
             old_feedback = student.my_feedbacks.get(exercise=new_feedback.exercise)
             
             if old_feedback != new_feedback:
-                print("Ei ole samat! Poista vanha ja lisää uusi tilalle.")
+                print("Ei ole samat! Poista vanha ja lisää uusi tilalle:", end=" ")
                 if not old_feedback.done:
                     old_feedback.delete()
                     student.my_feedbacks.add(new_feedback)
                 else:
-                    print("Eipäs poisteta. Arvostelu oli jo tehty!")
+                    print("Eipäs poisteta. Arvostelu oli jo tehty!", end=" ")
                     new_feedback.delete()
                 
             else:
-                print("Ne on samat, ei tartte tehdä mitään.")
+                print("Ne on samat, ei tartte tehdä mitään:", end=" ")
+                
+            print(student.email)
                 
         except Feedback.DoesNotExist:
+            print("Eka hyväksytty palautus tähän tehtävään:", student.email)
             student.my_feedbacks.add(new_feedback)
             
     except Student.DoesNotExist:
         student = Student(email=student_email)
         student.save()
         student.my_feedbacks.add(new_feedback)
+        print("Eka hyväksytty palautus tähän tehtävään:", student.email)
 
 
 def divide_submissions(exercise):
@@ -219,4 +223,29 @@ def choose_grader(exercise, graders):
     # jolla on vähiten, jos usealla yhtä vähän. Tasatilanteessa ei ole väliä 
     # kuka valitaan.
     return grader_to_add
+    
+    
+def create_json(feedbacks):
+    if feedbacks:
+        print("\nNyt pitäisi askarrella ja postata jsoni.\n")
+        return True
+    else:
+        print("Ei arvosteltuja palautuksia.")
+        return False
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     

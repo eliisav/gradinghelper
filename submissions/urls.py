@@ -26,6 +26,6 @@ urlpatterns = [
     path('<int:course_id>/exercises/<int:exercise_id>/trace/', views.enable_exercise_trace, name='trace'),
     path('exercises/<int:exercise_id>/submissions/', views.SubmissionsView.as_view(), name='submissions'),
     path('exercises/<int:exercise_id>/submissions/<int:sub_id>/', views.FeedbackView.as_view(), name='feedback'),
-    
+    path('exercises/<int:exercise_id>/submissions/release/', views.release, name='release'),
 ]
 

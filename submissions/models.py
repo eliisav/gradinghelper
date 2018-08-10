@@ -60,6 +60,7 @@ class Feedback(models.Model):
     feedback = models.TextField()
     points = models.PositiveSmallIntegerField(default=0)
     done = models.BooleanField(default=False)
+    released = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["done"]

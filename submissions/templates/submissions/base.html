@@ -2,6 +2,7 @@
 
 <!doctype html>
 <html lang="fi">
+
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -13,6 +14,8 @@
 
     <title>Eliisan palvelu</title>
   </head>
+ 
+  
   
   <body>
   
@@ -21,14 +24,46 @@
       <a class="navbar ml-auto" href="{% url 'submissions:logout' %}">Log out</a>
     </nav>
     
+    
+    
     <div class="container">
+    
+    
+    
+      <div class="row">
+        <div class="col-md-6" >
+          {% if messages %}
+            <ul class="list-group list-group-flush messages">
+              {% for message in messages %}
+                <li {% if message.tags == "error" %} 
+                      class="list-group-item list-group-item-danger" 
+                    {% elif message.tags == "success" %}
+                      class="list-group-item list-group-item-success"
+                    {% else %}
+                      class="list-group-item list-group-item-info" {% endif %}>
+                    
+                  {{ message }}
+                    
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div> <!-- column -->
+      </div> <!-- row -->
+      
+      
+      
       <div class="row">
     
         {% block content %}
         {% endblock %}
         
-      </div>
-    </div>
+      </div> <!-- row -->
+      
+      
+      
+    </div> <!-- container -->
+    
   </body>
   
 </html>
