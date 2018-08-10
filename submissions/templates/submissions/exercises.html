@@ -3,15 +3,36 @@
 
 {% block content %}
   <div class="col-md-6">
+  
+  
+  
     <h1> Arvosteltavat tehtävät </h1>
     
     {% if tracing %}
       <ul class="list-group exercises">
         {% for exercise in tracing %}
           <li class="list-group-item {{ exercise.exercise_id }}">
-            <a href="{% url 'submissions:submissions' exercise.exercise_id %}">
-              {{ exercise }}
-            </a>
+          
+            <div class="d-flex align-items-center">
+            
+              <div class="flex-grow-1">
+                <a href="{% url 'submissions:submissions' exercise.exercise_id %}">
+                  {{ exercise }}
+                </a>
+              </div>
+              
+              
+              {% if user.is_staff %}
+                <div class="ml-auto">
+                  <a class="btn btn-primary btn-sm" href={% url "submissions:trace_off" course_id exercise.exercise_id %} role="button">
+                    Peruuta tarkastus
+                  </a>
+                </div>
+              {% endif %}
+              
+            </div> <!-- d-flex -->
+           
+            
           </li>
         {% endfor %}
       </ul>
@@ -21,6 +42,8 @@
     </div>
       
     {% endif %}
+
+
 
 
     {% if user.is_staff %}
@@ -48,7 +71,7 @@
                
               <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
                 <div class="card card-body">
-                  <form action={% url "submissions:trace" course_id exercise.exercise_id %} method="post" class="form">
+                  <form action={% url "submissions:trace_on" course_id exercise.exercise_id %} method="post" class="form">
                     {% csrf_token %}
                     {% bootstrap_form exercise.form %}
                     <button type="submit" class="btn btn-primary">Submit</button>

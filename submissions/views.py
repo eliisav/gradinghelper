@@ -132,6 +132,26 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
             messages.success(request, "Tehtävän lisääminen onnistui.")
             
         return self.get(request, *args, **kwargs)
+        
+        
+class DisableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
+    """
+    Perutaan tehtävän tarkastus.
+    """
+    pattern_name = "submissions:exercises"
+    
+    def get_redirect_url(self, *args, **kwargs):
+        del kwargs["exercise_id"]
+        return super().get_redirect_url(*args, **kwargs)
+    
+    def get(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
+
+        exercise.trace = False
+        exercise.save()
+        messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
+            
+        return super().get(request, *args, **kwargs)
 
 
 class SubmissionsView(LoginRequiredMixin, generic.ListView):
