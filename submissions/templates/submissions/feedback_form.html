@@ -13,8 +13,11 @@
     <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
-      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="submit" class="btn btn-primary">Tallenna</button>
     </form>
+    
+    <a class="btn btn-primary" href={% url "submissions:submissions" feedback.exercise.exercise_id %} role="button">Peruuta</a>
+    
   </div>
   
 {% endblock %}
