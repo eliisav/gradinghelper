@@ -1,6 +1,13 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+
+
+"""
+class User(AbstractUser):
+    pass
+"""
 
 
 class Course(models.Model):
@@ -20,6 +27,7 @@ class Exercise(models.Model):
     consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE, 
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
+    feedback_base = models.FileField(null=True, blank=True)
     trace = models.BooleanField(default=False)
     
     # Tarvitaanko näitä?

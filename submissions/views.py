@@ -123,7 +123,7 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
     
     def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
-        filled_form = ExerciseForm(request.POST, instance=exercise)
+        filled_form = ExerciseForm(request.POST, request.FILES, instance=exercise)
         
         if filled_form.is_valid():
             exercise.trace = True
