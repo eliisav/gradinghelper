@@ -20,11 +20,11 @@ def kirjautumistesti(request):
         print("Ei ketään!")
 
 
-class IndexView(LoginRequiredMixin, generic.TemplateView):
+class IndexView(LoginRequiredMixin, generic.RedirectView):
     """
-    HUOM! Tämä sivu on aika turha tällä hetkellä.
+    Apin juuriosoite, uudelleenohjaa kurssilistaukseen.
     """
-    template_name = "submissions/index.html"
+    pattern_name = "submissions:courses"
 
 
 class GradingListView(LoginRequiredMixin, generic.ListView):
@@ -173,18 +173,13 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
         return context
     
     def get(self, request, exercise_id):
-    
-        kirjautumistesti(request)
-    
         exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
         update_submissions(exercise)
+        self.object_list = self.get_queryset().filter(exercise=exercise)
+        context = self.get_context_data()
+        context["submissions_me"] = self.object_list.filter(grader=request.user)
         
-        if request.user.is_staff:
-            self.object_list = self.get_queryset().filter(exercise=exercise)
-        else:
-            self.object_list = request.user.feedback_set.filter(exercise=exercise)
-        
-        return self.render_to_response(self.get_context_data())
+        return self.render_to_response(context)
 
 
 class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
