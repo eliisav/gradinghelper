@@ -60,18 +60,27 @@ class Student(models.Model):
 
 
 class Feedback(models.Model):
+    DRAFT = 0
+    READY = 1
+    
+    STATUS_CHOICES = (
+        (DRAFT, "Luonnos"),
+        (READY, "Valmis"),
+    )
+    
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     sub_id = models.IntegerField(unique=True)
     sub_url = models.URLField()
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
     grader = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    feedback = models.TextField()
-    points = models.PositiveSmallIntegerField(default=0)
-    done = models.BooleanField(default=False)
+    feedback = models.TextField(verbose_name="palaute")
+    points = models.PositiveSmallIntegerField(default=0, verbose_name="pisteet")
+    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, null=True,
+                                              verbose_name="palautteen tila")
     released = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["done"]
+        ordering = ["status"]
         
     def __str__(self):
         return str(self.sub_id)

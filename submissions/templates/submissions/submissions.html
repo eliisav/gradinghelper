@@ -13,22 +13,26 @@
               {{ sub }}
             </a>
             
+            
             {% for student in sub.students.all %}
               {{ student }}
             {% endfor %}
             
-            {% if sub.done %}
+            
+            {% if sub.status == sub.READY %}
               <div class="alert alert-warning" role="alert">
-                ARVOSTELTU!
+                VALMIS
+              </div>
+            {% elif sub.status == sub.DRAFT %}
+              <div class="alert alert-danger" role="alert">
+                LUONNOS
+              </div>
+            {% elif sub.released %}
+              <div class="alert alert-success" role="alert">
+                JULKAISTU
               </div>
             {% endif %}
             
-            {% if sub.released %}
-            <div class="alert alert-success" role="alert">
-              JULKAISTU!
-            </div>
-  
-            {% endif %}
             
           </li>
           

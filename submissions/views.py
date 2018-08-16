@@ -194,7 +194,8 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
     model = Feedback
     slug_field = "sub_id"
     slug_url_kwarg = "sub_id"
-    fields = ["points", "feedback"]
+    fields = ["points", "feedback", "status"]
+    initial = {"status": Feedback.READY}
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -210,12 +211,6 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
     def get_success_url(self):
         exercise_id = self.kwargs["exercise_id"]
         return reverse("submissions:submissions", args=(exercise_id,))
-    
-    def post(self, request, *args, **kwargs):
-        feedback = self.get_object()
-        feedback.done = True
-        feedback.save()
-        return super().post(request, *args, **kwargs)
           
 
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
@@ -223,7 +218,8 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
     
     def get(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
-        feedbacks = exercise.feedback_set.filter(grader=request.user, done=True, 
+        feedbacks = exercise.feedback_set.filter(grader=request.user,
+                                                 status=Feedback.READY, 
                                                  released=False)
         
         if create_json(feedbacks):
