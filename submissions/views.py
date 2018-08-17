@@ -22,7 +22,7 @@ def kirjautumistesti(request):
 
 class IndexView(LoginRequiredMixin, generic.RedirectView):
     """
-    Apin juuriosoite, uudelleenohjaa kurssilistaukseen.
+    Aplikaation juuriosoite, uudelleenohjaa kurssilistaukseen.
     """
     pattern_name = "submissions:courses"
 

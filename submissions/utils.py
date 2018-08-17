@@ -17,18 +17,49 @@ def get_json(url):
     return resp.json()
 
 
-def get_courses():
+def add_user_to_course(user, html_url):
     """
-    Hakee kaikki TUT+ -sivustolla olevat kurssi-instanssit. TARPEETON!?!?
-    return: lista kursseista
+    
+    return: 
     """
+    try:
+        course = Course.objects.get(html_url=html_url)
+        
+    except Course.DoesNotExist:
+        course = create_course(html_url)
+    
+    if course:   
+        course.teachers.add(user)
+
+
+def create_course(html_url):
+    # Html_urlin pitäisi olla muotoa: plus.cs.tut.fi/{kurssi}/{instanssi}/
+    # Tallennetaan nimeksi kurssin ja instanssin tunnisteet
+    name = "".join(html_url.split("/")[1:3])
+    
     courses_url = f"{API_URL}courses/"
+    course_id = None
     
-    # HUOM! Tämä ei toimi pelkästään näin, jos kursseja on useita sivuja!!!!
-    course_list = get_json(courses_url)["results"]
-    return course_list
+    while True:
+        course_list = get_json(courses_url)
+        for course in course_list["results"]:
+            if html_url in course["html_url"]:
+                course_id = course["id"]
+                break
+                
+        if not course_list["next"]:
+            break
+        else:
+            courses_url = course_list["next"]
     
-    
+    if course_id is None:
+        return None
+    else:        
+        course = Course(course_id=course_id, name=name, html_url=html_url)
+        course.save()
+        return course
+
+
 def get_exercises(course):
     """
     Hakee kaikki yhden kurssi-instanssin tehtävät.
@@ -199,9 +230,11 @@ def divide_submissions(exercise):
 
 def choose_grader(exercise, graders):
     """
-    Jonkinlainen algoritmi töiden jakamiseen. Ei vielä testattu ja saattaa 
+    Jonkinlainen algoritmi töiden jakamiseen. Jakaa työ tasan kaikkien kurssiin 
+    liitettyjen assareiden kesken. Ei ole kunnolla testattu ja saattaa 
     toimia väärin. 
-    HUOM! Tällä hetkellä arvosteluun menee kaikki, myös testipalautukset.
+    HUOM! Tämä ottaa nyt arvosteluun kaiken, myös assarien omat sekä 
+    testitunnuksilla tehdyt palautukset.
     """
     
     min_sub_count = 0

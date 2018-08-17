@@ -6,6 +6,8 @@ from django.shortcuts import reverse
 from django.dispatch import receiver
 from django_lti_login.signals import lti_login_authenticated
 
+from .utils import add_user_to_course
+
 
 @receiver(lti_login_authenticated)
 def store_last_login(sender, **kwargs):
@@ -54,8 +56,9 @@ def store_course_info(sender, **kwargs):
         session['course_label'] = course_label
         session['course_name'] = course_name
         session['course_lms'] = course_lms
-        
-        # user.courses.add(Courses.objects.all().filter(course_id=course_id))
+
+        # Liitetään käyttäjä kirjautumistietojen mukaiseen kurssiin.
+        add_user_to_course(user, course_id)
 
         # Redirect to notresponded page after login
         oauth.redirect_url = reverse('submissions:index')

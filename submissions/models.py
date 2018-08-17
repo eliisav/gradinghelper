@@ -1,18 +1,17 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 
 
-"""
 class User(AbstractUser):
-    pass
-"""
+    def __str__(self):
+        return self.email
 
 
 class Course(models.Model):
     course_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
+    html_url = models.URLField()
     teachers = models.ManyToManyField (User, related_name="my_courses", blank=True)
     
     def __str__(self):
