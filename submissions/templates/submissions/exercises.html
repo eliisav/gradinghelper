@@ -8,9 +8,9 @@
   
     <h1> Arvosteltavat tehtävät </h1>
     
-    {% if tracing %}
+    {% if exercises_in_grading %}
       <ul class="list-group exercises">
-        {% for exercise in tracing %}
+        {% for exercise in exercises_in_grading %}
           <li class="list-group-item {{ exercise.exercise_id }}">
           
             <div class="d-flex align-items-center">
@@ -22,7 +22,7 @@
               </div>
               
               
-              {% if user.is_staff %}
+              {% if user_is_teacher %}
                 <div class="ml-auto">
                   <a class="btn btn-primary btn-sm" href={% url "submissions:trace_off" course_id exercise.exercise_id %} role="button">
                     Peruuta tarkastus
@@ -46,14 +46,14 @@
 
 
 
-    {% if user.is_staff %}
+    {% if user_is_teacher %}
       <h1> Kaikki tehtävät </h1>
       
       <a class="btn btn-primary" href={% url "submissions:update" course_id %} role="button">Päivitä kurssin sisältö</a>
       
-      {% if exercises %}
+      {% if other_exercises %}
         <ul class="list-group all_exercises">
-          {% for exercise in exercises%}
+          {% for exercise in other_exercises%}
             <li class="list-group-item {{ exercise.exercise_id }}">
             
             

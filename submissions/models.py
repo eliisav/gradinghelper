@@ -12,11 +12,15 @@ class Course(models.Model):
     course_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
     html_url = models.URLField()
-    teachers = models.ManyToManyField (User, related_name="my_courses", blank=True)
+    teachers = models.ManyToManyField (User, related_name="responsibilities", blank=True)
+    assistants = models.ManyToManyField (User, related_name="my_courses", blank=True)
     
     def __str__(self):
         return self.name
-
+        
+    def is_teacher(self, user):
+        return user in self.teachers.all()
+        
 
 class Exercise(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)

@@ -17,19 +17,22 @@ def get_json(url):
     return resp.json()
 
 
-def add_user_to_course(user, html_url):
+def add_user_to_course(user, user_role, course_html_url):
     """
     
     return: 
     """
     try:
-        course = Course.objects.get(html_url=html_url)
+        course = Course.objects.get(html_url=course_html_url)
         
     except Course.DoesNotExist:
-        course = create_course(html_url)
+        course = create_course(course_html_url)
     
-    if course:   
-        course.teachers.add(user)
+    if course:
+        if user_role == "Instructor":
+            course.teachers.add(user)
+        elif user_role == "TA,TeachingAssistant":
+            course.assistants.add(user)
 
 
 def create_course(html_url):
@@ -212,7 +215,7 @@ def divide_submissions(exercise):
     Jakaa palautukset kurssille merkittyjen assareiden kesken.
     param exercise: (models.Exercise) Tehtäväobjekti
     """
-    graders = Course.objects.get(course_id=exercise.course.course_id).teachers.all()
+    graders = Course.objects.get(course_id=exercise.course.course_id).assistants.all()
     subs = exercise.feedback_set.all()
         
     for sub in subs:

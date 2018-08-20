@@ -37,6 +37,7 @@ def store_course_info(sender, **kwargs):
         course_id = getattr(oauth, 'context_id', None) # lms.example.com/it-101/
         course_label = getattr(oauth, 'context_label', None) # IT-101
         course_name = getattr(oauth, 'context_title', None) # Basics on IT
+        user_role = getattr(oauth, 'roles', None)
 
         if course_id is None or course_label is None or course_name is None:
             # Invalid lti login due to missing information
@@ -56,9 +57,10 @@ def store_course_info(sender, **kwargs):
         session['course_label'] = course_label
         session['course_name'] = course_name
         session['course_lms'] = course_lms
+        session['user_role'] = user_role
 
         # Liitetään käyttäjä kirjautumistietojen mukaiseen kurssiin.
-        add_user_to_course(user, course_id)
+        add_user_to_course(user, user_role, course_id)
 
         # Redirect to notresponded page after login
         oauth.redirect_url = reverse('submissions:index')

@@ -6,18 +6,11 @@ from django.core.cache import cache
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.db.models import Q
 
 from .models import Feedback, Exercise, Course
 from .forms import ExerciseForm
 from .utils import *
-
-
-def kirjautumistesti(request):
-    if request.user.is_authenticated:
-        print("Kirjautunut käyttäjä:", request.user.email)
-    else:
-        print("Ei ketään!")
 
 
 class IndexView(LoginRequiredMixin, generic.RedirectView):
@@ -25,19 +18,6 @@ class IndexView(LoginRequiredMixin, generic.RedirectView):
     Aplikaation juuriosoite, uudelleenohjaa kurssilistaukseen.
     """
     pattern_name = "submissions:courses"
-
-
-class GradingListView(LoginRequiredMixin, generic.ListView):
-    """
-    Listataan kaikki tarkastettavat tehtävät kurssista riippumatta.
-    HUOM! Tätä ei varmaan tarvita mihinkään.
-    """
-    model = Exercise
-    template_name = "submissions/grading.html"
-    context_object_name = "exercises"
-
-    def get_queryset(self):
-        return Exercise.objects.all().filter(trace=True) 
 
 
 class CourseListView(LoginRequiredMixin, generic.ListView):
@@ -50,12 +30,10 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     context_object_name = "courses"
     
     def get(self, request):
-        if request.user.is_staff:
-            self.object_list = self.get_queryset()
-        else:
-            self.object_list = request.user.my_courses.all()
-        kirjautumistesti(request)
-        #print(self.object_list)
+        
+        self.object_list = Course.objects.filter(Q(assistants=request.user) | 
+                                                 Q(teachers=request.user))
+
         return self.render_to_response(self.get_context_data())
         
         
@@ -65,24 +43,27 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
     """
     model = Exercise
     template_name = "submissions/exercises.html"
-    context_object_name = "exercises"
+    context_object_name = "exercises_in_grading"
     
     def get(self, request, course_id):
-        kirjautumistesti(request)
-    
         course = get_object_or_404(Course, course_id=course_id)
         queryset = self.get_queryset().filter(course=course)
-        self.object_list = queryset.filter(trace=False)
-        tracing = queryset.filter(trace=True)
         
-        for exercise in self.object_list:
-            print("Luodaan lomake tehtävälle:", exercise)
-            exercise.form = ExerciseForm(instance=exercise)
+        self.object_list = queryset.filter(trace=True)
         
         context = self.get_context_data()
-        context["tracing"] = tracing
         context["course_id"] = course_id
         
+        if course.is_teacher(request.user):
+            context["user_is_teacher"] = True
+            other_exercises = queryset.filter(trace=False)
+        
+            for exercise in other_exercises:
+                print("Luodaan lomake tehtävälle:", exercise)
+                exercise.form = ExerciseForm(instance=exercise)
+                
+            context["other_exercises"] = other_exercises
+
         print("Renderöidään html...")
         return self.render_to_response(context)
 
@@ -225,10 +206,25 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
         return super().get(request, *args, **kwargs)
 
 
+# -----------------------------------------------------------------
 
+def kirjautumistesti(request):
+    if request.user.is_authenticated:
+        print("Kirjautunut käyttäjä:", request.user.email)
+    else:
+        print("Ei ketään!")
 
+class GradingListView(LoginRequiredMixin, generic.ListView):
+    """
+    Listataan kaikki tarkastettavat tehtävät kurssista riippumatta.
+    HUOM! Tätä ei varmaan tarvita mihinkään.
+    """
+    model = Exercise
+    template_name = "submissions/grading.html"
+    context_object_name = "exercises"
 
-
+    def get_queryset(self):
+        return Exercise.objects.all().filter(trace=True) 
 
 
 
