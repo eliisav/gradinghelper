@@ -74,7 +74,7 @@
                   <form action={% url "submissions:trace_on" course_id exercise.exercise_id %} method="post" class="form">
                     {% csrf_token %}
                     {% bootstrap_form exercise.form %}
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-primary">Lisää</button>
                   </form>
                 </div>
               </div> <!-- collapse -->

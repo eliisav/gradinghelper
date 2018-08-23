@@ -61,9 +61,24 @@
     </button>
     <div class="collapse mt-4" id="submissions_all">
       <div class="card card-body">
-      {% if submissions %}
+      {% if submissions_all %}
       <h1> Kaikki arvosteltavat </h1>
-      <ul class="list-group">
+      <form method="post" action={% url "submissions:graderchange" exercise_id %}>
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% for form in formset %}
+          {{ form.id }}
+          <p>
+            {{ form.sub_id.value }}
+            {% for student in form.students %}
+              {{ student }}
+            {% endfor %}
+          </p>
+          {{ form.grader }}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
+      </form>
+      <!-- <ul class="list-group">
         {% for sub in submissions %}
         
           <li class="list-group-item">
@@ -101,7 +116,7 @@
           </li>
           
         {% endfor %}
-      </ul>
+      </ul> -->
       {% else %}
         <div class="alert alert-info" role="alert">
           Ei arvosteltavia palautuksia.

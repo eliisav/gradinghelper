@@ -21,12 +21,13 @@ urlpatterns = [
     path('', views.IndexView.as_view(), name='index'),
     path('courses/', views.CourseListView.as_view(), name='courses'),
     path('grading/', views.GradingListView.as_view(), name='grading'),
-    path('<int:course_id>/exercises/', views.ExerciseListView.as_view(), name='exercises'),
-    path('<int:course_id>/exercises/update/', views.UpdateExerciseListRedirectView.as_view(), name='update'),
-    path('<int:course_id>/exercises/<int:exercise_id>/trace_on/', views.EnableExerciseTraceRedirectView.as_view(), name='trace_on'),
-    path('<int:course_id>/exercises/<int:exercise_id>/trace_off/', views.DisableExerciseTraceRedirectView.as_view(), name='trace_off'),
+    path('courses/<int:course_id>/exercises/', views.ExerciseListView.as_view(), name='exercises'),
+    path('courses/<int:course_id>/exercises/update/', views.UpdateExerciseListRedirectView.as_view(), name='update'),
+    path('courses/<int:course_id>/exercises/<int:exercise_id>/trace_on/', views.EnableExerciseTraceRedirectView.as_view(), name='trace_on'),
+    path('courses/<int:course_id>/exercises/<int:exercise_id>/trace_off/', views.DisableExerciseTraceRedirectView.as_view(), name='trace_off'),
     path('exercises/<int:exercise_id>/submissions/', views.SubmissionsView.as_view(), name='submissions'),
     path('exercises/<int:exercise_id>/submissions/<int:sub_id>/', views.FeedbackView.as_view(), name='feedback'),
     path('exercises/<int:exercise_id>/submissions/release/', views.ReleaseFeedbacksRedirectView.as_view(), name='release'),
+    path('exercises/<int:exercise_id>/submissions/graderchange/', views.ChangeGraderRedirectView.as_view(), name='graderchange')
 ]
 

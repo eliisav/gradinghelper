@@ -40,19 +40,6 @@ class Exercise(models.Model):
     
     def __str__(self):
         return self.name
-        
-    """
-    Yritys rajoittaa lomakkeen valintalaatikossa näkyviä tehtäviä.
-    Tarkoitus näyttää vain samaan kurssiin kuuluvat tehtävät.
-    Ei kuitenkaan onnistunut näin.
-    
-    Tämän rivin piti olla vierasavaimen argumenttina:
-    limit_choices_to=self.limit_exercises
-    
-    def limit_exercises(self):
-        return {'course.course_id': self.course.course_id}
-        
-    """
 
 
 class Student(models.Model):

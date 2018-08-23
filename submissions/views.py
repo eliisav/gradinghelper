@@ -7,9 +7,10 @@ from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.forms import modelformset_factory
 
 from .models import Feedback, Exercise, Course
-from .forms import ExerciseForm
+from .forms import ExerciseForm, FeedbackForm
 from .utils import *
 
 
@@ -30,9 +31,9 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     context_object_name = "courses"
     
     def get(self, request):
-        
+       
         self.object_list = Course.objects.filter(Q(assistants=request.user) | 
-                                                 Q(teachers=request.user))
+                                                 Q(teachers=request.user)).distinct()
 
         return self.render_to_response(self.get_context_data())
         
@@ -107,6 +108,7 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
         filled_form = ExerciseForm(request.POST, request.FILES, instance=exercise)
         
         if filled_form.is_valid():
+            # Tää on tyhmästi tehty? On olemassa joku save(commit=False)
             exercise.trace = True
             exercise.save()
             filled_form.save()
@@ -133,24 +135,50 @@ class DisableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView)
         messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
             
         return super().get(request, *args, **kwargs)
+        
+        
+class ChangeGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
+    """
+    Vaihdetaan tehtävän tarkastajaa.
+    """
+    pattern_name = "submissions:submissions"
+    
+    def post(self, request, *args, **kwargs):
+        ChangeGraderFormset = modelformset_factory(Feedback, form=FeedbackForm)
+        formset = ChangeGraderFormset(request.POST)
+        
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, "Muutokset arvostelijoihin tallennettu.")
+        else:
+            messages.error(request, "Lomake ei ole validi!")
+            
+        return self.get(request, *args, **kwargs)
 
 
 class SubmissionsView(LoginRequiredMixin, generic.ListView):
     """
-    Listaa yhden tehtävän viimeisimmät/parhaat palautukset, staffille kaikki ja 
-    assareille vain heille osoitetut tehtävät.
+    Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
     TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa manuaalisesti.
     TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
           silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
 
     """
     template_name = "submissions/submissions.html"
-    context_object_name = "submissions"
+    context_object_name = "submissions_all"
     model = Feedback
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["exercise_id"] = self.kwargs["exercise_id"]
+        
+        
+        ChangeGraderFormset = modelformset_factory(Feedback, form=FeedbackForm, extra=0)
+        context["formset"] = ChangeGraderFormset(queryset=self.object_list)
+        
+        # print(context["formset"])
+        
+        
         return context
     
     def get(self, request, exercise_id):
@@ -159,7 +187,7 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
         self.object_list = self.get_queryset().filter(exercise=exercise)
         context = self.get_context_data()
         context["submissions_me"] = self.object_list.filter(grader=request.user)
-        
+        print(self.object_list)
         return self.render_to_response(context)
 
 
