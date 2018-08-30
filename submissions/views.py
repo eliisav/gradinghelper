@@ -1,16 +1,15 @@
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views import generic
-from django.core.cache import cache
 from django.contrib import messages
-from django.contrib.auth import authenticate
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms import modelformset_factory
 
-from .models import Feedback, Exercise, Course
-from .forms import ExerciseForm, FeedbackForm
+# from django.core.cache import cache
+# from django.http import HttpResponseRedirect
+
+from .forms import ExerciseForm, ChangeGraderForm, SetGraderMeForm
 from .utils import *
 
 
@@ -30,10 +29,10 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     template_name = "submissions/courses.html"
     context_object_name = "courses"
     
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
        
-        self.object_list = Course.objects.filter(Q(assistants=request.user) | 
-                                                 Q(teachers=request.user)).distinct()
+        self.object_list = Course.objects.filter(
+            Q(assistants=request.user) | Q(teachers=request.user)).distinct()
 
         return self.render_to_response(self.get_context_data())
         
@@ -46,14 +45,14 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
     template_name = "submissions/exercises.html"
     context_object_name = "exercises_in_grading"
     
-    def get(self, request, course_id):
-        course = get_object_or_404(Course, course_id=course_id)
+    def get(self, request, *args, **kwargs):
+        course = get_object_or_404(Course, course_id=kwargs["course_id"])
         queryset = self.get_queryset().filter(course=course)
         
         self.object_list = queryset.filter(trace=True)
         
         context = self.get_context_data()
-        context["course_id"] = course_id
+        context["course_id"] = kwargs["course_id"]
         
         if course.is_teacher(request.user):
             context["user_is_teacher"] = True
@@ -93,7 +92,8 @@ class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
         return super().get(request, *args, **kwargs)
                                         
 
-class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
+class EnableExerciseTraceRedirectView(LoginRequiredMixin,
+                                      generic.RedirectView):
     """
     Lisätään tehtävä tarkastukseen.
     """
@@ -104,8 +104,10 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
         return super().get_redirect_url(*args, **kwargs)
     
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
-        filled_form = ExerciseForm(request.POST, request.FILES, instance=exercise)
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
+        filled_form = ExerciseForm(request.POST, request.FILES,
+                                   instance=exercise)
         
         if filled_form.is_valid():
             # Tää on tyhmästi tehty? On olemassa joku save(commit=False)
@@ -117,7 +119,8 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
         return self.get(request, *args, **kwargs)
         
         
-class DisableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView):
+class DisableExerciseTraceRedirectView(LoginRequiredMixin,
+                                       generic.RedirectView):
     """
     Perutaan tehtävän tarkastus.
     """
@@ -128,7 +131,8 @@ class DisableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView)
         return super().get_redirect_url(*args, **kwargs)
     
     def get(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
 
         exercise.trace = False
         exercise.save()
@@ -136,59 +140,97 @@ class DisableExerciseTraceRedirectView(LoginRequiredMixin, generic.RedirectView)
             
         return super().get(request, *args, **kwargs)
         
-        
-class ChangeGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
-    """
-    Vaihdetaan tehtävän tarkastajaa.
-    """
-    pattern_name = "submissions:submissions"
-    
-    def post(self, request, *args, **kwargs):
-        ChangeGraderFormset = modelformset_factory(Feedback, form=FeedbackForm)
-        formset = ChangeGraderFormset(request.POST)
-        
-        if formset.is_valid():
-            formset.save()
-            messages.success(request, "Muutokset arvostelijoihin tallennettu.")
-        else:
-            messages.error(request, "Lomake ei ole validi!")
-            
-        return self.get(request, *args, **kwargs)
 
-
-class SubmissionsView(LoginRequiredMixin, generic.ListView):
+class GradingListView(LoginRequiredMixin, generic.ListView):
     """
-    Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
-    TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa manuaalisesti.
-    TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
-          silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
-
+    Listaa käyttäjälle hänen arvostelulistallaan olevat palautukset 
+    sekä ne palautukse, joilla ei vielä ole lainkaan arvostelijaa. 
+    Jos tehtävään on valittu automaattinen jako, kaikilla palautuksilla 
+    pitäisi aina olla joku arvostelija.
     """
-    template_name = "submissions/submissions.html"
-    context_object_name = "submissions_all"
+    template_name = "submissions/gradinglist.html"
+    context_object_name = "gradinglist"
     model = Feedback
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["exercise_id"] = self.kwargs["exercise_id"]
-        
-        
-        ChangeGraderFormset = modelformset_factory(Feedback, form=FeedbackForm, extra=0)
-        context["formset"] = ChangeGraderFormset(queryset=self.object_list)
-        
-        # print(context["formset"])
-        
+
+        SetGraderFormset = modelformset_factory(Feedback,
+                                                   form=SetGraderMeForm,
+                                                   extra=0)
+        queryset = self.get_queryset().filter(grader=None)
+        context["formset"] = SetGraderFormset(queryset=queryset)
         
         return context
     
-    def get(self, request, exercise_id):
-        exercise = get_object_or_404(Exercise, exercise_id=exercise_id)
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset().filter(grader=request.user)
+        return self.render_to_response(self.get_context_data())
+
+    def get_queryset(self):
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=self.kwargs["exercise_id"])
         update_submissions(exercise)
-        self.object_list = self.get_queryset().filter(exercise=exercise)
-        context = self.get_context_data()
-        context["submissions_me"] = self.object_list.filter(grader=request.user)
-        print(self.object_list)
-        return self.render_to_response(context)
+        return Feedback.objects.filter(exercise=exercise)
+
+
+class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
+    """
+    Lisätään palautus käyttäjän tarkastuslistalle.
+    """
+    pattern_name = "submissions:grading"
+
+    def post(self, request, *args, **kwargs):
+        SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm)
+        formset = SetGraderFormset(request.POST)
+
+        if formset.is_valid():
+            for form in formset.forms:
+                if form.cleaned_data.get("check_this"):
+                    feedback_obj = form.save(commit=False)
+                    feedback_obj.grader = request.user
+                    feedback_obj.save()
+
+            messages.success(request, "Palautukset lisätty "
+                                      "tarkastuslisatalle.")
+        else:
+            messages.error(request, "Virheellinen lomake!")
+
+        return self.get(request, *args, **kwargs)
+
+
+class SubmissionsFormView(LoginRequiredMixin, generic.FormView):
+    """
+    Lomakenäkymä, jolla palautuksen arvostelija voidaan vaihtaa/asettaa.
+
+    """
+    form_class = modelformset_factory(Feedback, form=ChangeGraderForm, extra=0)
+    template_name = "submissions/submissions_form.html"
+    
+    def form_valid(self, form):
+        for sub_form in form:
+            if sub_form.has_changed():
+                sub_form.save()
+        messages.success(self.request, "Muutokset tallennettu.")
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["exercise_id"] = self.kwargs["exercise_id"]
+        return context
+    
+    def get_form_kwargs(self):
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=self.kwargs["exercise_id"])
+        update_submissions(exercise)
+        kwargs = super().get_form_kwargs()
+        kwargs["queryset"] = Feedback.objects.filter(exercise=exercise)
+        return kwargs
+    
+    def get_success_url(self):
+        exercise_id = self.kwargs["exercise_id"]
+        return reverse_lazy("submissions:submissions", args=(exercise_id,))
 
 
 class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
@@ -205,7 +247,7 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
         context = super().get_context_data(**kwargs)
         feedback = context["object"]
         
-        if feedback.sub_url != "" and not "git" in feedback.sub_url:
+        if feedback.sub_url != "" and "git" not in feedback.sub_url:
             resp = requests.get(feedback.sub_url, headers=AUTH)
             resp.encoding = "utf-8"
             context["sub_code"] = resp.text
@@ -214,14 +256,15 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
         
     def get_success_url(self):
         exercise_id = self.kwargs["exercise_id"]
-        return reverse("submissions:submissions", args=(exercise_id,))
+        return reverse("submissions:grading", args=(exercise_id,))
           
 
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
-    pattern_name = "submissions:submissions"
+    pattern_name = "submissions:grading"
     
     def get(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise, exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
         feedbacks = exercise.feedback_set.filter(grader=request.user,
                                                  status=Feedback.READY, 
                                                  released=False)
@@ -235,6 +278,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
 
 
 # -----------------------------------------------------------------
+# Hylättyjä funktioita, testailua, kokeiluja jne.
 
 def kirjautumistesti(request):
     if request.user.is_authenticated:
@@ -242,7 +286,7 @@ def kirjautumistesti(request):
     else:
         print("Ei ketään!")
 
-class GradingListView(LoginRequiredMixin, generic.ListView):
+class GradingView(LoginRequiredMixin, generic.ListView):
     """
     Listataan kaikki tarkastettavat tehtävät kurssista riippumatta.
     HUOM! Tätä ei varmaan tarvita mihinkään.
@@ -258,12 +302,41 @@ class GradingListView(LoginRequiredMixin, generic.ListView):
 
 
 
+class SubmissionsView(LoginRequiredMixin, generic.ListView):
+    """
+    Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
+    TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa 
+    manuaalisesti.
+    TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
+          silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
 
-
-
-
-
-
-
+    """
+    template_name = "submissions/submissions.html"
+    context_object_name = "submissions"
+    model = Feedback
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["exercise_id"] = self.kwargs["exercise_id"]
         
-
+        ChangeGraderFormset = modelformset_factory(Feedback, 
+                                                   form=ChangeGraderForm, 
+                                                   extra=0)
+        context["formset"] = ChangeGraderFormset(
+            queryset=self.get_queryset().filter(
+                exercise=kwargs["exercise_id"]
+            )
+        )
+        
+        return context
+    
+    def get(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
+        
+        update_submissions(exercise)
+        
+        self.object_list = self.get_queryset().filter(
+            exercise=exercise).filter(grader=request.user)
+        
+        return self.render_to_response(self.get_context_data())
