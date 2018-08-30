@@ -18,24 +18,18 @@ class ExerciseForm(forms.ModelForm):
 class ChangeGraderForm(forms.ModelForm):
     class Meta:
         model = Feedback
-        fields = ["sub_id", "students", "grader"]
+        fields = ["grader"]
         labels = {
-            "sub_id": "Palautuksen id plussassa",
-            "students": "Opiskelijat",
             "grader": "Arvostelija"
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["sub_id"].widget.attrs["required"] = False
-        self.fields["sub_id"].widget.attrs["readonly"] = True
-        self.fields["students"].widget.attrs["required"] = False
-        self.fields["students"].widget.attrs["readonly"] = True
-        self.fields['students'].queryset = kwargs['instance'].students
 
-
-class SetGraderMeForm(ChangeGraderForm):
+class SetGraderMeForm(forms.ModelForm):
     check_this = forms.BooleanField(required=False)
     
     class Meta:
-        fields = ["sub_id", "students", "check_this"]
+        model = Feedback
+        fields = ["check_this"]
+        help_texts = {
+            "check_this": "Valitse arvosteltavaksi.",
+        }

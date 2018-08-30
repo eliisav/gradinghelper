@@ -18,17 +18,22 @@
     <div class="collapse mt-4" id="submissions_all">
 -->
 
-        <h1> Kaikki arvosteltavat palautukset </h1>
-        <form method="post" action="{% url 'submissions:submissions' exercise_id %}">
-          {% csrf_token %}
-          {{ form.management_form }}
-          {% for sub_form in form %}
-            <div class="card card-body">
-              {% bootstrap_form sub_form %}
-            </div>
-          {% endfor %}
-          <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
-        </form>
+    <h1> Kaikki arvosteltavat palautukset </h1>
+    <form method="post" action="{% url 'submissions:submissions' exercise_id %}">
+      {% csrf_token %}
+      {{ form.management_form }}
+        {% for sub_form in form %}
+          <div class="form-group">
+            {{ sub_form.id }}
+            {{ sub_form.instance.sub_id }}
+            {% for student in sub_form.instance.students.all %}
+              {{ student }}
+            {% endfor %}
+            {{ sub_form.grader }}
+          </div>
+        {% endfor %}
+      <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
+    </form>
 
     
    <!-- </div> collapse -->

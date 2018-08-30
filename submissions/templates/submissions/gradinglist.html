@@ -4,8 +4,9 @@
 {% block content %}
 
   <div class="col-md-6">
+    <h1> Omat arvosteltavat </h1>
+
     {% if gradinglist %}
-      <h1> Omat arvosteltavat </h1>
       <ul class="list-group">
         {% for sub in gradinglist %}
         
@@ -69,16 +70,27 @@
 -->
 
     <h1> Palautukset joilla ei vielä ole arvostelijaa </h1>
-    <form method="post" action="{% url 'submissions:set_grader' exercise_id %}">
-      {% csrf_token %}
-      {{ formset.management_form }}
-      {% for form in formset %}
-        <div class="card card-body">
-          {% bootstrap_form form %}
-        </div>
-      {% endfor %}
-      <button type="submit" class="btn btn-primary">Lisää omalle listalle</button>
-    </form>
+    {% if formset.forms %}
+      <form method="post" action="{% url 'submissions:set_grader' exercise_id %}">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% for form in formset %}
+          <div class="form-group">
+            {{ form.id }}
+            {{ form.instance.sub_id }}
+            {% for student in form.instance.students.all %}
+              {{ student }}
+            {% endfor %}
+            {{ form.check_this }}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Lisää omalle listalle</button>
+      </form>
+    {% else %}
+      <div class="alert alert-info" role="alert">
+        Ei palautuksia.
+      </div>
+    {% endif %}
 
 
    <!-- </div> collapse -->
