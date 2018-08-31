@@ -19,8 +19,11 @@ def get_json(url):
 
 def add_user_to_course(user, user_role, course_html_url):
     """
-    
-    return: 
+    Lisätään käyttäjä kurssille LTI-kirjautumisessa saatujen tietojen mukaan.
+    :param user: (User) käyttäjäobjekti
+    :param user_role: (str) Kirjautumistietojen mukainen rooli kurssilla.
+    :param course_html_url: (str) Kurssisivuston verkko-osoite.
+    :return: 
     """
     try:
         course = Course.objects.get(html_url=course_html_url)
@@ -115,7 +118,7 @@ def update_submissions(exercise):
 
     for sub in subsdata:
         
-        # print(sub)
+        print(sub)
         
         # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
         # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
@@ -146,8 +149,8 @@ def update_submissions(exercise):
         
         add_students(sub["Email"], feedback)
 
-    # if exercise.auto_div:
-    #divide_submissions(exercise)
+    if exercise.auto_div:
+        divide_submissions(exercise)
 
 
 def check_deadline(exercise):

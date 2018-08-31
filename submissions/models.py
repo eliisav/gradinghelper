@@ -36,14 +36,13 @@ class Exercise(models.Model):
     trace = models.BooleanField(default=False)
     
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
-    # Jos auto_div=False assari valitsee itse tehtävät tarkastukseen
-    #auto_div = models.BooleanField(default=False)
+    # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
+    auto_div = models.BooleanField(default=False)
     
     # Tarvitaanko näitä?
     #max_points = models.PositiveSmallIntegerField(null=True, blank=True)  
     #deadline = models.DateTimeField(default=timezone.now)
-    
-    
+
     def __str__(self):
         return self.name
 
@@ -83,4 +82,3 @@ class Feedback(models.Model):
         
     def __str__(self):
         return str(self.sub_id)
-

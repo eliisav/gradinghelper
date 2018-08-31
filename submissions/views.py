@@ -111,9 +111,10 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin,
         
         if filled_form.is_valid():
             # Tää on tyhmästi tehty? On olemassa joku save(commit=False)
+            exercise = filled_form.save(commit=False)
             exercise.trace = True
             exercise.save()
-            filled_form.save()
+
             messages.success(request, "Tehtävän lisääminen onnistui.")
             
         return self.get(request, *args, **kwargs)
@@ -156,9 +157,8 @@ class GradingListView(LoginRequiredMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context["exercise_id"] = self.kwargs["exercise_id"]
 
-        SetGraderFormset = modelformset_factory(Feedback,
-                                                   form=SetGraderMeForm,
-                                                   extra=0)
+        SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm,
+                                                extra=0)
         queryset = self.get_queryset().filter(grader=None)
         context["formset"] = SetGraderFormset(queryset=queryset)
         
@@ -193,7 +193,7 @@ class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
                     feedback_obj.save()
 
             messages.success(request, "Palautukset lisätty "
-                                      "tarkastuslisatalle.")
+                                      "tarkastuslistalle.")
         else:
             messages.error(request, "Virheellinen lomake!")
 
@@ -297,9 +297,6 @@ class GradingView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         return Exercise.objects.all().filter(trace=True) 
-
-
-
 
 
 class SubmissionsView(LoginRequiredMixin, generic.ListView):

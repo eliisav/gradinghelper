@@ -19,21 +19,28 @@
 -->
 
     <h1> Kaikki arvosteltavat palautukset </h1>
-    <form method="post" action="{% url 'submissions:submissions' exercise_id %}">
-      {% csrf_token %}
-      {{ form.management_form }}
-        {% for sub_form in form %}
-          <div class="form-group">
-            {{ sub_form.id }}
-            {{ sub_form.instance.sub_id }}
-            {% for student in sub_form.instance.students.all %}
-              {{ student }}
+    {% if form.forms %}
+        <form method="post" action="{% url 'submissions:submissions' exercise_id %}">
+          {% csrf_token %}
+          {{ form.management_form }}
+            {% for sub_form in form %}
+              <div class="form-group">
+                {{ sub_form.id }}
+                {{ sub_form.instance.sub_id }}
+                {% for student in sub_form.instance.students.all %}
+                  {{ student }}
+                {% endfor %}
+                {{ sub_form.grader }}
+              </div>
             {% endfor %}
-            {{ sub_form.grader }}
-          </div>
-        {% endfor %}
-      <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
-    </form>
+          <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
+        </form>
+    {% else %}
+      <div class="alert alert-info" role="alert">
+        Ei palautuksia.
+      </div>
+    {% endif %}
+
 
     
    <!-- </div> collapse -->

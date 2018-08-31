@@ -1,12 +1,19 @@
 from django import forms
-from .models import Exercise, Feedback
+from .models import Exercise, Feedback, User
+from django.db.models import Q
 
 
 class ExerciseForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        # Lisää field auto_div
-        fields = ["min_points", "consent_exercise", "feedback_base"]
+        fields = ["min_points", "consent_exercise", "auto_div",
+                  "feedback_base"]
+        labels = {
+            "min_points": "Vähimmäispisteet:",
+            "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
+            "auto_div": "Automaattinen työnjako",
+            "feedback_base": "Palautepohja:"
+        }
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,6 +29,12 @@ class ChangeGraderForm(forms.ModelForm):
         labels = {
             "grader": "Arvostelija"
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        course = kwargs["instance"].exercise.course
+        self.fields["grader"].queryset = User.objects.filter(
+            Q(my_courses=course) | Q(responsibilities=course)).distinct()
 
 
 class SetGraderMeForm(forms.ModelForm):
