@@ -110,12 +110,16 @@ class EnableExerciseTraceRedirectView(LoginRequiredMixin,
                                    instance=exercise)
         
         if filled_form.is_valid():
-            # Tää on tyhmästi tehty? On olemassa joku save(commit=False)
             exercise = filled_form.save(commit=False)
-            exercise.trace = True
-            exercise.save()
-
-            messages.success(request, "Tehtävän lisääminen onnistui.")
+            if check_filetype(exercise.feedback_base):
+                exercise.trace = True
+                exercise.save()
+                messages.success(request, "Tehtävän lisääminen onnistui.")
+            else:
+                messages.error(request, "Ladatun tiedoston pääte ei ollut "
+                                        ".txt tai tiedosto on liian suuri.")
+        else:
+            messages.error(request, "Virheellinen lomake!")
             
         return self.get(request, *args, **kwargs)
         
@@ -125,6 +129,9 @@ class DisableExerciseTraceRedirectView(LoginRequiredMixin,
     """
     Perutaan tehtävän tarkastus.
     """
+
+    # TODO: nyt mitään tehtävään liittyvää ei poisteta. Pitäisikö?
+
     pattern_name = "submissions:exercises"
     
     def get_redirect_url(self, *args, **kwargs):
@@ -155,24 +162,24 @@ class GradingListView(LoginRequiredMixin, generic.ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["exercise_id"] = self.kwargs["exercise_id"]
+        context["exercise_id"] = kwargs["exercise"].exercise_id
 
         SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm,
                                                 extra=0)
-        queryset = self.get_queryset().filter(grader=None)
+        queryset = self.get_queryset().filter(
+            exercise=kwargs["exercise"]).filter(grader=None)
         context["formset"] = SetGraderFormset(queryset=queryset)
         
         return context
     
     def get(self, request, *args, **kwargs):
-        self.object_list = self.get_queryset().filter(grader=request.user)
-        return self.render_to_response(self.get_context_data())
-
-    def get_queryset(self):
         exercise = get_object_or_404(Exercise,
-                                     exercise_id=self.kwargs["exercise_id"])
+                                     exercise_id=kwargs["exercise_id"])
         update_submissions(exercise)
-        return Feedback.objects.filter(exercise=exercise)
+        self.object_list = self.get_queryset().filter(
+            exercise=exercise).filter(grader=request.user)
+        return self.render_to_response(
+            self.get_context_data(exercise=exercise))
 
 
 class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
@@ -205,6 +212,9 @@ class SubmissionsFormView(LoginRequiredMixin, generic.FormView):
     Lomakenäkymä, jolla palautuksen arvostelija voidaan vaihtaa/asettaa.
 
     """
+
+    # TODO: palautusten päivittäminen tähän näkymään tultaessa
+
     form_class = modelformset_factory(Feedback, form=ChangeGraderForm, extra=0)
     template_name = "submissions/submissions_form.html"
     
@@ -223,7 +233,6 @@ class SubmissionsFormView(LoginRequiredMixin, generic.FormView):
     def get_form_kwargs(self):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=self.kwargs["exercise_id"])
-        update_submissions(exercise)
         kwargs = super().get_form_kwargs()
         kwargs["queryset"] = Feedback.objects.filter(exercise=exercise)
         return kwargs
@@ -298,16 +307,16 @@ class GradingView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return Exercise.objects.all().filter(trace=True) 
 
-
+"""
 class SubmissionsView(LoginRequiredMixin, generic.ListView):
-    """
+
     Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
     TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa 
     manuaalisesti.
     TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
           silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
 
-    """
+
     template_name = "submissions/submissions.html"
     context_object_name = "submissions"
     model = Feedback
@@ -337,3 +346,4 @@ class SubmissionsView(LoginRequiredMixin, generic.ListView):
             exercise=exercise).filter(grader=request.user)
         
         return self.render_to_response(self.get_context_data())
+"""

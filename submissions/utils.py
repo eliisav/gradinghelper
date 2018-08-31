@@ -3,6 +3,7 @@ Module for various utility functions
 """
 
 
+# import filetype, jos käytät tätä muista lisätä tiedostoon requirements.txt
 import requests
 from .models import Course, Exercise, Feedback, Student
 from django.conf import settings
@@ -118,7 +119,7 @@ def update_submissions(exercise):
 
     for sub in subsdata:
         
-        print(sub)
+        # print(sub)
         
         # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
         # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
@@ -146,7 +147,8 @@ def update_submissions(exercise):
             feedback = Feedback(exercise=exercise, sub_id=sub["SubmissionID"], 
                                 sub_url=sub_url)
             feedback.save()
-        
+
+        add_feedback_base(exercise, feedback)
         add_students(sub["Email"], feedback)
 
     if exercise.auto_div:
@@ -174,6 +176,18 @@ def check_consent(student_email, exercise):
                 return True
 
     return False
+
+
+def add_feedback_base(exercise, feedback):
+    # Lisätään palautepohja, jos sellainen on tehtävään liitetty.
+    if exercise.feedback_base:
+        try:
+            feedback.feedback = exercise.feedback_base.open("r").read()
+        except ValueError as e:
+            feedback.feedback = f"Virhe luettaessa palautepohjaa: {e}"
+
+        exercise.feedback_base.close()
+        feedback.save()
 
 
 def add_students(student_email, new_feedback):
@@ -271,4 +285,24 @@ def create_json(feedbacks):
         return True
     else:
         print("Ei arvosteltuja palautuksia.")
+        return False
+
+
+def check_filetype(fileobject):
+    """
+    Tarkastellaan ladatun tiedoston kokoa ja tiedostopäätettä.
+    :param fileobject: (FieldFile)
+    :return: True jos tiedostoa ei ole lainkaan tai se on pääteltävissä 
+    tekstitiedostoksi.
+    """
+
+    if not fileobject:
+        return True
+
+    # Oletetaan tiedoston olevan tekstitiedosto, jos tiedoston koko on
+    # alle 500 kB ja tiedostopääte on .txt.
+    # print(fileobject.size)
+    if fileobject.name.endswith("txt") and fileobject.size < 500000:
+        return True
+    else:
         return False
