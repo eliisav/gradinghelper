@@ -7,6 +7,7 @@ Module for various utility functions
 import requests
 from .models import Course, Exercise, Feedback, Student
 from django.conf import settings
+from django.core.cache import cache
 
 
 AUTH = {'Authorization': settings.TOKEN}
@@ -74,9 +75,14 @@ def get_exercises(course):
     return: lista tehtävistä
     """
 
+    modules = cache.get(course.course_id)
+    if modules:
+        return
+
     exercises_url = f"{API_URL}courses/{course.course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
-    
+    cache.set(course.course_id, modules)
+
     # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
     for sub_module in modules:
         # Käydään läpi jokainen materiaali/tehtävä ja tutkitaan onko kyseessä
@@ -104,17 +110,20 @@ def get_submissions(exercise):
     pyydettyä tiedot kyseisen tehtävän viimeisimmistä/parhaista palautuksista.
     param exercise: (models.Exercise) tehtäväobjekti
     """
-
     data_url = f"{API_URL}courses/{exercise.course.course_id}/submissiondata/"
     query_url = f"{data_url}?exercise_id={exercise.exercise_id}&format=json"
-    
-    # print("SUB_DATA_URL:", data_url)
-    
     return get_json(query_url)
 
 
 def update_submissions(exercise):
+    subsdata = cache.get(exercise.exercise_id)
+    # Funktiota ei tarvitse suorittaa, jos data ei ole muuttunut.
+    if subsdata:
+        return
+
     subsdata = get_submissions(exercise)
+    cache.set(exercise.exercise_id, subsdata)
+
     deadline_passed = check_deadline(exercise)
 
     for sub in subsdata:
