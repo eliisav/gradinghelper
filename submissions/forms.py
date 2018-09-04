@@ -4,9 +4,10 @@ from django.db.models import Q
 
 
 class ExerciseForm(forms.ModelForm):
+
     class Meta:
         model = Exercise
-        fields = ["min_points", "consent_exercise", "auto_div",
+        fields = ["name", "min_points", "consent_exercise", "auto_div",
                   "feedback_base"]
         labels = {
             "min_points": "Vähimmäispisteet:",
@@ -16,10 +17,16 @@ class ExerciseForm(forms.ModelForm):
         }
         
     def __init__(self, *args, **kwargs):
+        course = kwargs.pop("course")
+
         super().__init__(*args, **kwargs)
+
+        self.fields["name"] = forms.ModelChoiceField(
+            queryset=Exercise.objects.filter(
+                course=course).filter(trace=False))
+        self.fields["name"].label = "Tehtävä:"
         self.fields["consent_exercise"].queryset = Exercise.objects.filter(
-            course=kwargs["instance"].course
-        )
+            course=course)
 
 
 class ChangeGraderForm(forms.ModelForm):

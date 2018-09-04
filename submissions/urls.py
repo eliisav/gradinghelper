@@ -28,7 +28,7 @@ urlpatterns = [
          views.ExerciseListView.as_view(), name='exercises'),
     path('courses/<int:course_id>/exercises/update/',
          views.UpdateExerciseListRedirectView.as_view(), name='update'),
-    path('courses/<int:course_id>/exercises/<int:exercise_id>/trace_on/',
+    path('courses/<int:course_id>/exercises/trace_on/',
          views.EnableExerciseTraceRedirectView.as_view(), name='trace_on'),
     path('courses/<int:course_id>/exercises/<int:exercise_id>/trace_off/',
          views.DisableExerciseTraceRedirectView.as_view(), name='trace_off'),

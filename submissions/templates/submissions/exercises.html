@@ -8,9 +8,9 @@
   
     <h1> Arvosteltavat tehtävät </h1>
     
-    {% if exercises_in_grading %}
+    {% if exercises %}
       <ul class="list-group exercises">
-        {% for exercise in exercises_in_grading %}
+        {% for exercise in exercises %}
           <li class="list-group-item {{ exercise.exercise_id }}">
           
             <div class="d-flex align-items-center">
@@ -57,10 +57,22 @@
   <div class="col-md-6">
 
     {% if user_is_teacher %}
-      <h1> Kaikki tehtävät </h1>
+      <h1> Lisää tehtäviä arvosteluun </h1>
       
       <a class="btn btn-primary" href="{% url 'submissions:update' course_id %}" role="button">Päivitä kurssin sisältö</a>
-      
+
+      <form action="{% url 'submissions:trace_on' course_id %}" method="post" class="form" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">Lisää</button>
+      </form>
+
+    {% endif %}
+
+  </div> <!-- column -->
+{% endblock %}
+
+    <!--
       {% if other_exercises %}
         <ul class="list-group all_exercises">
           {% for exercise in other_exercises%}
@@ -78,7 +90,7 @@
                 </div>
               </div> <!-- d-flex -->
                
-               
+              <!--
               <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
                 <div class="card card-body">
                   <form action="{% url 'submissions:trace_on' course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
@@ -89,7 +101,7 @@
                 </div>
               </div> <!-- collapse -->
               
-              
+       <!--
             </li>
           {% endfor %}
         </ul>
@@ -97,9 +109,4 @@
         <div class="alert alert-info" role="alert">
           Yhtään tehtävää ei löytynyt. Hae tehtäviä valitsemalla "Päivitä kurssin sisältö".
         </div>
-      {% endif %}
-    {% endif %}
-        
-  </div> <!-- column -->
-{% endblock %}
-
+      {% endif %} -->

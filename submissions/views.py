@@ -43,39 +43,20 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
     """
     model = Exercise
     template_name = "submissions/exercises.html"
-    context_object_name = "exercises_in_grading"
+    context_object_name = "exercises"
     
     def get(self, request, *args, **kwargs):
         course = get_object_or_404(Course, course_id=kwargs["course_id"])
-        queryset = self.get_queryset().filter(course=course)
-        
-        self.object_list = queryset.filter(trace=True)
-        
-        context = self.get_context_data()
-        context["course_id"] = kwargs["course_id"]
+        self.object_list = self.get_queryset().filter(
+            course=course).filter(trace=True)
+
+        context = self.get_context_data(course_id=kwargs["course_id"])
         
         if course.is_teacher(request.user):
             context["user_is_teacher"] = True
-            other_exercises = queryset.filter(trace=False)
-        
-            for exercise in other_exercises:
-                print("Luodaan lomake tehtävälle:", exercise)
-                exercise.form = ExerciseForm(instance=exercise)
-                
-            context["other_exercises"] = other_exercises
+            context["form"] = ExerciseForm(course=course)
 
-        print("Renderöidään html...")
         return self.render_to_response(context)
-
-
-"""        
-    
-        exercises = cache.get(course_id)
-        if not exercises:
-            exercises = get_exercises(course_id)
-            cache.set(course_id, exercises)
-        
-"""
 
 
 class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
@@ -161,13 +142,13 @@ class GradingListView(LoginRequiredMixin, generic.ListView):
     model = Feedback
     
     def get_context_data(self, **kwargs):
+        exercise = kwargs.pop("exercise")
         context = super().get_context_data(**kwargs)
-        context["exercise_id"] = kwargs["exercise"].exercise_id
-
+        context["exercise_id"] = exercise.exercise_id
         SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm,
                                                 extra=0)
         queryset = self.get_queryset().filter(
-            exercise=kwargs["exercise"]).filter(grader=None)
+            exercise=exercise).filter(grader=None)
         context["formset"] = SetGraderFormset(queryset=queryset)
         
         return context
