@@ -31,20 +31,19 @@
     <div class="container">
     
       <div class="row">
-        <div class="col-md-6" >
+        <div class="col-md-12" >
           {% if messages %}
             <ul class="list-group list-group-flush messages">
               {% for message in messages %}
-                <li {% if message.tags == "error" %} 
-                      class="list-group-item list-group-item-danger" 
-                    {% elif message.tags == "success" %}
-                      class="list-group-item list-group-item-success"
-                    {% else %}
-                      class="list-group-item list-group-item-info" {% endif %}>
-                    
+                {% if message.tags == "error" %}
+                  <li class="list-group-item list-group-item-danger">
+                {% elif message.tags == "success" %}
+                  <li class="list-group-item list-group-item-success">
+                {% else %}
+                  <li class="list-group-item list-group-item-info">
+                {% endif %}
                   {{ message }}
-                    
-                </li>
+                  </li>
               {% endfor %}
             </ul>
           {% endif %}
