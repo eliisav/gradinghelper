@@ -33,15 +33,11 @@ class Exercise(models.Model):
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
     feedback_base = models.FileField(null=True, blank=True, upload_to="files/")
-    trace = models.BooleanField(default=False)
-    
+    in_grading = models.BooleanField(default=False)
+
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
     auto_div = models.BooleanField(default=False)
-    
-    # Tarvitaanko näitä?
-    #max_points = models.PositiveSmallIntegerField(null=True, blank=True)  
-    #deadline = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name

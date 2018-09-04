@@ -2,7 +2,7 @@
 {% load bootstrap4 %}
 
 {% block content %}
-  <div class="col-md-6">
+  <div class="col-md-8">
   
   
   
@@ -32,7 +32,7 @@
                   </a>
 
                   {% if user_is_teacher %}
-                  <a class="btn btn-primary btn-sm" href="{% url 'submissions:trace_off' course_id exercise.exercise_id %}" role="button">
+                  <a class="btn btn-primary btn-sm" href="{% url 'submissions:grading_off' course_id exercise.exercise_id %}" role="button">
                     Peruuta tarkastus
                   </a>
                   {% endif %}
@@ -54,14 +54,14 @@
     {% endif %}
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-4">
 
     {% if user_is_teacher %}
       <h1> Lisää tehtäviä arvosteluun </h1>
       
-      <a class="btn btn-primary" href="{% url 'submissions:update' course_id %}" role="button">Päivitä kurssin sisältö</a>
+      <a class="btn btn-primary" href="{% url 'submissions:update_exercise_list' course_id %}" role="button">Päivitä kurssin sisältö</a>
 
-      <form action="{% url 'submissions:trace_on' course_id %}" method="post" class="form" enctype="multipart/form-data">
+      <form action="{% url 'submissions:grading_on' course_id %}" method="post" class="form" enctype="multipart/form-data">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Lisää</button>
@@ -93,7 +93,7 @@
               <!--
               <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
                 <div class="card card-body">
-                  <form action="{% url 'submissions:trace_on' course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
+                  <form action="{% url 'submissions:grading_on' course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% bootstrap_form exercise.form %}
                     <button type="submit" class="btn btn-primary">Lisää</button>
