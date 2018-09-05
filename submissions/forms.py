@@ -17,16 +17,24 @@ class ExerciseForm(forms.ModelForm):
         }
         
     def __init__(self, *args, **kwargs):
-        course = kwargs.pop("course")
+        course = None
+
+        if "course" in kwargs:
+            course = kwargs.pop("course")
 
         super().__init__(*args, **kwargs)
 
-        self.fields["name"] = forms.ModelChoiceField(
-            queryset=Exercise.objects.filter(
-                course=course).filter(trace=False))
-        self.fields["name"].label = "Tehtävä:"
-        self.fields["consent_exercise"].queryset = Exercise.objects.filter(
-            course=course)
+        if course:
+            self.fields["name"] = forms.ModelChoiceField(
+                queryset=Exercise.objects.filter(
+                    course=course
+                ).filter(
+                    in_grading=False)
+            )
+            self.fields["name"].label = "Tehtävä:"
+            self.fields["consent_exercise"].queryset = Exercise.objects.filter(
+                course=course
+            )
 
 
 class ChangeGraderForm(forms.ModelForm):

@@ -6,8 +6,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms import modelformset_factory
 
-# from django.core.cache import cache
-# from django.http import HttpResponseRedirect
 
 from .forms import ExerciseForm, ChangeGraderForm, SetGraderMeForm
 from .utils import *
@@ -48,7 +46,7 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
     def get(self, request, *args, **kwargs):
         course = get_object_or_404(Course, course_id=kwargs["course_id"])
         self.object_list = self.get_queryset().filter(
-            course=course).filter(trace=True)
+            course=course).filter(in_grading=True)
 
         context = self.get_context_data(course_id=kwargs["course_id"])
         
@@ -71,46 +69,58 @@ class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
         messages.success(request, "Kurssin sisältö päivitetty.")
             
         return super().get(request, *args, **kwargs)
-                                        
 
-class EnableExerciseTraceRedirectView(LoginRequiredMixin,
-                                      generic.RedirectView):
+
+class EnableExerciseGradingRedirectView(LoginRequiredMixin,
+                                        generic.RedirectView):
     """
     Lisätään tehtävä tarkastukseen.
     """
     pattern_name = "submissions:exercises"
     
-    def get_redirect_url(self, *args, **kwargs):
-        del kwargs["exercise_id"]
-        return super().get_redirect_url(*args, **kwargs)
-    
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
-        filled_form = ExerciseForm(request.POST, request.FILES,
-                                   instance=exercise)
-        
-        if filled_form.is_valid():
-            exercise = filled_form.save(commit=False)
-            if check_filetype(exercise.feedback_base):
-                exercise.trace = True
+        form = ExerciseForm(request.POST, request.FILES)
+
+        if form.is_valid():
+
+            print(request.FILES['feedback_base'])
+
+            if check_filetype(request.FILES['feedback_base']):
+                """
+                Exercise.objects.filter(
+                    pk=form.cleaned_data["name"]
+                ).update(
+                    min_points=form.cleaned_data["min_points"],
+                    consent_exercise=form.cleaned_data["consent_exercise"],
+                    auto_div=form.cleaned_data["auto_div"],
+                    feedback_base=request.FILES["feedback_base"],
+                    in_grading=True
+                )
+                """
+                save_file(request.FILES["feedback_base"])
+                exercise = Exercise.objects.get(pk=form.cleaned_data["name"])
+                exercise.min_points=form.cleaned_data["min_points"]
+                exercise.consent_exercise=form.cleaned_data["consent_exercise"]
+                exercise.auto_div = form.cleaned_data["auto_div"]
+                exercise.in_grading=True
+                exercise.feedback_base = request.FILES["feedback_base"]
                 exercise.save()
                 messages.success(request, "Tehtävän lisääminen onnistui.")
             else:
                 messages.error(request, "Ladatun tiedoston pääte ei ollut "
                                         ".txt tai tiedosto on liian suuri.")
+
         else:
             messages.error(request, "Virheellinen lomake!")
             
         return self.get(request, *args, **kwargs)
         
         
-class DisableExerciseTraceRedirectView(LoginRequiredMixin,
+class DisableExerciseGradingRedirectView(LoginRequiredMixin,
                                        generic.RedirectView):
     """
     Perutaan tehtävän tarkastus.
     """
-
     # TODO: nyt mitään tehtävään liittyvää ei poisteta. Pitäisikö?
 
     pattern_name = "submissions:exercises"
@@ -123,7 +133,7 @@ class DisableExerciseTraceRedirectView(LoginRequiredMixin,
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
 
-        exercise.trace = False
+        exercise.in_grading = False
         exercise.save()
         messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
             
@@ -276,6 +286,7 @@ def kirjautumistesti(request):
     else:
         print("Ei ketään!")
 
+
 class GradingView(LoginRequiredMixin, generic.ListView):
     """
     Listataan kaikki tarkastettavat tehtävät kurssista riippumatta.
@@ -286,7 +297,7 @@ class GradingView(LoginRequiredMixin, generic.ListView):
     context_object_name = "exercises"
 
     def get_queryset(self):
-        return Exercise.objects.all().filter(trace=True) 
+        return Exercise.objects.all().filter(in_grading=True)
 
 """
 class SubmissionsView(LoginRequiredMixin, generic.ListView):

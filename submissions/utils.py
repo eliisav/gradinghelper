@@ -117,7 +117,7 @@ def get_submissions(exercise):
 
 def update_submissions(exercise):
     subsdata = cache.get(exercise.exercise_id)
-    # Funktiota ei tarvitse suorittaa, jos data ei ole muuttunut.
+
     if subsdata:
         return
 
@@ -190,6 +190,7 @@ def check_consent(student_email, exercise):
 def add_feedback_base(exercise, feedback):
     # Lisätään palautepohja, jos sellainen on tehtävään liitetty.
     if exercise.feedback_base:
+        print(exercise.feedback_base.name)
         try:
             feedback.feedback = exercise.feedback_base.open("r").read()
         except ValueError as e:
@@ -295,6 +296,14 @@ def create_json(feedbacks):
     else:
         print("Ei arvosteltuja palautuksia.")
         return False
+
+
+def save_file(fileobject):
+    with open(f"files/{fileobject.name}.txt", "wb") as file:
+        for chunk in fileobject.chunks():
+            file.write(chunk)
+
+
 
 
 def check_filetype(fileobject):
