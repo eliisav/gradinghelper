@@ -36,7 +36,7 @@ def add_user_to_course(user, user_role, course_html_url):
     if course:
         if user_role == "Instructor":
             course.teachers.add(user)
-        elif user_role == "TA,TeachingAssistant":
+        if user_role == "TA,TeachingAssistant":
             course.assistants.add(user)
 
 
@@ -116,10 +116,11 @@ def get_submissions(exercise):
 
 
 def update_submissions(exercise):
-    subsdata = cache.get(exercise.exercise_id)
 
+    subsdata = cache.get(exercise.exercise_id)
     if subsdata:
         return
+
 
     subsdata = get_submissions(exercise)
     cache.set(exercise.exercise_id, subsdata)
@@ -304,23 +305,24 @@ def save_file(fileobject):
             file.write(chunk)
 
 
-
-
 def check_filetype(fileobject):
     """
     Tarkastellaan ladatun tiedoston kokoa ja tiedostopäätettä.
-    :param fileobject: (FieldFile)
+    :param fileobject: (InMemoryUploadedFile)
     :return: True jos tiedostoa ei ole lainkaan tai se on pääteltävissä 
     tekstitiedostoksi.
     """
 
+    # print(fileobject.size)
+
+    # Jos tiedostoa ei ole annettu, kyseessä ei ole virhe
     if not fileobject:
         return True
 
     # Oletetaan tiedoston olevan tekstitiedosto, jos tiedoston koko on
     # alle 500 kB ja tiedostopääte on .txt.
-    # print(fileobject.size)
-    if fileobject.name.endswith("txt") and fileobject.size < 500000:
+    elif fileobject.name.endswith("txt") and fileobject.size < 500000:
         return True
+
     else:
         return False

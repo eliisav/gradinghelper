@@ -79,36 +79,70 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
     pattern_name = "submissions:exercises"
     
     def post(self, request, *args, **kwargs):
-        form = ExerciseForm(request.POST, request.FILES)
-
-        if form.is_valid():
-
-            print(request.FILES['feedback_base'])
-
-            if check_filetype(request.FILES['feedback_base']):
-                """
-                Exercise.objects.filter(
-                    pk=form.cleaned_data["name"]
-                ).update(
-                    min_points=form.cleaned_data["min_points"],
-                    consent_exercise=form.cleaned_data["consent_exercise"],
-                    auto_div=form.cleaned_data["auto_div"],
-                    feedback_base=request.FILES["feedback_base"],
-                    in_grading=True
-                )
-                """
-                save_file(request.FILES["feedback_base"])
-                exercise = Exercise.objects.get(pk=form.cleaned_data["name"])
-                exercise.min_points=form.cleaned_data["min_points"]
-                exercise.consent_exercise=form.cleaned_data["consent_exercise"]
-                exercise.auto_div = form.cleaned_data["auto_div"]
-                exercise.in_grading=True
-                exercise.feedback_base = request.FILES["feedback_base"]
+        """        
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
+        filled_form = ExerciseForm(request.POST, request.FILES,
+                                   instance=exercise)
+        
+        if filled_form.is_valid():
+            exercise = filled_form.save(commit=False)
+            if check_filetype(exercise.feedback_base):
+                exercise.trace = True
                 exercise.save()
                 messages.success(request, "Tehtävän lisääminen onnistui.")
             else:
                 messages.error(request, "Ladatun tiedoston pääte ei ollut "
                                         ".txt tai tiedosto on liian suuri.")
+        """
+
+        form = ExerciseForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            """
+            Exercise.objects.filter(
+                pk=form.cleaned_data["name"]
+            ).update(
+                min_points=form.cleaned_data["min_points"],
+                consent_exercise=form.cleaned_data["consent_exercise"],
+                auto_div=form.cleaned_data["auto_div"],
+                feedback_base=request.FILES["feedback_base"],
+                in_grading=True
+            )
+            """
+
+            print(type(request.FILES['feedback_base']))
+
+            exercise = get_object_or_404(Exercise,
+                                         pk=form.cleaned_data["name"])
+
+            # Palautepohjatiedoston puuttuminen kokonaan on ok
+            file_ok = True
+
+            if "feedback_base" in request.FILES:
+                # Jos palautepohja oli annettu, niin tarkastetaan että se on
+                # tekstitiedosto
+                file_ok = check_filetype(request.FILES["feedback_base"])
+
+                # print(file_ok)
+
+                if file_ok:
+                    save_file(request.FILES["feedback_base"])
+                    exercise.feedback_base = request.FILES["feedback_base"]
+                else:
+                    messages.error(request, "Ladatun tiedoston pääte ei "
+                                            "ollut .txt tai tiedosto on "
+                                            "liian suuri.")
+
+            # Jos tiedosto oli annettu ja se oli ok, tai tiedosto puuttuu
+            # kokonaan, niin voidaan päivittää exercise-objektin kentät
+            if file_ok:
+                exercise.min_points=form.cleaned_data["min_points"]
+                exercise.consent_exercise=form.cleaned_data["consent_exercise"]
+                exercise.auto_div = form.cleaned_data["auto_div"]
+                exercise.in_grading=True
+                exercise.save()
+                messages.success(request, "Tehtävän lisääminen onnistui.")
 
         else:
             messages.error(request, "Virheellinen lomake!")
