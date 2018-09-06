@@ -4,21 +4,25 @@
 {% block content %}
 
   <div class="col-md-6">
-    <a href="{{ feedback.sub_url }}">{{ feedback.sub_url }}</a>
-    <pre>{{ sub_code }}</pre>
+
+    {% for obj in sub_data %}
+      <pre>{{ obj.title }}</pre>
+      <a href="{{ obj.url }}">{{ obj.url }}</a>
+      <pre>{{ obj.content }}</pre>
+    {% endfor %}
+
   </div>
   
   
   <div class="col-md-6">
+
     <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
       <a class="btn btn-warning" href="{% url 'submissions:grading' feedback.exercise.exercise_id %}" role="button">Peruuta</a>
       <button type="submit" class="btn btn-success float-right">Tallenna</button>
     </form>
-    
-    
-    
+
   </div>
   
 {% endblock %}

@@ -29,7 +29,7 @@ class Exercise(models.Model):
     exercise_id = models.PositiveIntegerField(unique=True)
     module_id = models.PositiveIntegerField()
     name = models.CharField(max_length=200)
-    consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE, 
+    consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
     feedback_base = models.FileField(null=True, blank=True, upload_to="files/")
@@ -61,7 +61,6 @@ class Feedback(models.Model):
     
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     sub_id = models.IntegerField(unique=True)
-    sub_url = models.URLField()
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
     grader = models.ForeignKey(User, on_delete=models.CASCADE, null=True,
                                blank=True)

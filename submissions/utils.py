@@ -75,9 +75,11 @@ def get_exercises(course):
     return: lista tehtävistä
     """
 
+
     modules = cache.get(course.course_id)
     if modules:
         return
+
 
     exercises_url = f"{API_URL}courses/{course.course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
@@ -91,7 +93,6 @@ def get_exercises(course):
             details = get_json(exercise["url"])
             # print(details)
             if "is_submittable" in details and details["is_submittable"]:
-            
                 try:
                     exercise = Exercise.objects.get(exercise_id=details["id"])
                     
@@ -120,7 +121,7 @@ def update_submissions(exercise):
     subsdata = cache.get(exercise.exercise_id)
     if subsdata:
         return
-
+    
 
     subsdata = get_submissions(exercise)
     cache.set(exercise.exercise_id, subsdata)
@@ -144,25 +145,82 @@ def update_submissions(exercise):
             feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
             
         except Feedback.DoesNotExist:
-            # Etsitään palautetun tiedoston/gitrepon url.
-            # HUOM! Kaikilla tehtävillä ei ole mitään urlia ja
-            # kentät voivat olla eri nimisiä!!!
-            if "ohjelma.py" in sub:
-                sub_url = sub["ohjelma.py"]
-            elif "git" in sub:
-                sub_url = sub["git"]
-            else:
-                sub_url = ""
-
-            feedback = Feedback(exercise=exercise, sub_id=sub["SubmissionID"], 
-                                sub_url=sub_url)
+            feedback = Feedback(exercise=exercise, sub_id=sub["SubmissionID"])
             feedback.save()
 
         add_feedback_base(exercise, feedback)
-        add_students(sub["Email"], feedback)
+        add_student(sub["Email"], feedback)
 
     if exercise.auto_div:
         divide_submissions(exercise)
+
+
+def get_submission_data(feedback):
+    exercise_url = f"{API_URL}exercises/{feedback.exercise.exercise_id}/"
+    form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
+
+    sub_url = f"{API_URL}submissions/{feedback.sub_id}/"
+    sub_info = get_json(sub_url)
+
+    sub_data = []
+
+    # Kun palautetaan git-url, "form_spec" näyttää jäävän tyhjäksi
+    if len(form_spec) == 0 and sub_info["submission_data"]:
+        sub_data.append(
+            {
+                "title": "Linkki course-gitlabiin:",
+                "url": sub_info["submission_data"][0][1],
+                "content": ""
+            }
+        )
+
+    # Jos palautus ei ole git-url, se voi olla paljon muuta...
+    for field in form_spec:
+        if field["type"] == "file":
+            for file in sub_info["files"]:
+                if file["param_name"] == field["key"]:
+                    content = ""
+                    resp = requests.get(file["url"], headers=AUTH)
+
+                    if file["filename"].endswith(".py"):
+                        resp.encoding = "utf-8"
+                        content = resp.text
+
+                    sub_data.append(
+                        {
+                            "title": "",
+                            "url": file["url"],
+                            "content": content
+                        }
+                    )
+
+                    break
+
+        elif field["type"] == "textarea":
+            for area in sub_info["submission_data"]:
+                if area[0] == field["key"]:
+                    sub_data.append(
+                        {
+                            "title": field["title"],
+                            "url": "",
+                            "content": area[1]
+                        }
+                    )
+
+                    break
+
+    # print(sub_data)
+    return sub_data
+
+
+def append_data(data_list, title, url, content):
+    data_list.append(
+        {
+            "title": title,
+            "url": url,
+            "content": content
+        }
+    )
 
 
 def check_deadline(exercise):
@@ -191,7 +249,7 @@ def check_consent(student_email, exercise):
 def add_feedback_base(exercise, feedback):
     # Lisätään palautepohja, jos sellainen on tehtävään liitetty.
     if exercise.feedback_base:
-        print(exercise.feedback_base.name)
+        # print(exercise.feedback_base.name)
         try:
             feedback.feedback = exercise.feedback_base.open("r").read()
         except ValueError as e:
@@ -201,7 +259,7 @@ def add_feedback_base(exercise, feedback):
         feedback.save()
 
 
-def add_students(student_email, new_feedback):
+def add_student(student_email, new_feedback):
     try:
         student = Student.objects.get(email=student_email)
         
@@ -212,7 +270,7 @@ def add_students(student_email, new_feedback):
             if old_feedback != new_feedback:
                 print("Ei ole samat! Poista vanha ja lisää uusi tilalle:",
                       end=" ")
-                if not old_feedback.done:
+                if old_feedback.status is None:
                     old_feedback.delete()
                     student.my_feedbacks.add(new_feedback)
                 else:

@@ -111,8 +111,6 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
             )
             """
 
-            print(type(request.FILES['feedback_base']))
-
             exercise = get_object_or_404(Exercise,
                                          pk=form.cleaned_data["name"])
 
@@ -278,20 +276,15 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
     initial = {"status": Feedback.READY}
     
     def get_context_data(self, **kwargs):
+        feedback = self.object
         context = super().get_context_data(**kwargs)
-        feedback = context["object"]
-        
-        if feedback.sub_url != "" and "git" not in feedback.sub_url:
-            resp = requests.get(feedback.sub_url, headers=AUTH)
-            resp.encoding = "utf-8"
-            context["sub_code"] = resp.text
-
+        context["sub_data"] = get_submission_data(feedback)
         return context
         
     def get_success_url(self):
-        exercise_id = self.kwargs["exercise_id"]
+        exercise_id = self.object.exercise.exercise_id
         return reverse("submissions:grading", args=(exercise_id,))
-          
+
 
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
