@@ -121,7 +121,7 @@ def update_submissions(exercise):
     subsdata = cache.get(exercise.exercise_id)
     if subsdata:
         return
-    
+
 
     subsdata = get_submissions(exercise)
     cache.set(exercise.exercise_id, subsdata)
@@ -155,72 +155,7 @@ def update_submissions(exercise):
         divide_submissions(exercise)
 
 
-def get_submission_data(feedback):
-    exercise_url = f"{API_URL}exercises/{feedback.exercise.exercise_id}/"
-    form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
 
-    sub_url = f"{API_URL}submissions/{feedback.sub_id}/"
-    sub_info = get_json(sub_url)
-
-    sub_data = []
-
-    # Kun palautetaan git-url, "form_spec" näyttää jäävän tyhjäksi
-    if len(form_spec) == 0 and sub_info["submission_data"]:
-        sub_data.append(
-            {
-                "title": "Linkki course-gitlabiin:",
-                "url": sub_info["submission_data"][0][1],
-                "content": ""
-            }
-        )
-
-    # Jos palautus ei ole git-url, se voi olla paljon muuta...
-    for field in form_spec:
-        if field["type"] == "file":
-            for file in sub_info["files"]:
-                if file["param_name"] == field["key"]:
-                    content = ""
-                    resp = requests.get(file["url"], headers=AUTH)
-
-                    if file["filename"].endswith(".py"):
-                        resp.encoding = "utf-8"
-                        content = resp.text
-
-                    sub_data.append(
-                        {
-                            "title": "",
-                            "url": file["url"],
-                            "content": content
-                        }
-                    )
-
-                    break
-
-        elif field["type"] == "textarea":
-            for area in sub_info["submission_data"]:
-                if area[0] == field["key"]:
-                    sub_data.append(
-                        {
-                            "title": field["title"],
-                            "url": "",
-                            "content": area[1]
-                        }
-                    )
-
-                    break
-
-    # print(sub_data)
-    return sub_data
-
-
-def append_data(data_list, title, url, content):
-    data_list.append(
-        {
-            "title": title,
-            "url": url,
-            "content": content
-        }
-    )
 
 
 def check_deadline(exercise):
@@ -346,8 +281,91 @@ def choose_grader(exercise, graders):
     # niistä jolla on vähiten, jos usealla yhtä vähän. Tasatilanteessa ei ole
     # väliä kuka valitaan.
     return grader_to_add
-    
-    
+
+
+def get_submission_data(feedback):
+    exercise_url = f"{API_URL}exercises/{feedback.exercise.exercise_id}/"
+    form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
+
+    sub_url = f"{API_URL}submissions/{feedback.sub_id}/"
+    sub_info = get_json(sub_url)
+
+    sub_data = []
+
+    # Kun palautetaan git-url, "form_spec" näyttää jäävän tyhjäksi
+    if len(form_spec) == 0 and sub_info["submission_data"]:
+        sub_data.append(
+            {
+                "title": "Linkki course-gitlabiin:",
+                "url": sub_info["submission_data"][0][1],
+                "content": ""
+            }
+        )
+
+    # Jos palautus ei ole git-url, se voi olla tekstiä tai tiedosto
+    # (tai monivalintatehtävän valintavaihtoehto ("option_n"), näitä ei
+    # yleensä arvioida käsin, joten jätetään tyyppi "radio" huomiotta).
+    for field in form_spec:
+        if field["type"] == "file":
+            get_filecontent(sub_data, field, sub_info["files"])
+
+        elif field["type"] == "textarea":
+            get_text(sub_data, field, sub_info["submission_data"])
+
+    # print(sub_data)
+    return sub_data
+
+
+def get_filecontent(sub_data, form_field, files):
+    """
+    Etsii halutun tiedoston ja tallentaa sen tiedot listaan sanakirjamuodossa.
+    :param sub_data: (list) Opiskelijan palautuksen olennaiset tiedot dicteinä.
+    :param form_field: (dict) Tehtävän (yaml-tiedosto) palautuskentän tiedot.
+    :param files: (dict) Palautettujen tiedostojen nimet, urlit jne.
+    :return: None
+    """
+    for file in files:
+        if file["param_name"] == form_field["key"]:
+            resp = requests.get(file["url"], headers=AUTH)
+
+            if file["filename"].endswith(".py"):
+                resp.encoding = "utf-8"
+                content = resp.text
+            else:
+                content = "Lataa tiedosto oheisesta linkistä."
+
+            sub_data.append(
+                {
+                    "title": "",
+                    "url": file["url"],
+                    "content": content
+                }
+            )
+
+            return
+
+
+def get_text(sub_data, form_field, textareas):
+    """
+    Hakee tekstimuotoisen tehtävän kysymykset ja vastaukset.
+    :param sub_data: (list) Opiskelijan palautuksen olennaiset tiedot dicteinä.
+    :param form_field: (dict) Tehtävän (yaml-tiedosto) palautuskentän tiedot.
+    :param textareas: 
+    :return: 
+    """
+    for area in textareas:
+        if area[0] == form_field["key"]:
+            sub_data.append(
+                {
+                    "title": form_field["title"],
+                    "url": "",
+                    "content": area[1]
+                }
+            )
+
+            return
+
+
 def create_json(feedbacks):
     if feedbacks:
         print("\nNyt pitäisi askarrella ja postata jsoni.\n")
