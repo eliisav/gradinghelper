@@ -4,7 +4,7 @@ from django.views import generic
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.forms import modelformset_factory
+from django.forms import modelformset_factory, Textarea
 
 
 from .forms import ExerciseForm, ChangeGraderForm, SetGraderMeForm
@@ -226,6 +226,12 @@ class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
     slug_url_kwarg = "sub_id"
     fields = ["points", "feedback", "status"]
     initial = {"status": Feedback.READY}
+
+    widgets = {
+
+        'feedback': {Textarea(attrs={'cols': 80, 'rows': 10000})}
+
+    }
     
     def get_context_data(self, **kwargs):
         feedback = self.object

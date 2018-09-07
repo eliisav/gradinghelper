@@ -1,66 +1,70 @@
-{% load bootstrap4 %}
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fi">
+
+{% load bootstrap4 %}
+{% load django_bootstrap_breadcrumbs %}
 
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
+
     {% bootstrap_css %}
     {% bootstrap_javascript jquery='full' %}
-    
 
     <title>Eliisan palvelu</title>
+
   </head>
  
-  
-  
+
   <body>
-  
+
+    {% block breadcrumbs %}
+      {% clear_breadcrumbs %}
+      {% breadcrumb "Eliisan palvelu" "submissions:index" %}
+    {% endblock %}
+
     <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 border-bottom">
       <nav class="my-2 my-md-0 mr-md-3">
-        <a class="p-2 text-dark" href={% url "submissions:courses" %}>Kurssit</a>
+        {% render_breadcrumbs %}
       </nav>
       <h5 class="my-0 mr-3 ml-md-auto font-weight-normal">{{ user }}</h5>
-      <a class="btn btn-outline-primary" href={% url "submissions:logout" %}>Log out</a>
+      <a class="btn btn-outline-primary" href="{% url 'submissions:logout' %}">Log out</a>
     </div>
     
     
     <div class="container">
-    
-      <div class="row">
-        <div class="col-md-12" >
-          {% if messages %}
-            <ul class="list-group list-group-flush messages">
-              {% for message in messages %}
-                {% if message.tags == "error" %}
-                  <li class="list-group-item list-group-item-danger">
-                {% elif message.tags == "success" %}
-                  <li class="list-group-item list-group-item-success">
-                {% else %}
-                  <li class="list-group-item list-group-item-info">
-                {% endif %}
-                  {{ message }}
-                  </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        </div> <!-- column -->
+
+
+      <div class="row" id="messages">
+
+          <div class="col-md-12" >
+            {% if messages %}
+              <ul class="list-group list-group-flush messages">
+                {% for message in messages %}
+                  {% if message.tags == "error" %}
+                    <li class="list-group-item list-group-item-danger">
+                  {% elif message.tags == "success" %}
+                    <li class="list-group-item list-group-item-success">
+                  {% else %}
+                    <li class="list-group-item list-group-item-info">
+                  {% endif %}
+                    {{ message }}
+                    </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div> <!-- column -->
+
       </div> <!-- row -->
-      
-      
-      
-      <div class="row">
-    
+
+
+      <div class="row" id="content">
         {% block content %}
         {% endblock %}
-        
       </div> <!-- row -->
       
-      
-      
+
     </div> <!-- container -->
     
   </body>

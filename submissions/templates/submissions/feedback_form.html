@@ -6,9 +6,17 @@
   <div class="col-md-6">
 
     {% for obj in sub_data %}
-      <pre>{{ obj.title }}</pre>
+      {% if obj.title %}
+        <span style="font-weight: bold;">
+          {{ forloop.counter}}:
+          {{ obj.title }}
+        </span>
+      {% endif %}
       <a href="{{ obj.url }}">{{ obj.url }}</a>
-      <pre>{{ obj.content }}</pre>
+      <div class="p-2">{{ obj.text | linebreaks }}</div>
+      {% if obj.code %}
+        <pre> {{ obj.code }} </pre>
+      {% endif %}
     {% endfor %}
 
   </div>
@@ -16,7 +24,7 @@
   
   <div class="col-md-6">
 
-    <form method="post">
+    <form method="post" style="position: sticky;top: 50px;">
       {% csrf_token %}
       {% bootstrap_form form %}
       <a class="btn btn-warning" href="{% url 'submissions:grading' feedback.exercise.exercise_id %}" role="button">Peruuta</a>

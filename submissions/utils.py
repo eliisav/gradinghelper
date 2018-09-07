@@ -296,9 +296,10 @@ def get_submission_data(feedback):
     if len(form_spec) == 0 and sub_info["submission_data"]:
         sub_data.append(
             {
-                "title": "Linkki course-gitlabiin:",
+                "title": None,
                 "url": sub_info["submission_data"][0][1],
-                "content": ""
+                "text": "",
+                "code": None
             }
         )
 
@@ -328,17 +329,21 @@ def get_filecontent(sub_data, form_field, files):
         if file["param_name"] == form_field["key"]:
             resp = requests.get(file["url"], headers=AUTH)
 
+            text = ""
+            code = None
+
             if file["filename"].endswith(".py"):
                 resp.encoding = "utf-8"
-                content = resp.text
+                code = resp.text
             else:
-                content = "Lataa tiedosto oheisesta linkistä."
+                text = "Lataa tiedosto oheisesta linkistä."
 
             sub_data.append(
                 {
-                    "title": "",
+                    "title": None,
                     "url": file["url"],
-                    "content": content
+                    "text": text,
+                    "code": code
                 }
             )
 
@@ -359,7 +364,8 @@ def get_text(sub_data, form_field, textareas):
                 {
                     "title": form_field["title"],
                     "url": "",
-                    "content": area[1]
+                    "text": area[1],
+                    "code": None
                 }
             )
 

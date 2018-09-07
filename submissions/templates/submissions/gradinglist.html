@@ -1,5 +1,12 @@
 {% extends 'submissions/base.html' %}
+
 {% load bootstrap4 %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb "Omat arvosteltavat" "submissions:grading" %}
+{% endblock %}
 
 {% block content %}
 
