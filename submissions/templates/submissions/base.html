@@ -3,6 +3,7 @@
 
 {% load bootstrap4 %}
 {% load django_bootstrap_breadcrumbs %}
+{% load pygmentify_tags %}
 
   <head>
     <!-- Required meta tags -->
@@ -11,6 +12,8 @@
 
     {% bootstrap_css %}
     {% bootstrap_javascript jquery='full' %}
+
+    <link rel="stylesheet" href="{% pygmentify_css %}">
 
     <title>Eliisan palvelu</title>
 

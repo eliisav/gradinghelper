@@ -1,11 +1,11 @@
-{% extends 'submissions/base.html' %}
+{% extends 'submissions/exercises.html' %}
 
 {% load bootstrap4 %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Kaikki palautukset" "submissions:submissions" %}
+  {% breadcrumb "Kaikki palautukset" "submissions:submissions" exercise_id %}
 {% endblock %}
 
 {% block content %}

@@ -1,5 +1,13 @@
-{% extends 'submissions/base.html' %}
+{% extends 'submissions/gradinglist.html' %}
 {% load bootstrap4 %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb "Palaute" "submissions:feedback" exercise_id sub_id %}
+{% endblock %}
+
+{% load pygmentify_tags %}
 
 {% block content %}
 
@@ -14,8 +22,17 @@
       {% endif %}
       <a href="{{ obj.url }}">{{ obj.url }}</a>
       <div class="p-2">{{ obj.text | linebreaks }}</div>
+
+
       {% if obj.code %}
-        <pre> {{ obj.code }} </pre>
+        <pre>{{ obj.code }}</pre>
+
+
+        {% pygmentify %}
+          <pre class="python">{{ obj.code }}</pre>
+        {% endpygmentify %}
+
+
       {% endif %}
     {% endfor %}
 

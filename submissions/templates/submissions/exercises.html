@@ -1,11 +1,11 @@
-{% extends 'submissions/base.html' %}
+{% extends 'submissions/courses.html' %}
 
 {% load bootstrap4 %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Tehtävät" "submissions:exercises" %}
+  {% breadcrumb "Tehtävät" "submissions:exercises" course_id=course_id %}
 {% endblock %}
 
 {% block content %}

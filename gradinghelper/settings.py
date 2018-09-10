@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'bootstrap4',
     'django_bootstrap_breadcrumbs',
-    'crispy_forms',
     'django_lti_login',
+    'pygmentify',
 ]
 
 MIDDLEWARE = [
