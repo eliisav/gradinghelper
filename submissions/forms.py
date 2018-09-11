@@ -37,6 +37,16 @@ class ExerciseForm(forms.ModelForm):
             )
 
 
+class FeedbackForm(forms.ModelForm):
+    class Meta:
+        model = Feedback
+        fields = ["points", "feedback", "status"]
+
+        widgets = {
+            "feedback": forms.Textarea(attrs={'cols': 70, 'rows': 20})
+        }
+
+
 class ChangeGraderForm(forms.ModelForm):
     class Meta:
         model = Feedback
