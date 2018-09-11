@@ -5,7 +5,7 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Kaikki palautukset" "submissions:submissions" exercise_id %}
+  {% breadcrumb "Kaikki palautukset" "submissions:submissions" exercise.exercise_id %}
 {% endblock %}
 
 {% block content %}
@@ -21,10 +21,12 @@
     
     <div class="collapse mt-4" id="submissions_all">
 -->
+    <h2> Kaikki arvosteltavat palautukset </h2>
+    <h4> {{ exercise.name }} </h4>
 
-    <h1> Kaikki arvosteltavat palautukset </h1>
+
     {% if form.forms %}
-        <form method="post" action="{% url 'submissions:submissions' exercise_id %}">
+        <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
           {% csrf_token %}
           {{ form.management_form }}
             {% for sub_form in form %}

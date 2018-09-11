@@ -3,12 +3,26 @@ from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
 from django.forms import modelformset_factory
 
 
 from .forms import *
 from .utils import *
+
+
+class CourseExerciseMixin:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if "course_id" in self.kwargs:
+            context["course"] = get_object_or_404(
+                Course, course_id=self.kwargs["course_id"]
+            )
+        elif "exercise_id" in self.kwargs:
+            context["exercise"] = get_object_or_404(
+                Exercise, exercise_id=self.kwargs["exercise_id"]
+            )
+            context["course"] = context["exercise"].course
+        return context
 
 
 class IndexView(LoginRequiredMixin, generic.RedirectView):
@@ -35,7 +49,8 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
         return self.render_to_response(self.get_context_data())
         
         
-class ExerciseListView(LoginRequiredMixin, generic.ListView):
+class ExerciseListView(CourseExerciseMixin, LoginRequiredMixin,
+                       generic.ListView):
     """
     Listaa yhden kurssin kaikki tehtävät
     """
@@ -48,7 +63,7 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
         self.object_list = self.get_queryset().filter(
             course=course).filter(in_grading=True)
 
-        context = self.get_context_data(course_id=kwargs["course_id"])
+        context = self.get_context_data()
         
         if course.is_teacher(request.user):
             context["user_is_teacher"] = True
@@ -101,11 +116,11 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
         
         
 class DisableExerciseGradingRedirectView(LoginRequiredMixin,
-                                       generic.RedirectView):
+                                         generic.RedirectView):
     """
     Perutaan tehtävän tarkastus.
     """
-    # TODO: nyt mitään tehtävään liittyvää ei poisteta. Pitäisikö?
+    # TODO: nyt mitään tehtävään liittyvää ei poisteta. Pitäisikö? Pitäisi...
 
     pattern_name = "submissions:exercises"
     
@@ -124,7 +139,8 @@ class DisableExerciseGradingRedirectView(LoginRequiredMixin,
         return super().get(request, *args, **kwargs)
         
 
-class GradingListView(LoginRequiredMixin, generic.ListView):
+class GradingListView(CourseExerciseMixin, LoginRequiredMixin,
+                      generic.ListView):
     """
     Listaa käyttäjälle hänen arvostelulistallaan olevat palautukset 
     sekä ne palautukse, joilla ei vielä ole lainkaan arvostelijaa. 
@@ -136,13 +152,11 @@ class GradingListView(LoginRequiredMixin, generic.ListView):
     model = Feedback
     
     def get_context_data(self, **kwargs):
-        exercise = kwargs.pop("exercise")
         context = super().get_context_data(**kwargs)
-        context["exercise_id"] = exercise.exercise_id
         SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm,
                                                 extra=0)
         queryset = self.get_queryset().filter(
-            exercise=exercise).filter(grader=None)
+            exercise=context["exercise"]).filter(grader=None)
         context["formset"] = SetGraderFormset(queryset=queryset)
         
         return context
@@ -153,8 +167,7 @@ class GradingListView(LoginRequiredMixin, generic.ListView):
         update_submissions(exercise)
         self.object_list = self.get_queryset().filter(
             exercise=exercise).filter(grader=request.user)
-        return self.render_to_response(
-            self.get_context_data(exercise=exercise))
+        return self.render_to_response(self.get_context_data())
 
 
 class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
@@ -182,7 +195,8 @@ class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
         return self.get(request, *args, **kwargs)
 
 
-class SubmissionsFormView(LoginRequiredMixin, generic.FormView):
+class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
+                          generic.FormView):
     """
     Lomakenäkymä, jolla palautuksen arvostelija voidaan vaihtaa/asettaa.
 
@@ -200,11 +214,6 @@ class SubmissionsFormView(LoginRequiredMixin, generic.FormView):
         messages.success(self.request, "Muutokset tallennettu.")
         return super().form_valid(form)
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["exercise_id"] = self.kwargs["exercise_id"]
-        return context
-    
     def get_form_kwargs(self):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=self.kwargs["exercise_id"])
@@ -217,7 +226,8 @@ class SubmissionsFormView(LoginRequiredMixin, generic.FormView):
         return reverse_lazy("submissions:submissions", args=(exercise_id,))
 
 
-class FeedbackView(LoginRequiredMixin, generic.edit.UpdateView):
+class FeedbackView(CourseExerciseMixin, LoginRequiredMixin,
+                   generic.edit.UpdateView):
     """
     Näyttää yhden palautuksen koodin ja lomakkeen palautetta varten.
     """

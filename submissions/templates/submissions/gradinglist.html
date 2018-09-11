@@ -5,13 +5,15 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Omat arvosteltavat" "submissions:grading" exercise_id %}
+  {% breadcrumb "Omat arvosteltavat" "submissions:grading" exercise.exercise_id %}
 {% endblock %}
 
 {% block content %}
 
   <div class="col-md-6">
-    <h1> Omat arvosteltavat </h1>
+
+    <h2> Omat arvosteltavat </h2>
+    <h4> {{ exercise.name }} </h4>
 
     {% if gradinglist %}
       <ul class="list-group">
@@ -50,7 +52,7 @@
       </ul>
       
       
-      <a class="btn btn-primary" href="{% url 'submissions:release' exercise_id %}" role="button">
+      <a class="btn btn-primary" href="{% url 'submissions:release' exercise.exercise_id %}" role="button">
       Julkaise arvostelut
       </a>
       
@@ -74,11 +76,11 @@
 
 
     <div class="collapse mt-4" id="submissions_all">
--->
+--> <h2> Palautukset joilla ei vielä ole arvostelijaa </h2>
+    <h4> {{ exercise.name }} </h4>
 
-    <h1> Palautukset joilla ei vielä ole arvostelijaa </h1>
     {% if formset.forms %}
-      <form method="post" action="{% url 'submissions:set_grader' exercise_id %}">
+      <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
         {% csrf_token %}
         {{ formset.management_form }}
         {% for form in formset %}

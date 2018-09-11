@@ -7,11 +7,19 @@
   {% breadcrumb "Palaute" "submissions:feedback" exercise_id sub_id %}
 {% endblock %}
 
-{% load pygmentify_tags %}
+
+
+
 
 {% block content %}
 
+
+
+
   <div class="col-md-6">
+
+
+
 
     {% for obj in sub_data %}
       {% if obj.title %}
@@ -27,9 +35,9 @@
       {% if obj.code %}
         <pre>{{ obj.code }}</pre>
 
-
-        {% pygmentify %}
-          <pre class="python">{{ obj.code }}</pre>
+        {% load pygmentify_tags %}
+        {% pygmentify nowrap=True %}
+          <pre class="python">print("wtf?")</pre>
         {% endpygmentify %}
 
 
