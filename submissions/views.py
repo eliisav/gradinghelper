@@ -1,10 +1,10 @@
-from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
-from django.views import generic
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import modelformset_factory
-
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.views import generic
 
 from .forms import *
 from .utils import *
@@ -67,7 +67,10 @@ class ExerciseListView(CourseExerciseMixin, LoginRequiredMixin,
         
         if course.is_teacher(request.user):
             context["user_is_teacher"] = True
-            context["form"] = ExerciseForm(course=course)
+            context["form"] = ExerciseSetGradingForm(course=course)
+            for exercise in self.object_list:
+                exercise.form = ExerciseUpdateForm(instance=exercise,
+                                                   course=course)
 
         return self.render_to_response(context)
 
@@ -95,14 +98,14 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
     
     def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, pk=request.POST["name"])
-        form = ExerciseForm(request.POST, request.FILES, instance=exercise)
+        form = ExerciseSetGradingForm(request.POST, request.FILES, instance=exercise)
 
         if form.is_valid():
             exercise = form.save(commit=False)
             if check_filetype(exercise.feedback_base):
                 exercise.in_grading = True
                 exercise.save(update_fields=["min_points", "consent_exercise",
-                                             "auto_div", "feedback_base",
+                                             "work_div", "feedback_base",
                                              "in_grading"])
                 messages.success(request, "Tehtävän lisääminen onnistui.")
             else:
@@ -114,37 +117,38 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
             
         return self.get(request, *args, **kwargs)
         
-        
-class DisableExerciseGradingRedirectView(LoginRequiredMixin,
-                                         generic.RedirectView):
-    """
-    Perutaan tehtävän tarkastus.
-    """
-    # TODO: nyt mitään tehtävään liittyvää ei poisteta. Pitäisikö? Pitäisi...
 
-    pattern_name = "submissions:exercises"
-    
-    def get_redirect_url(self, *args, **kwargs):
-        del kwargs["exercise_id"]
-        return super().get_redirect_url(*args, **kwargs)
-    
+class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
+    """
+    Käsittelee lomakkeen, jolla muutetaan arvosteltavan tehtävän asetuksia.
+    Huom. get-metodi ei renderöi lomaketta, vaan se tapahtuu luokassa 
+    ExerciseListView. Get-metodi käsittelee tehtävän poistamisen 
+    tarkastuslistalta. (Onko vastoin hyvää tyyliä?) Post-metodi käsittelee 
+    lomakkeen lomakkeen normaalisti ilman ylimääräisiä kikkailuja
+    """
+    model = Exercise
+    slug_field = "exercise_id"
+    slug_url_kwarg = "exercise_id"
+    form_class = ExerciseUpdateForm
+
     def get(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
-
-        exercise.in_grading = False
-        exercise.save()
+        self.object = self.get_object()
+        self.object.consent_exercise = None
+        self.object.feedback_base.delete()
+        self.object.feedback_set.all().delete()
+        self.object.in_grading = False
+        self.object.save()
         messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
-            
-        return super().get(request, *args, **kwargs)
-        
+
+        return HttpResponseRedirect(self.get_success_url())
+
 
 class GradingListView(CourseExerciseMixin, LoginRequiredMixin,
                       generic.ListView):
     """
     Listaa käyttäjälle hänen arvostelulistallaan olevat palautukset 
-    sekä ne palautukse, joilla ei vielä ole lainkaan arvostelijaa. 
-    Jos tehtävään on valittu automaattinen jako, kaikilla palautuksilla 
+    sekä ne palautukset, joilla ei vielä ole lainkaan arvostelijaa. 
+    Jos tehtävään on valittu automaattinen tasajako, kaikilla palautuksilla 
     pitäisi aina olla joku arvostelija.
     """
     template_name = "submissions/gradinglist.html"

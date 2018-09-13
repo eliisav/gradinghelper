@@ -3,38 +3,52 @@ from .models import Exercise, Feedback, User
 from django.db.models import Q
 
 
-class ExerciseForm(forms.ModelForm):
-
+class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        fields = ["name", "min_points", "consent_exercise", "auto_div",
+        fields = ["min_points", "consent_exercise", "work_div",
                   "feedback_base"]
         labels = {
-            "min_points": "Vähimmäispisteet:",
+            "min_points": "Pisteet, joilla tehtävä hyväksytään arvosteluun:",
             "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
             "auto_div": "Automaattinen työnjako",
             "feedback_base": "Palautepohja:"
         }
-        
+        widgets = {
+            "work_div": forms.RadioSelect,
+        }
+
     def __init__(self, *args, **kwargs):
-        course = None
+        self.course = None
 
         if "course" in kwargs:
-            course = kwargs.pop("course")
+            self.course = kwargs.pop("course")
 
         super().__init__(*args, **kwargs)
 
-        if course:
+        if self.course:
+            self.fields["consent_exercise"].queryset = Exercise.objects.filter(
+                course=self.course
+            )
+
+
+class ExerciseSetGradingForm(ExerciseUpdateForm):
+    class Meta(ExerciseUpdateForm.Meta):
+        fields = ["name", "min_points", "consent_exercise", "work_div",
+                  "feedback_base"]
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        if self.course:
             self.fields["name"] = forms.ModelChoiceField(
                 queryset=Exercise.objects.filter(
-                    course=course
+                    course=self.course
                 ).filter(
                     in_grading=False)
             )
             self.fields["name"].label = "Tehtävä:"
-            self.fields["consent_exercise"].queryset = Exercise.objects.filter(
-                course=course
-            )
 
 
 class FeedbackForm(forms.ModelForm):

@@ -151,7 +151,7 @@ def update_submissions(exercise):
         add_feedback_base(exercise, feedback)
         add_student(sub["Email"], feedback)
 
-    if exercise.auto_div:
+    if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
 
 

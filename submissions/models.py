@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils import timezone
+from django.urls import reverse
 from django.contrib.auth.models import AbstractUser
 
 
@@ -25,6 +25,14 @@ class Course(models.Model):
         
 
 class Exercise(models.Model):
+    EVEN_DIV = 0
+    NO_DIV = 1
+
+    DIV_CHOICES = (
+        (EVEN_DIV, "Automaattinen tasajako"),
+        (NO_DIV, "Henkilökunta valitsee työt manuaalisesti"),
+    )
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     exercise_id = models.PositiveIntegerField(unique=True)
     module_id = models.PositiveIntegerField()
@@ -37,7 +45,14 @@ class Exercise(models.Model):
 
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
-    auto_div = models.BooleanField(default=False)
+    work_div = models.PositiveSmallIntegerField(choices=DIV_CHOICES,
+                                                default=EVEN_DIV,
+                                                verbose_name="Työnjako:")
+
+    def get_absolute_url(self):
+        return reverse(
+           "submissions:exercises", kwargs={"course_id": self.course.course_id}
+        )
 
     def __str__(self):
         return self.name
