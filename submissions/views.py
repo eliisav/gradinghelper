@@ -131,6 +131,10 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     slug_url_kwarg = "exercise_id"
     form_class = ExerciseUpdateForm
 
+    def form_valid(self, form):
+        messages.success(self.request, "Muutokset tallennettu.")
+        return super().form_valid(form)
+
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.consent_exercise = None

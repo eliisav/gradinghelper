@@ -74,6 +74,9 @@ def get_exercises(course):
     param course: (Course) kurssiobjekti
     return: lista tehtävistä
     """
+    # TODO: pitäisikö sellaiset tehtävät poistaa, jotka on poistettu kurssilta
+    # eli niitä ei enää löydy kurssin rajapinnasta. (Jos poistetaan, niin ei
+    # voida kuitenkaan sokeasti poistaa niitä, jotka on merkitty arvosteluun.)
 
 
     modules = cache.get(course.course_id)
@@ -153,9 +156,6 @@ def update_submissions(exercise):
 
     if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
-
-
-
 
 
 def check_deadline(exercise):
@@ -298,7 +298,7 @@ def get_submission_data(feedback):
             {
                 "title": None,
                 "url": sub_info["submission_data"][0][1],
-                "text": "",
+                "text": "Siirry opiskelijan repositorioon oheisesta linkistä.",
                 "code": None
             }
         )
