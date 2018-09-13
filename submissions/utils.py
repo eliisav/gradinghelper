@@ -129,6 +129,10 @@ def update_submissions(exercise):
     subsdata = get_submissions(exercise)
     cache.set(exercise.exercise_id, subsdata)
 
+    consent_data = []
+    if exercise.consent_exercise is not None:
+        consent_data = get_submissions(exercise.consent_exercise)
+
     deadline_passed = check_deadline(exercise)
 
     for sub in subsdata:
@@ -141,7 +145,8 @@ def update_submissions(exercise):
         if sub["Grade"] < exercise.min_points:
             continue
         
-        if not deadline_passed and not check_consent(sub["Email"], exercise):
+        if not deadline_passed and not check_consent(sub["Email"],
+                                                     consent_data):
             continue
         
         try:
@@ -170,13 +175,10 @@ def check_deadline(exercise):
     return True
 
 
-def check_consent(student_email, exercise):
-    if exercise.consent_exercise is not None:
-        subsdata = get_submissions(exercise.consent_exercise)
-        
-        for sub in subsdata:
-            if sub["Email"] == student_email:
-                return True
+def check_consent(student_email, consent_data):
+    for sub in consent_data:
+        if sub["Email"] == student_email:
+            return True
 
     return False
 
@@ -304,7 +306,7 @@ def get_submission_data(feedback):
         )
 
     # Jos palautus ei ole git-url, se voi olla tekstiä tai tiedosto
-    # (tai monivalintatehtävän valintavaihtoehto ("option_n"), näitä ei
+    # (tai monivalintatehtävän valintavaihtoehto ("option_n"), joita ei
     # yleensä arvioida käsin, joten jätetään tyyppi "radio" huomiotta).
     for field in form_spec:
         if field["type"] == "file":
