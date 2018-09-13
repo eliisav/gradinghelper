@@ -10,9 +10,9 @@
 
 {% block content %}
 
-  <div class="col-md-6">
+  <div class="col-md-6 offset-md-3">
 
-    <h1>Kurssit</h1>
+    <h1>Omat kurssit</h1>
     
     {% if courses %}
       <ul class="list-group">
@@ -25,7 +25,9 @@
         {% endfor %}
       </ul>
     {% else %}
-      <p>Käyttäjälle {{ user }} ei löytynyt yhtään kurssia.</p>
+      <div class="alert alert-info" role="alert">
+        Käyttäjälle {{ user }} ei löytynyt yhtään kurssia.
+      </div>
     {% endif %}
     
   </div>

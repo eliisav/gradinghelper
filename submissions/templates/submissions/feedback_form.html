@@ -28,8 +28,11 @@
           {{ obj.title }}
         </span>
       {% endif %}
-      <a href="{{ obj.url }}">{{ obj.url }}</a>
-      <div class="p-2">{{ obj.text | linebreaks }}</div>
+
+      <div class="p-2">
+        <a href="{{ obj.url }}">{{ obj.url }}</a>
+        {{ obj.text | linebreaks }}
+      </div>
 
 
       {% if obj.code %}
