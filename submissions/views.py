@@ -225,6 +225,9 @@ class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
     def get_form_kwargs(self):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=self.kwargs["exercise_id"])
+        # Päivitetään palautukset rajapinnasta, tämä on huono paikka,
+        # homma hidasta.
+        update_submissions(exercise)
         kwargs = super().get_form_kwargs()
         kwargs["queryset"] = Feedback.objects.filter(exercise=exercise)
         return kwargs

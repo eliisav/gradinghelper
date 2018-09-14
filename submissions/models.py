@@ -60,9 +60,13 @@ class Exercise(models.Model):
 
 class Student(models.Model):
     email = models.EmailField(unique=True)
+    student_id = models.IntegerField(default=None, null=True)
     
     def __str__(self):
-        return self.email
+        if self.student_id:
+            return f"{self.student_id} {self.email}"
+        else:
+            return self.email
 
 
 class Feedback(models.Model):

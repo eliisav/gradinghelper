@@ -157,7 +157,7 @@ def update_submissions(exercise):
             feedback.save()
 
         add_feedback_base(exercise, feedback)
-        add_student(sub["Email"], feedback)
+        add_student(sub, feedback)
 
     if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
@@ -196,9 +196,13 @@ def add_feedback_base(exercise, feedback):
         feedback.save()
 
 
-def add_student(student_email, new_feedback):
+def add_student(sub, new_feedback):
     try:
-        student = Student.objects.get(email=student_email)
+        student = Student.objects.get(email=sub["Email"])
+        # Päivitetään varmuuden vuoksi opnum. Joissain tapauksissa on
+        # mahdollista, että opiskelija saa opnumin vasta myöhemmin.
+        student.student_id = sub["StudentID"]
+        student.save()
         
         try:
             old_feedback = student.my_feedbacks.get(
@@ -224,7 +228,7 @@ def add_student(student_email, new_feedback):
             student.my_feedbacks.add(new_feedback)
             
     except Student.DoesNotExist:
-        student = Student(email=student_email)
+        student = Student(email=sub["Email"], student_id=sub["StudentID"])
         student.save()
         student.my_feedbacks.add(new_feedback)
         print("Eka hyväksytty palautus tähän tehtävään:", student.email)

@@ -10,7 +10,7 @@
 
 {% block content %}
 
-  <div class="col-md-12">
+  <div class="col-md-8 offset-md-2">
   
   
 <!--
@@ -29,18 +29,79 @@
         <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
           {% csrf_token %}
           {{ form.management_form }}
-            {% for sub_form in form %}
-              <div class="form-group">
+
+
+          <table class="table">
+            <thead>
+              <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Palautuksen id plussassa</th>
+                  <th scope="col">Opiskelijanro ja s-posti</th>
+                  <th scope="col">Arvostelun tila</th>
+                  <th scope="col">Arvostelija</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for sub_form in form %}
+              <tr>
                 {{ sub_form.id }}
-                {{ sub_form.instance.sub_id }}
-                {% for student in sub_form.instance.students.all %}
-                  {{ student }}
-                {% endfor %}
-                {{ sub_form.grader }}
-              </div>
+                <th scope="row">{{ forloop.counter }}</th>
+                <td>
+
+                  <a href="{%url 'submissions:feedback' exercise.exercise_id sub_form.instance.sub_id %}">
+                    {{ sub_form.instance.sub_id }}
+                  </a>
+                </td>
+
+                <td>
+                  <table class="table bg-light">
+                  {% for student in sub_form.instance.students.all %}
+                    <tbody>
+                      <tr>
+                        <td>
+                          {{ student }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  {% endfor %}
+                  </table>
+                </td>
+
+                <td>
+                    {% if sub_form.instance.status == sub_form.instance.READY %}
+                      <div class="alert alert-warning" role="alert">
+                        VALMIS
+                      </div>
+                    {% elif sub_form.instance.status == sub_form.instance.DRAFT %}
+                      <div class="alert alert-danger" role="alert">
+                        LUONNOS
+                      </div>
+                    {% elif sub_form.instance.released %}
+                      <div class="alert alert-success" role="alert">
+                        JULKAISTU
+                      </div>
+                    {% else %}
+                      <div class="alert alert-info" role="alert">
+                        EI ALOITETTU
+                      </div>
+                    {% endif %}
+                </td>
+
+                <td>
+                  {{ sub_form.grader }}
+                </td>
+
+              </tr>
             {% endfor %}
+            </tbody>
+          </table>
+
+
           <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
         </form>
+
+
     {% else %}
       <div class="alert alert-info" role="alert">
         Ei palautuksia.
