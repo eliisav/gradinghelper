@@ -10,27 +10,48 @@
 
 {% block content %}
 
-  <div class="col-md-6">
+  <div class="col-md-7">
 
     <h2> Omat arvosteltavat </h2>
     <h4> {{ exercise.name }} </h4>
 
     {% if gradinglist %}
-      <ul class="list-group">
+
+    <table class="table">
+      <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">ID</th>
+            <th scope="col">Opiskelijanro ja s-posti</th>
+            <th scope="col">Arvostelun tila</th>
+        </tr>
+      </thead>
+
+      <tbody>
         {% for sub in gradinglist %}
-        
-          <li class="list-group-item">
-          
+        <tr>
+          <th scope="row">{{ forloop.counter }}</th>
+          <td>
             <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
               {{ sub }}
             </a>
-            
-            
+          </td>
+
+          <td>
+            <table class="table bg-light">
             {% for student in sub.students.all %}
-              {{ student }}
+              <tbody>
+                <tr>
+                  <td>
+                    {{ student }}
+                  </td>
+                </tr>
+              </tbody>
             {% endfor %}
-            
-            
+            </table>
+          </td>
+
+          <td>
             {% if sub.status == sub.READY %}
               <div class="alert alert-warning" role="alert">
                 VALMIS
@@ -43,66 +64,99 @@
               <div class="alert alert-success" role="alert">
                 JULKAISTU
               </div>
+            {% else %}
+              <div class="alert alert-info" role="alert">
+                EI ALOITETTU
+              </div>
             {% endif %}
-            
-            
-          </li>
-          
-        {% endfor %}
-      </ul>
-      
-      
-      <a class="btn btn-primary" href="{% url 'submissions:release' exercise.exercise_id %}" role="button">
-      Julkaise arvostelut
-      </a>
-      
-      
-      {% else %}
-        <div class="alert alert-info" role="alert">
-          Ei arvosteltavia palautuksia.
-        </div>
+          </td>
+
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <a class="btn btn-primary" href="{% url 'submissions:release' exercise.exercise_id %}" role="button">
+    Julkaise arvostelut
+    </a>
+
+    {% else %}
+
+      <div class="alert alert-info" role="alert">
+        Ei arvosteltavia palautuksia.
+      </div>
+
     {% endif %}
     
   </div> <!-- column -->
 
 
-  <div class="col-md-6">
 
+  <div class="col-md-5">
 
-<!--
-    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#submissions_all">
-      Näytä kaikki palautukset
-    </button>
-
-
-    <div class="collapse mt-4" id="submissions_all">
---> <h2> Palautukset joilla ei vielä ole arvostelijaa </h2>
+    <h2> Palautukset joilla ei vielä ole arvostelijaa </h2>
     <h4> {{ exercise.name }} </h4>
-
+    
     {% if formset.forms %}
       <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
         {% csrf_token %}
         {{ formset.management_form }}
-        {% for form in formset %}
-          <div class="form-group">
-            {{ form.id }}
-            {{ form.instance.sub_id }}
-            {% for student in form.instance.students.all %}
-              {{ student }}
+
+        <table class="table">
+          <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Opiskelijanro ja s-posti</th>
+                <th scope="col">Valitse</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for form in formset %}
+            <tr>
+              {{ form.id }}
+              <th scope="row">{{ forloop.counter }}</th>
+              <td>
+                {{ form.instance.sub_id }}
+              </td>
+
+              <td>
+                <table class="table bg-light">
+                {% for student in form.instance.students.all %}
+                  <tbody>
+                    <tr>
+                      <td>
+                        {{ student }}
+                      </td>
+                    </tr>
+                  </tbody>
+                {% endfor %}
+                </table>
+              </td>
+
+              <td>
+                {{ form.check_this }}
+              </td>
+
+            </tr>
             {% endfor %}
-            {{ form.check_this }}
-          </div>
-        {% endfor %}
+          </tbody>
+        </table>
+
         <button type="submit" class="btn btn-primary">Lisää omalle listalle</button>
+
       </form>
+
     {% else %}
+
       <div class="alert alert-info" role="alert">
         Ei palautuksia.
       </div>
+
     {% endif %}
 
 
-   <!-- </div> collapse -->
   </div> <!-- column -->
 
 {% endblock %}
