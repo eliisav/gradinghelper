@@ -24,6 +24,7 @@
     <h2> Kaikki arvosteltavat palautukset </h2>
     <h4> {{ exercise.name }} </h4>
 
+    <h6> Arvosteltu: {{ ready_count }} / {{ feedback_count }} </h6>
 
     {% if form.forms %}
         <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
@@ -31,8 +32,8 @@
           {{ form.management_form }}
 
 
-          <table class="table table-bordered">
-            <thead class="thead-dark">
+          <table class="table table-bordered table-hover table-sm">
+            <thead class="thead-light">
               <tr>
                   <th scope="col">ID</th>
                   <th scope="col">Opiskelijanro ja s-posti</th>

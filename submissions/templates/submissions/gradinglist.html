@@ -15,10 +15,13 @@
     <h2> Omat arvosteltavat </h2>
     <h4> {{ exercise.name }} </h4>
 
+    <h6> Arvosteltu: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
+    <h6> Kaikki: {{ ready_count }} / {{ feedback_count }} </h6>
+
     {% if gradinglist %}
 
-    <table class="table table-bordered">
-      <thead class="thead-dark">
+    <table class="table table-bordered table-sm table-hover">
+      <thead class="thead-light">
         <tr>
             <th scope="col">ID</th>
             <th scope="col">Opiskelijanro ja s-posti</th>
@@ -89,14 +92,14 @@
 
     <h2> Palautukset joilla ei vielä ole arvostelijaa </h2>
     <h4> {{ exercise.name }} </h4>
-    
+
     {% if formset.forms %}
       <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
         {% csrf_token %}
         {{ formset.management_form }}
 
-        <table class="table table-bordered">
-          <thead class="thead-dark">
+        <table class="table table-bordered table-sm table-hover">
+          <thead class="thead-light">
             <tr>
                 <th scope="col">ID</th>
                 <th scope="col">Opiskelijanro ja s-posti</th>

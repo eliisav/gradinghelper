@@ -18,10 +18,16 @@ class CourseExerciseMixin:
                 Course, course_id=self.kwargs["course_id"]
             )
         elif "exercise_id" in self.kwargs:
-            context["exercise"] = get_object_or_404(
+            exercise = get_object_or_404(
                 Exercise, exercise_id=self.kwargs["exercise_id"]
             )
-            context["course"] = context["exercise"].course
+            context["exercise"] = exercise
+            context["course"] = exercise.course
+            context["feedback_count"] = len(exercise.feedback_set.all())
+            context["ready_count"] = len(exercise.feedback_set.filter(
+                status=Feedback.READY
+            ))
+
         return context
 
 
@@ -163,9 +169,14 @@ class GradingListView(CourseExerciseMixin, LoginRequiredMixin,
         context = super().get_context_data(**kwargs)
         SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm,
                                                 extra=0)
-        queryset = self.get_queryset().filter(
+        no_grader_set = self.get_queryset().filter(
             exercise=context["exercise"]).filter(grader=None)
-        context["formset"] = SetGraderFormset(queryset=queryset)
+        context["formset"] = SetGraderFormset(queryset=no_grader_set)
+
+        context["my_ready_count"] = len(
+            self.object_list.filter(status=Feedback.READY)
+        )
+        context["my_feedback_count"] = len(self.object_list)
         
         return context
     
@@ -221,7 +232,7 @@ class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
                 sub_form.save()
         messages.success(self.request, "Muutokset tallennettu.")
         return super().form_valid(form)
-    
+
     def get_form_kwargs(self):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=self.kwargs["exercise_id"])
@@ -229,7 +240,7 @@ class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
         # homma hidasta.
         update_submissions(exercise)
         kwargs = super().get_form_kwargs()
-        kwargs["queryset"] = Feedback.objects.filter(exercise=exercise)
+        kwargs["queryset"] = exercise.feedback_set.all()
         return kwargs
     
     def get_success_url(self):
