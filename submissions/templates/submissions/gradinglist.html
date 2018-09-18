@@ -93,6 +93,8 @@
     <h2> Palautukset joilla ei vielä ole arvostelijaa </h2>
     <h4> {{ exercise.name }} </h4>
 
+    <!-- formset.total_form_count saadaan lomakkeen objektien määrä-->
+
     {% if formset.forms %}
       <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
         {% csrf_token %}
