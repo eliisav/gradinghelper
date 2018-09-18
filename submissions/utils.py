@@ -300,14 +300,7 @@ def get_submission_data(feedback):
 
     # Kun palautetaan git-url, "form_spec" näyttää jäävän tyhjäksi
     if len(form_spec) == 0 and sub_info["submission_data"]:
-        sub_data.append(
-            {
-                "title": None,
-                "url": sub_info["submission_data"][0][1],
-                "text": "Siirry opiskelijan repositorioon oheisesta linkistä.",
-                "code": None
-            }
-        )
+        get_git_url(sub_data, sub_info["submission_data"][0][1])
 
     # Jos palautus ei ole git-url, se voi olla tekstiä tai tiedosto
     # (tai monivalintatehtävän valintavaihtoehto ("option_n"), joita ei
@@ -321,6 +314,20 @@ def get_submission_data(feedback):
 
     # print(sub_data)
     return sub_data
+
+
+def get_git_url(sub_data, url):
+    if url.startswith("git@"):
+        url = url.replace(":", "/").replace("git@", "https://", 1)
+
+    sub_data.append(
+        {
+            "title": None,
+            "url": url,
+            "text": "Siirry opiskelijan repositorioon oheisesta linkistä.",
+            "code": None
+        }
+    )
 
 
 def get_filecontent(sub_data, form_field, files):
