@@ -251,7 +251,8 @@ class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
 class FeedbackView(CourseExerciseMixin, LoginRequiredMixin,
                    generic.edit.UpdateView):
     """
-    Näyttää yhden palautuksen koodin ja lomakkeen palautetta varten.
+    Näyttää yhden palautuksen koodin/urlin/kysymykset/vastauksekset ja 
+    lomakkeen palautetta varten.
     """
     model = Feedback
     slug_field = "sub_id"
@@ -262,9 +263,19 @@ class FeedbackView(CourseExerciseMixin, LoginRequiredMixin,
     }
 
     def get_context_data(self, **kwargs):
-        feedback = self.object
         context = super().get_context_data(**kwargs)
-        context["sub_data"] = get_submission_data(feedback)
+
+        # Haetaan palautuksen koodi/url/tekstimuotoinen vastaus jne.
+        context["sub_data"] = get_submission_data(self.object)
+
+        # Näkymään pääsee kahden eri sivun kautta, joten murupolkua
+        # varten lisätään kontekstiin tieto siitä mistä tultiin.
+        context["referer"] = "submissions/gradinglist.html"
+
+        if "HTTP_REFERER" in self.request.META and self.request.META[
+                "HTTP_REFERER"].endswith("update/"):
+            context["referer"] = "submissions/submissions_form.html"
+
         return context
         
     def get_success_url(self):
