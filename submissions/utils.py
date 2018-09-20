@@ -135,6 +135,10 @@ def update_submissions(exercise):
 
     deadline_passed = check_deadline(exercise)
 
+    accepted = {}
+    students = {}
+    duplicates = []
+
     for sub in subsdata:
         
         # print(sub)
@@ -148,7 +152,20 @@ def update_submissions(exercise):
         if not deadline_passed and not check_consent(sub["Email"],
                                                      consent_data):
             continue
-        
+
+        if sub["SubmissionID"] not in accepted:
+            accepted[sub["SubmissionID"]] = {
+                "grade": sub["Grade"],
+                "penalty": sub["Penalty"],
+                "students": {
+                    sub["Email"]: sub["StudentID"]
+                }
+            }
+        else:
+            accepted[sub["SubmissionID"]]["students"][sub["Email"]] = sub["StudentID"]
+
+
+
         try:
             feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
             
