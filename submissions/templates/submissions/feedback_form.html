@@ -1,5 +1,7 @@
 {% extends referer %}
+
 {% load bootstrap4 %}
+{% load pygmentify %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
@@ -8,18 +10,9 @@
 {% endblock %}
 
 
-
-
-
 {% block content %}
 
-
-
-
   <div class="col-md-6">
-
-
-
 
     {% for obj in sub_data %}
       {% if obj.title %}
@@ -36,12 +29,10 @@
 
 
       {% if obj.code %}
-        <pre>{{ obj.code }}</pre>
 
-        {% load pygmentify_tags %}
-        {% pygmentify nowrap=True %}
-          <pre class="python">print("wtf?")</pre>
-        {% endpygmentify %}
+        {% pygment %}
+          <pre lang="python">{{ obj.code }}</pre>
+        {% endpygment %}
 
 
       {% endif %}

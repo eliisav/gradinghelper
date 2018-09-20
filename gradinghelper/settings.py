@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'bootstrap4',
     'django_bootstrap_breadcrumbs',
     'django_lti_login',
-    'pygmentify',
+    'django_pygments',
 ]
 
 MIDDLEWARE = [
