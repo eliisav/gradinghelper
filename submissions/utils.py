@@ -121,60 +121,40 @@ def get_submissions(exercise):
 
 def update_submissions(exercise):
 
-    subsdata = cache.get(exercise.exercise_id)
-    if subsdata:
+    submissiondata = cache.get(exercise.exercise_id)
+    if submissiondata:
         return
 
 
-    subsdata = get_submissions(exercise)
-    cache.set(exercise.exercise_id, subsdata)
+    submissiondata = get_submissions(exercise)
+    cache.set(exercise.exercise_id, submissiondata)
 
-    consent_data = []
+    consent_data = None
     if exercise.consent_exercise is not None:
         consent_data = get_submissions(exercise.consent_exercise)
 
     deadline_passed = check_deadline(exercise)
 
-    accepted = {}
-    students = {}
-    duplicates = []
+    if deadline_passed or consent_data:
+        accepted = sort_submissions(submissiondata, exercise.min_points,
+                                    deadline_passed, consent_data)
 
-    for sub in subsdata:
-        
-        # print(sub)
-        
-        # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
-        # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus 
-        #       on jo arvioitu. Toimii ehkä jo...?
-        if sub["Grade"] < exercise.min_points:
-            continue
-        
-        if not deadline_passed and not check_consent(sub["Email"],
-                                                     consent_data):
-            continue
-
-        if sub["SubmissionID"] not in accepted:
-            accepted[sub["SubmissionID"]] = {
-                "grade": sub["Grade"],
-                "penalty": sub["Penalty"],
-                "students": {
-                    sub["Email"]: sub["StudentID"]
-                }
-            }
-        else:
-            accepted[sub["SubmissionID"]]["students"][sub["Email"]] = sub["StudentID"]
-
-
-
+    for sub in accepted:
         try:
-            feedback = Feedback.objects.get(sub_id=sub["SubmissionID"])
-            
+            feedback = Feedback.objects.get(sub_id=sub)
+
         except Feedback.DoesNotExist:
-            feedback = Feedback(exercise=exercise, sub_id=sub["SubmissionID"])
+            feedback = Feedback(
+                exercise=exercise,
+                sub_id=sub,
+                # auto_grade = accepted[sub]["grade"]
+                # penalty = accepted[sub]["penalty"]
+            )
             feedback.save()
 
         add_feedback_base(exercise, feedback)
-        add_student(sub, feedback)
+        for student in accepted[sub]["students"]:
+            add_student(student, feedback)
 
     if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
@@ -200,8 +180,82 @@ def check_consent(student_email, consent_data):
     return False
 
 
+def sort_submissions(submissions, min_points, deadline_passed, consent_data):
+    """
+    Käydään läpi jsonin palautukset ja lisätään hyväksytyt accepted-dictiin. 
+    Pääsääntöisesti täysin turhaa ajan tuhlausta, mutta tarvitaan jos 
+    ryhmäpalautuksen ryhmä on jälkikäteen tehty henkilökunnan toimesta.
+    
+    :param submissions: (dict) tehtävän viimeisimmät/parhaat palautukset 
+    :param min_points: (int) minimipisteet joilla tehtävä otetaan arvosteluun
+    :param deadline_passed: (boolean) True, jos tehtävän deadline on mennyt
+    :param consent_data: (dict) hyväksyntätehtävään tehdyt palautukset
+    :return: (dict) hyväksytyt palautukset, jotka otetaan arvosteluun
+    """
+
+    accepted = {}    # Hyväksyttyjen palautusten oleellinen informaatio
+    students = {}    # Opiskelijat ja heidän tekemänsä palautukset
+    duplicates = []  # Lista opiskelijoista, joilla enemmän kuin yksi palautus
+
+    for sub in submissions:
+
+        # print(sub)
+
+        # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
+        # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus
+        #       on jo arvioitu. Toimii ehkä jo...?
+        if sub["Grade"] < min_points:
+            continue
+
+        if not deadline_passed and not check_consent(sub["Email"],
+                                                     consent_data):
+            continue
+
+        if sub["SubmissionID"] not in accepted:
+            accepted[sub["SubmissionID"]] = {
+                "grade": sub["Grade"],
+                "penalty": sub["Penalty"],
+                "students": [
+                    {
+                        "email": sub["Email"],
+                        "id": sub["StudentID"]
+                    }
+                ]
+            }
+        else:
+            accepted[sub["SubmissionID"]]["students"].append(
+                {
+                    "email": sub["Email"],
+                    "id": sub["StudentID"]
+                }
+            )
+
+        if sub["Email"] not in students:
+            students[sub["Email"]] = [sub["SubmissionID"]]
+        else:
+            # Parityösähläyksissä opiskelijalle on voinut tallentua
+            # useampi kuin yksi palautus. Laitetaan tuplat talteen
+            # ja poistetaan tarpeettomat palautukset seuraavassa vaiheessa.
+            students[sub["Email"]].append(sub["SubmissionID"])
+            duplicates.append(sub["Email"])
+
+    for student in duplicates:
+        for sub in students[student]:
+            # Poistetaan opiskelijalta se palautus, joka EI ole paripalautus.
+            # Tällöin opiskelijatietoja siis 1 kpl
+            if len(accepted[sub]["students"]) == 1:
+                print("Poistetaan tupla:", sub, accepted[sub])
+                del accepted[sub]
+
+    return accepted
+
+
 def add_feedback_base(exercise, feedback):
-    # Lisätään palautepohja, jos sellainen on tehtävään liitetty.
+    """
+    Lisätään/päivitetään palautepohja, jos sellainen on tehtävään liitetty.
+    :param exercise: (Exercise model object)
+    :param feedback: (Feedback model object)
+    """
     if exercise.feedback_base:
         # print(exercise.feedback_base.name)
         try:
@@ -213,42 +267,55 @@ def add_feedback_base(exercise, feedback):
         feedback.save()
 
 
-def add_student(sub, new_feedback):
+def add_student(student_dict, new_feedback):
+    """
+    Liitetään opiskelija palautukseen. Jos opiskelijalla on edellinen palautus 
+    samaan tehtävään, se poistetaan mikäli arviointia ei ole aloitettu.
+    :param student_dict: (dict) opiskelijan s-posti ja opiskelijanumero
+    :param new_feedback: (Feedback model object)
+    """
     try:
-        student = Student.objects.get(email=sub["Email"])
+        student_obj = Student.objects.get(email=student_dict["email"])
         # Päivitetään varmuuden vuoksi opnum. Joissain tapauksissa on
         # mahdollista, että opiskelija saa opnumin vasta myöhemmin.
-        student.student_id = sub["StudentID"]
-        student.save()
+        student_obj.student_id = student_dict["id"]
+        student_obj.save()
         
         try:
-            old_feedback = student.my_feedbacks.get(
-                exercise=new_feedback.exercise)
+            old_feedback = student_obj.my_feedbacks.get(
+                exercise=new_feedback.exercise
+            )
             
             if old_feedback != new_feedback:
                 print("Ei ole samat! Poista vanha ja lisää uusi tilalle:",
                       end=" ")
                 if old_feedback.status is None:
                     old_feedback.delete()
-                    student.my_feedbacks.add(new_feedback)
+                    student_obj.my_feedbacks.add(new_feedback)
                 else:
-                    print("Eipäs poisteta. Arvostelu oli jo tehty!", end=" ")
+                    # TODO: huomautus arvostelijalle siitä, että uudempi
+                    # palautus olisi olemassa.
+                    print("Eipäs poisteta. Arvostelu oli jo aloitettu!",
+                          end=" ")
                     new_feedback.delete()
                 
             else:
                 print("Ne on samat, ei tartte tehdä mitään:", end=" ")
                 
-            print(student.email)
-                
+            print(student_obj.email)
+
         except Feedback.DoesNotExist:
-            print("Eka hyväksytty palautus tähän tehtävään:", student.email)
-            student.my_feedbacks.add(new_feedback)
+            print("Aikaisempaa palautusta ei löytynyt:", student_obj.email)
+            student_obj.my_feedbacks.add(new_feedback)
             
     except Student.DoesNotExist:
-        student = Student(email=sub["Email"], student_id=sub["StudentID"])
-        student.save()
-        student.my_feedbacks.add(new_feedback)
-        print("Eka hyväksytty palautus tähän tehtävään:", student.email)
+        student_obj = Student(
+            email=student_dict["email"],
+            student_id=student_dict["id"]
+        )
+        student_obj.save()
+        student_obj.my_feedbacks.add(new_feedback)
+        print("Eka hyväksytty palautus opiskelijalle:", student_obj.email)
 
 
 def divide_submissions(exercise):
