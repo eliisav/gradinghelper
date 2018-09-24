@@ -95,6 +95,26 @@ class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
         return super().get(request, *args, **kwargs)
 
 
+class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
+    """
+    Lisätään/päivitetään tehtävän palautukset tietokantaan.
+    """
+    def get(self, request, *args, **kwargs):
+        exercise = get_object_or_404(
+            Exercise,
+            exercise_id=kwargs["exercise_id"]
+        )
+        update_submissions(exercise)
+        messages.success(request, "Palautukset päivitetty.")
+
+        return super().get(request, *args, **kwargs)
+
+    def get_redirect_url(self, *args, **kwargs):
+        url = self.request.META.get("HTTP_REFERER", "")
+        print(url)
+        return url
+
+
 class EnableExerciseGradingRedirectView(LoginRequiredMixin,
                                         generic.RedirectView):
     """
@@ -183,7 +203,7 @@ class GradingListView(CourseExerciseMixin, LoginRequiredMixin,
     def get(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
-        update_submissions(exercise)
+        # update_submissions(exercise)
         self.object_list = self.get_queryset().filter(
             exercise=exercise).filter(grader=request.user)
         return self.render_to_response(self.get_context_data())
@@ -238,7 +258,7 @@ class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
                                      exercise_id=self.kwargs["exercise_id"])
         # Päivitetään palautukset rajapinnasta, tämä on huono paikka,
         # homma hidasta.
-        update_submissions(exercise)
+        # update_submissions(exercise)
         kwargs = super().get_form_kwargs()
         kwargs["queryset"] = exercise.feedback_set.all()
         return kwargs

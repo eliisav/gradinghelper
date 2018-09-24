@@ -79,7 +79,8 @@
     {% else %}
 
       <div class="alert alert-info" role="alert">
-        Ei arvosteltavia palautuksia.
+        Arvosteltavia palautuksia ei löytynyt. Hae palautuksia valitsemalla "Päivitä".
+        <a class="btn btn-primary m-4" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">Päivitä</a>
       </div>
 
     {% endif %}

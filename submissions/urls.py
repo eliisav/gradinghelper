@@ -41,10 +41,14 @@ urlpatterns = [
          views.UpdateExerciseInGradingView.as_view(),
          name='update_exercise'),
 
-    path('exercises/<int:exercise_id>/submissions/',
+    path('exercises/<int:exercise_id>/submissions/update/',
+         views.UpdateSubmissionsRedirectView.as_view(),
+         name='update_submissions'),
+
+    path('exercises/<int:exercise_id>/submissions/grading',
          views.GradingListView.as_view(), name='grading'),
 
-    path('exercises/<int:exercise_id>/submissions/update/',
+    path('exercises/<int:exercise_id>/submissions/all/',
          views.SubmissionsFormView.as_view(), name='submissions'),
 
     path('exercises/<int:exercise_id>/submissions/<int:sub_id>/',
