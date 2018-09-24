@@ -130,9 +130,6 @@ def update_submissions(exercise):
         return
 
 
-    submissiondata = get_submissions(exercise)
-    cache.set(exercise.exercise_id, submissiondata)
-
     consent_data = None
     if exercise.consent_exercise is not None:
         consent_data = get_submissions(exercise.consent_exercise)
@@ -140,28 +137,32 @@ def update_submissions(exercise):
     deadline_passed = check_deadline(exercise)
 
     if deadline_passed or consent_data:
+        submissiondata = get_submissions(exercise)
+        cache.set(exercise.exercise_id, submissiondata)
+
         accepted = sort_submissions(submissiondata, exercise.min_points,
                                     deadline_passed, consent_data)
 
-    for sub in accepted:
-        try:
-            feedback = Feedback.objects.get(sub_id=sub)
+        for sub in accepted:
+            try:
+                feedback = Feedback.objects.get(sub_id=sub)
 
-        except Feedback.DoesNotExist:
-            feedback = Feedback(
-                exercise=exercise,
-                sub_id=sub,
-                # auto_grade = accepted[sub]["grade"]
-                # penalty = accepted[sub]["penalty"]
-            )
-            feedback.save()
+            except Feedback.DoesNotExist:
+                feedback = Feedback(
+                    exercise=exercise,
+                    sub_id=sub,
+                    # auto_grade = accepted[sub]["grade"]
+                    # penalty = accepted[sub]["penalty"]
+                )
+                feedback.save()
 
-        add_feedback_base(exercise, feedback)
-        for student in accepted[sub]["students"]:
-            add_student(student, feedback)
+            add_feedback_base(exercise, feedback)
 
-    if exercise.work_div == Exercise.EVEN_DIV:
-        divide_submissions(exercise)
+            for student in accepted[sub]["students"]:
+                add_student(student, feedback)
+
+        if exercise.work_div == Exercise.EVEN_DIV:
+            divide_submissions(exercise)
 
 
 def check_deadline(exercise):
