@@ -29,13 +29,19 @@
 
 
       {% if obj.code %}
-
         {% pygment %}
           <pre lang="python">{{ obj.code }}</pre>
         {% endpygment %}
 
+        {% if obj.style %}
+        <div class="p-2">
+          <h5>PEP8 tyylitarkastuksen tulokset</h5>
+          {{ obj.style| linebreaks }}
+        </div>
+        {% endif %}
 
       {% endif %}
+
     {% endfor %}
 
   </div>

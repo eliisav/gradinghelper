@@ -4,7 +4,11 @@ Module for various utility functions
 
 
 # import filetype, jos käytät tätä muista lisätä tiedostoon requirements.txt
+import io
+import pep8
 import requests
+import sys
+
 from .models import Course, Exercise, Feedback, Student
 from django.conf import settings
 from django.core.cache import cache
@@ -428,10 +432,27 @@ def get_filecontent(sub_data, form_field, files):
 
             text = ""
             code = None
+            style = None
 
             if file["filename"].endswith(".py"):
                 resp.encoding = "utf-8"
                 code = resp.text
+                lines = code.split("\n")
+                lines = [line + "\n" for line in lines]
+                style_checker = pep8.Checker(lines=lines)
+
+                # check_all -metodi printtaa tulokset stdouttiin,
+                # joten luodaan bufferi, johon saadaan tulokset talteen
+                buffer = io.StringIO()
+                sys.stdout = buffer
+
+                style_checker.check_all()
+
+                # Palautetaan alkuperäinen stdout ja
+                # haetaan tarkastuksen tulokset bufferista
+                sys.stdout = sys.__stdout__
+                style = buffer.getvalue()
+
             else:
                 text = "Lataa tiedosto oheisesta linkistä."
 
@@ -440,7 +461,8 @@ def get_filecontent(sub_data, form_field, files):
                     "title": None,
                     "url": file["url"],
                     "text": text,
-                    "code": code
+                    "code": code,
+                    "style": style
                 }
             )
 
