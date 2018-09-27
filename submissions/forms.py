@@ -11,7 +11,7 @@ class ExerciseUpdateForm(forms.ModelForm):
         labels = {
             "min_points": "Pisteet, joilla tehtävä hyväksytään arvosteluun:",
             "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
-            "auto_div": "Automaattinen työnjako",
+            "work_div": "Työnjako:",
             "feedback_base": "Palautepohja:"
         }
         widgets = {
@@ -51,16 +51,6 @@ class ExerciseSetGradingForm(ExerciseUpdateForm):
             self.fields["name"].label = "Tehtävä:"
 
 
-class FeedbackForm(forms.ModelForm):
-    class Meta:
-        model = Feedback
-        fields = ["points", "feedback", "status"]
-
-        widgets = {
-            "feedback": forms.Textarea(attrs={'cols': 70, 'rows': 20})
-        }
-
-
 class ChangeGraderForm(forms.ModelForm):
     class Meta:
         model = Feedback
@@ -74,6 +64,23 @@ class ChangeGraderForm(forms.ModelForm):
         course = kwargs["instance"].exercise.course
         self.fields["grader"].queryset = User.objects.filter(
             Q(my_courses=course) | Q(responsibilities=course)).distinct()
+
+
+class FeedbackForm(ChangeGraderForm):
+    class Meta(ChangeGraderForm.Meta):
+        fields = ["grader", "staff_grade", "feedback", "status"]
+        labels = {
+            "grader": "Arvostelija",
+            "staff_grade": "Arvostelijan antamat pisteet",
+            "feedback": "Palaute",
+            "status": "Palautteen tila"
+        }
+        widgets = {
+            "staff_grade": forms.NumberInput(attrs={
+                "placeholder": "Kirjaa pisteet ilman myöhästymissakkoa"
+            }),
+            "feedback": forms.Textarea(attrs={"cols": 70, "rows": 17})
+        }
 
 
 class SetGraderMeForm(forms.ModelForm):

@@ -43,11 +43,17 @@ class Exercise(models.Model):
     feedback_base = models.FileField(null=True, blank=True, upload_to="files/")
     in_grading = models.BooleanField(default=False)
 
+    # TODO: Tarvittaisiinko tämmöinen, ettei suotta loputtomiin haeta
+    # palautuksia tehtävään, joka on jo arvosteltu?
+    # grading_ready = models.BooleanField(default=False)
+
+    # TODO: Tarvitaanko kuitenkin joku max-pisteet rästiprojekteja varten?
+    # max_points = models.PositiveSmallIntegerField(null=True, blank=True)
+
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
     work_div = models.PositiveSmallIntegerField(choices=DIV_CHOICES,
-                                                default=EVEN_DIV,
-                                                verbose_name="Työnjako:")
+                                                default=EVEN_DIV)
 
     def get_absolute_url(self):
         return reverse(
@@ -81,14 +87,14 @@ class Feedback(models.Model):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     sub_id = models.IntegerField(unique=True)
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
-    grader = models.ForeignKey(User, on_delete=models.CASCADE, null=True,
-                               blank=True)
-    feedback = models.TextField(verbose_name="palaute")
-    points = models.PositiveSmallIntegerField(default=0,
-                                              verbose_name="pisteet")
+    grader = models.ForeignKey(User, on_delete=models.CASCADE,
+                               null=True, blank=True)
+    feedback = models.TextField()
+    auto_grade = models.PositiveIntegerField(default=0)
+    staff_grade = models.PositiveSmallIntegerField(null=True)
+    penalty = models.DecimalField(default=1.0, max_digits=4, decimal_places=2)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES,
-                                              null=True,
-                                              verbose_name="palautteen tila")
+                                              null=True)
     released = models.BooleanField(default=False)
 
     class Meta:
