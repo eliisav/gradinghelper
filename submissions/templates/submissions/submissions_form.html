@@ -11,21 +11,16 @@
 {% block content %}
 
   <div class="col-md-8 offset-md-2">
-  
-  
-<!--
-    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#submissions_all">
-      Näytä kaikki palautukset
-    </button>
-    
-    
-    <div class="collapse mt-4" id="submissions_all">
--->
+
     <h2> Kaikki arvosteltavat palautukset </h2>
     <h4> {{ exercise.name }} </h4>
 
     <h6> Arvosteltu: {{ ready_count }} / {{ feedback_count }} </h6>
 
+    {% if user_is_teacher %}
+      <a class="btn btn-primary mb-4" href="{% url 'submissions:json' exercise.exercise_id %}" role="button">Luo json palautteista</a>
+    {% endif %}
+      
     {% if form.forms %}
         <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
           {% csrf_token %}
