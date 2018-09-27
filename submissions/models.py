@@ -55,6 +55,12 @@ class Exercise(models.Model):
     work_div = models.PositiveSmallIntegerField(choices=DIV_CHOICES,
                                                 default=EVEN_DIV)
 
+    def set_defaults(self):
+        self.consent_exercise = None
+        self.min_points = 1
+        self.in_grading = False
+        self.work_div = self.EVEN_DIV
+
     def get_absolute_url(self):
         return reverse(
            "submissions:exercises", kwargs={"course_id": self.course.course_id}

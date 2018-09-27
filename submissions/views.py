@@ -166,10 +166,9 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        self.object.consent_exercise = None
+        self.object.set_defaults()
         self.object.feedback_base.delete()
         self.object.feedback_set.all().delete()
-        self.object.in_grading = False
         self.object.save()
         messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
 
