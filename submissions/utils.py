@@ -5,6 +5,9 @@ Module for various utility functions
 
 # import filetype, jos käytät tätä muista lisätä tiedostoon requirements.txt
 import io
+import json
+import datetime
+import math
 import pep8
 import requests
 import sys
@@ -148,11 +151,16 @@ def update_submissions(exercise):
                 feedback = Feedback.objects.get(sub_id=sub)
 
             except Feedback.DoesNotExist:
+                if accepted[sub]["penalty"]:
+                    penalty = accepted[sub]["penalty"]
+                else:
+                    penalty = 1.0
+
                 feedback = Feedback(
                     exercise=exercise,
                     sub_id=sub,
-                    # auto_grade = accepted[sub]["grade"]
-                    # penalty = accepted[sub]["penalty"]
+                    auto_grade=accepted[sub]["grade"],
+                    penalty=penalty
                 )
                 feedback.save()
 
@@ -438,9 +446,10 @@ def get_filecontent(sub_data, form_field, files):
             if file["filename"].endswith(".py"):
                 resp.encoding = "utf-8"
                 code = resp.text
-                lines = code.split("\n")
+                lines = code.rstrip("\n").split("\n")
                 lines = [line + "\n" for line in lines]
-                style_checker = pep8.Checker(lines=lines)
+                print(lines)
+                style_checker = pep8.Checker(lines=lines, show_source=True)
 
                 # check_all -metodi printtaa tulokset stdouttiin,
                 # joten luodaan bufferi, johon saadaan tulokset talteen
@@ -492,21 +501,6 @@ def get_text(sub_data, form_field, textareas):
             return
 
 
-def create_json(feedbacks):
-    if feedbacks:
-        print("\nNyt pitäisi askarrella ja postata jsoni.\n")
-        return True
-    else:
-        print("Ei arvosteltuja palautuksia.")
-        return False
-
-
-def save_file(fileobject):
-    with open(f"files/{fileobject.name}.txt", "wb") as file:
-        for chunk in fileobject.chunks():
-            file.write(chunk)
-
-
 def check_filetype(fileobject):
     """
     Tarkastellaan ladatun tiedoston kokoa ja tiedostopäätettä.
@@ -528,3 +522,39 @@ def check_filetype(fileobject):
 
     else:
         return False
+
+
+def create_json(feedbacks):
+    """
+    HUOM! Tämä on väliaikainen purkkaliima. 
+    
+    Nyt kaikkiin palautteisiin menee arvostelijaksi aps.
+    
+    Rästiprojekteja ajatellen ei voida laittaa useita opiskelijoita samaan 
+    arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
+    """
+
+    object_list = []
+
+    for feedback in feedbacks:
+        students = []
+
+        for student in feedback.students.all():
+            students.append(student.email)
+
+        penalty = feedback.staff_grade * feedback.penalty
+        points = feedback.auto_grade + feedback.staff_grade - penalty
+
+        obj = {
+            "students_by_email": students,
+            "feedback": f"<pre>{feedback.feedback}</pre>",
+            "grader": 191,
+            "exercise_id": feedback.exercise.exercise_id,
+            "submission_time": f"{datetime.datetime.now()}",
+            "points": math.ceil(points)  # TODO: pyöristys?
+        }
+
+        object_list.append(obj)
+
+    objects = {"objects": object_list}
+    return json.dumps(objects, indent=2)

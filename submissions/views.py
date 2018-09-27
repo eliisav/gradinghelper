@@ -10,19 +10,18 @@ from .forms import *
 from .utils import *
 
 
-class CourseExerciseMixin:
+class ExerciseMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if "course_id" in self.kwargs:
-            context["course"] = get_object_or_404(
-                Course, course_id=self.kwargs["course_id"]
-            )
-        elif "exercise_id" in self.kwargs:
+        if "exercise_id" in self.kwargs:
             exercise = get_object_or_404(
                 Exercise, exercise_id=self.kwargs["exercise_id"]
             )
             context["exercise"] = exercise
             context["course"] = exercise.course
+            context["user_is_teacher"] = exercise.course.is_teacher(
+                self.request.user
+            )
             context["feedback_count"] = len(exercise.feedback_set.all())
             context["ready_count"] = len(exercise.feedback_set.filter(
                 status=Feedback.READY
@@ -55,8 +54,7 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
         return self.render_to_response(self.get_context_data())
         
         
-class ExerciseListView(CourseExerciseMixin, LoginRequiredMixin,
-                       generic.ListView):
+class ExerciseListView(LoginRequiredMixin, generic.ListView):
     """
     Listaa yhden kurssin kaikki tehtävät
     """
@@ -68,17 +66,22 @@ class ExerciseListView(CourseExerciseMixin, LoginRequiredMixin,
         course = get_object_or_404(Course, course_id=kwargs["course_id"])
         self.object_list = self.get_queryset().filter(
             course=course).filter(in_grading=True)
+        context = self.get_context_data(user=request.user, course=course)
+        return self.render_to_response(context)
 
-        context = self.get_context_data()
-        
-        if course.is_teacher(request.user):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["course"] = kwargs["course"]
+
+        if kwargs["course"].is_teacher(kwargs["user"]):
             context["user_is_teacher"] = True
-            context["form"] = ExerciseSetGradingForm(course=course)
+            context["form"] = ExerciseSetGradingForm(course=kwargs["course"])
+
             for exercise in self.object_list:
                 exercise.form = ExerciseUpdateForm(instance=exercise,
-                                                   course=course)
+                                                   course=kwargs["course"])
 
-        return self.render_to_response(context)
+        return context
 
 
 class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
@@ -111,7 +114,6 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
         url = self.request.META.get("HTTP_REFERER", "")
-        print(url)
         return url
 
 
@@ -124,7 +126,8 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
     
     def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, pk=request.POST["name"])
-        form = ExerciseSetGradingForm(request.POST, request.FILES, instance=exercise)
+        form = ExerciseSetGradingForm(request.POST, request.FILES,
+                                      instance=exercise)
 
         if form.is_valid():
             exercise = form.save(commit=False)
@@ -173,7 +176,7 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class GradingListView(CourseExerciseMixin, LoginRequiredMixin,
+class GradingListView(ExerciseMixin, LoginRequiredMixin,
                       generic.ListView):
     """
     Listaa käyttäjälle hänen arvostelulistallaan olevat palautukset 
@@ -234,7 +237,7 @@ class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
         return self.get(request, *args, **kwargs)
 
 
-class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
+class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
                           generic.FormView):
     """
     Lomakenäkymä, jolla palautuksen arvostelija voidaan vaihtaa/asettaa.
@@ -268,7 +271,7 @@ class SubmissionsFormView(CourseExerciseMixin, LoginRequiredMixin,
         return reverse_lazy("submissions:submissions", args=(exercise_id,))
 
 
-class FeedbackView(CourseExerciseMixin, LoginRequiredMixin,
+class FeedbackView(ExerciseMixin, LoginRequiredMixin,
                    generic.edit.UpdateView):
     """
     Näyttää yhden palautuksen koodin/urlin/kysymykset/vastauksekset ja 
@@ -284,20 +287,22 @@ class FeedbackView(CourseExerciseMixin, LoginRequiredMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        self.course = context["course"]
         # Haetaan palautuksen koodi/url/tekstimuotoinen vastaus jne.
         context["sub_data"] = get_submission_data(self.object)
 
         # Näkymään pääsee kahden eri sivun kautta, joten murupolkua
         # varten lisätään kontekstiin tieto siitä mistä tultiin.
-        context["referer"] = "submissions/gradinglist.html"
+        context["referer_template"] = "submissions/gradinglist.html"
+        context["referer_url"] = "submissions:grading"
 
         if "HTTP_REFERER" in self.request.META and self.request.META[
-                "HTTP_REFERER"].endswith("update/"):
-            context["referer"] = "submissions/submissions_form.html"
+                "HTTP_REFERER"].endswith("all/"):
+            context["referer_template"] = "submissions/submissions_form.html"
+            context["referer_url"] = "submissions:submissions"
 
         return context
-        
+
     def get_success_url(self):
         exercise_id = self.object.exercise.exercise_id
         return reverse("submissions:grading", args=(exercise_id,))
@@ -310,38 +315,39 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
         feedbacks = exercise.feedback_set.filter(grader=request.user,
-                                                 status=Feedback.READY, 
+                                                 status=Feedback.READY,
                                                  released=False)
         
         if create_json(feedbacks):
-            messages.success(request, "Palautteet julkaistu!")
+            messages.success(request, "Julkaistavia palautteita löytyi, "
+                                      "mutta ominaisuus on keskeneräinen "
+                                      "eikä palautteita julkaistu.")
         else:
             messages.info(request, "Julkaistavia palautteita ei löytynyt.")
             
         return super().get(request, *args, **kwargs)
 
 
+class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
+    template_name = "submissions/json.html"
+
+    def get(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
+        feedbacks = exercise.feedback_set.filter(status=Feedback.READY,
+                                                 released=False)
+        context = super().get_context_data()
+
+        if feedbacks:
+            context["json"] = create_json(feedbacks)
+        else:
+            messages.info(request, "Julkaistavia palautteita ei löytynyt.")
+
+        return self.render_to_response(context)
+
+
 # -----------------------------------------------------------------
 # Hylättyjä funktioita, testailua, kokeiluja jne.
-
-def kirjautumistesti(request):
-    if request.user.is_authenticated:
-        print("Kirjautunut käyttäjä:", request.user.email)
-    else:
-        print("Ei ketään!")
-
-
-class GradingView(LoginRequiredMixin, generic.ListView):
-    """
-    Listataan kaikki tarkastettavat tehtävät kurssista riippumatta.
-    HUOM! Tätä ei varmaan tarvita mihinkään.
-    """
-    model = Exercise
-    template_name = "submissions/grading.html"
-    context_object_name = "exercises"
-
-    def get_queryset(self):
-        return Exercise.objects.all().filter(in_grading=True)
 
 """
 class SubmissionsView(LoginRequiredMixin, generic.ListView):

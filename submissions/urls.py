@@ -58,5 +58,8 @@ urlpatterns = [
          views.ReleaseFeedbacksRedirectView.as_view(), name='release'),
 
     path('exercises/<int:exercise_id>/submissions/setgrader/',
-         views.SetGraderRedirectView.as_view(), name='set_grader')
+         views.SetGraderRedirectView.as_view(), name='set_grader'),
+
+    path('exercises/<int:exercise_id>/submissions/json/',
+         views.CreateJsonFromFeedbacksView.as_view(), name='json')
 ]
