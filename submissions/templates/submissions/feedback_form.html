@@ -33,11 +33,11 @@
           <pre lang="python">{{ obj.code }}</pre>
         {% endpygment %}
 
+        <h5>PEP8 tyylitarkastuksen tulokset</h5>
         {% if obj.style %}
-        <div class="p-2">
-          <h5>PEP8 tyylitarkastuksen tulokset</h5>
           <pre>{{ obj.style }}</pre>
-        </div>
+        {% else %}
+          <p>Tyylivirheitä ei löytynyt.</p>
         {% endif %}
 
       {% endif %}
