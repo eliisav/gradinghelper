@@ -7,18 +7,22 @@ Module for various utility functions
 import io
 import json
 import datetime
+import logging
 import math
 import pep8
 import requests
 import sys
 
-from .models import Course, Exercise, Feedback, Student
+from .models import Course, Exercise, Feedback, Student, User
 from django.conf import settings
 from django.core.cache import cache
 
 
 AUTH = {'Authorization': settings.TOKEN}
 API_URL = "https://plus.cs.tut.fi/api/v2/"
+
+LOGGER = logging.getLogger(__name__)
+debug_feedbacks = []
 
 
 def get_json(url):
@@ -131,7 +135,7 @@ def update_submissions(exercise):
     submissiondata = cache.get(exercise.exercise_id)
     if submissiondata:
         return
-
+    
 
     consent_data = None
     if exercise.consent_exercise is not None:
@@ -141,6 +145,9 @@ def update_submissions(exercise):
 
     if deadline_passed or consent_data:
         submissiondata = get_submissions(exercise)
+
+        # print(submissiondata)
+
         cache.set(exercise.exercise_id, submissiondata)
 
         accepted = sort_submissions(submissiondata, exercise.min_points,
@@ -151,23 +158,22 @@ def update_submissions(exercise):
                 feedback = Feedback.objects.get(sub_id=sub)
 
             except Feedback.DoesNotExist:
-                if accepted[sub]["penalty"]:
-                    penalty = accepted[sub]["penalty"]
-                else:
-                    penalty = 1.0
-
                 feedback = Feedback(
                     exercise=exercise,
                     sub_id=sub,
                     auto_grade=accepted[sub]["grade"],
-                    penalty=penalty
                 )
+
+                if accepted[sub]["penalty"]:
+                    feedback.penalty = accepted[sub]["penalty"]
+
                 feedback.save()
 
             add_feedback_base(exercise, feedback)
 
             for student in accepted[sub]["students"]:
-                add_student(student, feedback)
+                if not add_student(student, feedback):
+                    break
 
         if exercise.work_div == Exercise.EVEN_DIV:
             divide_submissions(exercise)
@@ -257,7 +263,7 @@ def sort_submissions(submissions, min_points, deadline_passed, consent_data):
             # Poistetaan opiskelijalta se palautus, joka EI ole paripalautus.
             # Tällöin opiskelijatietoja siis 1 kpl
             if len(accepted[sub]["students"]) == 1:
-                print("Poistetaan tupla:", sub, accepted[sub])
+                # print("Poistetaan tupla:", sub, accepted[sub])
                 del accepted[sub]
 
     return accepted
@@ -286,6 +292,7 @@ def add_student(student_dict, new_feedback):
     samaan tehtävään, se poistetaan mikäli arviointia ei ole aloitettu.
     :param student_dict: (dict) opiskelijan s-posti ja opiskelijanumero
     :param new_feedback: (Feedback model object)
+    :return: (bool) False, jos opiskelijalla on jo palautus arvostelussa.
     """
     try:
         student_obj = Student.objects.get(email=student_dict["email"])
@@ -300,10 +307,24 @@ def add_student(student_dict, new_feedback):
             )
             
             if old_feedback != new_feedback:
-                print("Ei ole samat! Poista vanha ja lisää uusi tilalle:",
-                      end=" ")
+                print("Ei ole samat! Poista vanha ja lisää uusi tilalle:")
                 if old_feedback.status is None:
+
+                    #grader = User.objects.get(pk=old_feedback.grader.pk)
+
+                    new_feedback.grader = old_feedback.grader
+                    new_feedback.save()
+
+                    LOGGER.error(f"{student_obj} {new_feedback.exercise}")
+                    LOGGER.error(f"Vanha: {old_feedback} "
+                                 f"{old_feedback.grader}")
+
                     old_feedback.delete()
+
+                    LOGGER.error(f"Uusi: {new_feedback} {new_feedback.grader}")
+
+                    debug_feedbacks.append(new_feedback)
+
                     student_obj.my_feedbacks.add(new_feedback)
                 else:
                     # TODO: huomautus arvostelijalle siitä, että uudempi
@@ -311,11 +332,12 @@ def add_student(student_dict, new_feedback):
                     print("Eipäs poisteta. Arvostelu oli jo aloitettu!",
                           end=" ")
                     new_feedback.delete()
+                    return False
                 
             else:
                 print("Ne on samat, ei tartte tehdä mitään:", end=" ")
                 
-            print(student_obj.email)
+            # print(student_obj.email)
 
         except Feedback.DoesNotExist:
             print("Aikaisempaa palautusta ei löytynyt:", student_obj.email)
@@ -330,6 +352,8 @@ def add_student(student_dict, new_feedback):
         student_obj.my_feedbacks.add(new_feedback)
         print("Eka hyväksytty palautus opiskelijalle:", student_obj.email)
 
+    return True
+
 
 def divide_submissions(exercise):
     """
@@ -341,12 +365,12 @@ def divide_submissions(exercise):
     subs = exercise.feedback_set.all()
         
     for sub in subs:
+        if sub in debug_feedbacks:
+            LOGGER.error(f"Palautus päivitetty: {sub} {sub.grader}")
         if sub.grader is None:
             grader = choose_grader(exercise, graders)
             grader.feedback_set.add(sub)
-        else:
-            print(sub, sub.grader)
-    
+
     print("Palautusta per assari:", len(subs) / len(graders))
     print("Assareilla arvostelussa:")
     for grader in graders:
@@ -448,7 +472,6 @@ def get_filecontent(sub_data, form_field, files):
                 code = resp.text
                 lines = code.rstrip("\n").split("\n")
                 lines = [line + "\n" for line in lines]
-                print(lines)
                 style_checker = pep8.Checker(lines=lines, show_source=True)
 
                 # check_all -metodi printtaa tulokset stdouttiin,

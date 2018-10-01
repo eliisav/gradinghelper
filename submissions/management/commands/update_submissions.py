@@ -7,7 +7,7 @@ import datetime
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        with open("files/crontesti.txt", "a") as file:
+        with open("files/logfiles/crontesti.txt", "a") as file:
             file.write(f"Trying to update {datetime.datetime.now()}\n")
 
         exercises = Exercise.objects.all().filter(in_grading=True)
