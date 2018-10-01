@@ -98,7 +98,7 @@ class Feedback(models.Model):
     feedback = models.TextField()
     auto_grade = models.PositiveIntegerField(default=0)
     staff_grade = models.PositiveSmallIntegerField(null=True)
-    penalty = models.DecimalField(default=1.0, max_digits=4, decimal_places=2)
+    penalty = models.DecimalField(default=0.0, max_digits=4, decimal_places=2)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES,
                                               null=True)
     released = models.BooleanField(default=False)
