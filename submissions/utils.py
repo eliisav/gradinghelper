@@ -135,7 +135,7 @@ def update_submissions(exercise):
     submissiondata = cache.get(exercise.exercise_id)
     if submissiondata:
         return
-
+    
 
     consent_data = None
     if exercise.consent_exercise is not None:
@@ -315,13 +315,13 @@ def add_student(student_dict, new_feedback):
                     new_feedback.grader = old_feedback.grader
                     new_feedback.save()
 
-                    LOGGER.error(f"{student_obj} {new_feedback.exercise}")
-                    LOGGER.error(f"Vanha: {old_feedback} "
+                    LOGGER.debug(f"{student_obj} {new_feedback.exercise}")
+                    LOGGER.debug(f"Vanha: {old_feedback} "
                                  f"{old_feedback.grader}")
 
                     old_feedback.delete()
 
-                    LOGGER.error(f"Uusi: {new_feedback} {new_feedback.grader}")
+                    LOGGER.debug(f"Uusi: {new_feedback} {new_feedback.grader}")
 
                     debug_feedbacks.append(new_feedback)
 
@@ -365,9 +365,9 @@ def divide_submissions(exercise):
     subs = exercise.feedback_set.all()
         
     for sub in subs:
-        if sub in debug_feedbacks:
-            LOGGER.error(f"Palautus päivitetty: {sub} {sub.grader}")
         if sub.grader is None:
+            if sub in debug_feedbacks:
+                LOGGER.debug(f"TÄLLÄ PITI OLLA JO GRADER: {sub} {sub.grader}")
             grader = choose_grader(exercise, graders)
             grader.feedback_set.add(sub)
 

@@ -128,16 +128,16 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'file': {
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'files/logfiles/error.log',
+            'filename': 'files/logfiles/debug.log',
             'delay': True
         },
     },
     'loggers': {
-        'submissions.custom': {
+        'submissions': {
             'handlers': ['file'],
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'propagate': True,
         },
     },
