@@ -19,8 +19,7 @@
         {% for course in courses %}
           <li class="list-group-item"> 
             <a href="{% url 'submissions:exercises' course.course_id %}">
-              {{ course }}
-            </a>
+              {{ course }}</a>
           </li>
         {% endfor %}
       </ul>
