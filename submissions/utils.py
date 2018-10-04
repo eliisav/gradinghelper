@@ -13,7 +13,7 @@ import pep8
 import requests
 import sys
 
-from .models import Course, Exercise, Feedback, Student, User
+from .models import Course, Exercise, Feedback, Student
 from django.conf import settings
 from django.core.cache import cache
 
@@ -54,8 +54,8 @@ def add_user_to_course(user, user_role, course_html_url):
 def create_course(html_url):
     # Html_urlin pitäisi olla muotoa: plus.cs.tut.fi/{kurssi}/{instanssi}/
     # Tallennetaan nimeksi kurssin ja instanssin tunnisteet
-    name = "".join(html_url.split("/")[1:3])
-    
+    name = "".join(html_url.replace("https://plus.cs.tut.fi/", "").split("/"))
+
     courses_url = f"{API_URL}courses/"
     course_id = None
     
@@ -135,7 +135,7 @@ def update_submissions(exercise):
     submissiondata = cache.get(exercise.exercise_id)
     if submissiondata:
         return
-    
+
 
     consent_data = None
     if exercise.consent_exercise is not None:

@@ -34,7 +34,7 @@ def store_course_info(sender, **kwargs):
 
     if request and user and oauth:
         course_lms = getattr(oauth, 'tool_consumer_instance_name', None) # Example LMS
-        course_id = getattr(oauth, 'context_id', None) # lms.example.com/it-101/
+        course_id = getattr(oauth, 'launch_presentation_return_url', None) # https://lms.example.com/it-101/
         course_label = getattr(oauth, 'context_label', None) # IT-101
         course_name = getattr(oauth, 'context_title', None) # Basics on IT
         user_role = getattr(oauth, 'roles', None)
