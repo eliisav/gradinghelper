@@ -11,6 +11,7 @@ django-settingsdict==1.0.1
 filetype==1.0.1
 idna==2.6
 oauthlib==2.1.0
+pep8==1.7.1
 Pygments==2.2.0
 pytz==2017.3
 requests==2.18.4
