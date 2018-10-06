@@ -40,7 +40,8 @@ class Exercise(models.Model):
     consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
-    feedback_base = models.FileField(null=True, blank=True, upload_to="files/")
+    feedback_base = models.FileField(null=True, blank=True,
+                                     upload_to="feedback_bases/")
     in_grading = models.BooleanField(default=False)
 
     # TODO: Tarvittaisiinko tämmöinen, ettei suotta loputtomiin haeta

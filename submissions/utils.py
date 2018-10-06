@@ -89,11 +89,11 @@ def get_exercises(course):
     # eli niitä ei enää löydy kurssin rajapinnasta. (Jos poistetaan, niin ei
     # voida kuitenkaan sokeasti poistaa niitä, jotka on merkitty arvosteluun.)
 
-
+    """
     modules = cache.get(course.course_id)
     if modules:
         return
-
+    """
 
     exercises_url = f"{API_URL}courses/{course.course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
@@ -131,11 +131,11 @@ def get_submissions(exercise):
 
 
 def update_submissions(exercise):
-
+    """
     submissiondata = cache.get(exercise.exercise_id)
     if submissiondata:
         return
-    
+    """
 
     consent_data = None
     if exercise.consent_exercise is not None:

@@ -130,7 +130,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'files/logfiles/debug.log',
+            'filename': 'logfiles/debug.log',
             'delay': True
         },
     },
