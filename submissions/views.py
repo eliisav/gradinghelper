@@ -317,7 +317,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                                                  status=Feedback.READY,
                                                  released=False)
         
-        if create_json(feedbacks):
+        if feedbacks:
             messages.success(request, "Julkaistavia palautteita löytyi, "
                                       "mutta ominaisuus on keskeneräinen "
                                       "eikä palautteita julkaistu.")
