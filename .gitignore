@@ -3,6 +3,6 @@ db.sqlite3
 local_settings.py
 create_key.py
 .idea
-files/
-feedback_bases/*.txt
 logfiles/*.log
+static/
+media/
