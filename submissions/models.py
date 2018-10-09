@@ -22,7 +22,19 @@ class Course(models.Model):
         
     def is_teacher(self, user):
         return user in self.teachers.all()
-        
+
+
+def feedback_base_path(instance, filename):
+    """
+    Return a path to save feedback base file.
+    :param instance: (Exercise) exercise model object
+    :param filename: (str) name of uploaded file
+    :return: (str) path to save uploaded file
+    """
+    course = f"course_{instance.course.course_id}"
+    exercise = f"exercise_{instance.exercise_id}"
+    return f"{course}/{exercise}/{filename}/"
+
 
 class Exercise(models.Model):
     EVEN_DIV = 0
@@ -41,7 +53,7 @@ class Exercise(models.Model):
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
     feedback_base = models.FileField(null=True, blank=True,
-                                     upload_to="feedback_bases/")
+                                     upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
 
     # TODO: Tarvittaisiinko tämmöinen, ettei suotta loputtomiin haeta
@@ -56,19 +68,19 @@ class Exercise(models.Model):
     work_div = models.PositiveSmallIntegerField(choices=DIV_CHOICES,
                                                 default=EVEN_DIV)
 
-    def set_defaults(self):
-        self.consent_exercise = None
-        self.min_points = 1
-        self.in_grading = False
-        self.work_div = self.EVEN_DIV
+    def __str__(self):
+        return self.name
 
     def get_absolute_url(self):
         return reverse(
            "submissions:exercises", kwargs={"course_id": self.course.course_id}
         )
 
-    def __str__(self):
-        return self.name
+    def set_defaults(self):
+        self.consent_exercise = None
+        self.min_points = 1
+        self.in_grading = False
+        self.work_div = self.EVEN_DIV
 
 
 class Student(models.Model):
@@ -98,7 +110,7 @@ class Feedback(models.Model):
                                null=True, blank=True)
     feedback = models.TextField()
     auto_grade = models.PositiveIntegerField(default=0)
-    staff_grade = models.PositiveSmallIntegerField(null=True)
+    staff_grade = models.PositiveSmallIntegerField(default=0)
     penalty = models.DecimalField(default=0.0, max_digits=4, decimal_places=2)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES,
                                               null=True)
@@ -109,3 +121,6 @@ class Feedback(models.Model):
         
     def __str__(self):
         return str(self.sub_id)
+
+
+
