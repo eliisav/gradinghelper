@@ -340,7 +340,7 @@ class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
         if feedbacks:
             context["json"] = create_json(feedbacks)
         else:
-            messages.info(request, "Julkaistavia palautteita ei löytynyt.")
+            context["json"] = "JULKAISTAVIA PALAUTTEITA EI LÖYTYNYT!"
 
         return self.render_to_response(context)
 
