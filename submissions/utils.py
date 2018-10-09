@@ -226,6 +226,10 @@ def sort_submissions(submissions, min_points, deadline_passed, consent_data):
         if sub["Grade"] < min_points:
             continue
 
+        # TODO: Ota tämä pois! Väliaikainen viritys askelmittaria varten
+        if sub["Penalty"] is None and sub["Grade"] < 20:
+            continue
+
         if not deadline_passed and not check_consent(sub["Email"],
                                                      consent_data):
             continue
