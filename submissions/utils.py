@@ -8,7 +8,6 @@ import io
 import json
 import datetime
 import logging
-import math
 import pep8
 import requests
 import sys
@@ -561,6 +560,11 @@ def create_json(feedbacks):
     arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
     """
 
+    otsikko = "TIE-02101 OHJELMOINTI 1: JOHDANTO / ASKELMITTARI\n"
+    selite = "Arvostelua koskevat mahdolliset tiedustelut voit lähettää " \
+             "työsi tarkastajalle.\nHUOM! Muista sisällyttää viestisi " \
+             "otsikkoon myös opiskelijanumerosi!\n"
+
     object_list = []
 
     for feedback in feedbacks:
@@ -569,16 +573,23 @@ def create_json(feedbacks):
         for student in feedback.students.all():
             students.append(student.email)
 
-        penalty = feedback.staff_grade * feedback.penalty
+        penalty = int(feedback.staff_grade * feedback.penalty)
         points = feedback.auto_grade + feedback.staff_grade - penalty
+
+        header = f"{otsikko}\n{selite}\nTARKASTAJA: {feedback.grader}\n\n"
+        auto_grade = f"Automaatin pisteet: {feedback.auto_grade}\n"
+        staff_grade = f"Tarkastajan pisteet: {feedback.staff_grade}\n"
+        sakko = f"Myöhästymissakko tarkastajan pisteistä: -{penalty}\n"
+        yht = f"Pisteet yhteensä: {points}\n\n"
+        grade = f"{auto_grade}{staff_grade}{sakko}{yht}"
 
         obj = {
             "students_by_email": students,
-            "feedback": f"<pre>{feedback.feedback}</pre>",
+            "feedback": f"<pre>{header}{grade}{feedback.feedback}</pre>",
             "grader": 191,
             "exercise_id": feedback.exercise.exercise_id,
             "submission_time": f"{datetime.datetime.now()}",
-            "points": math.ceil(points)  # TODO: pyöristys?
+            "points": points  # TODO: pyöristys?
         }
 
         object_list.append(obj)
