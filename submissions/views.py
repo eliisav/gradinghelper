@@ -94,7 +94,8 @@ class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
     Lisätään/päivitetään kurssin tehtävät tietokantaan.
     """
     pattern_name = "submissions:exercises"
-    
+
+    # TODO: muuttaa tietokannan tilaa, joten muuta postiksi
     def get(self, request, *args, **kwargs):
         course = get_object_or_404(Course, course_id=kwargs["course_id"])
         get_exercises(course)
@@ -107,6 +108,8 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
     """
     Lisätään/päivitetään tehtävän palautukset tietokantaan.
     """
+
+    # TODO: muuttaa tietokannan tilaa, joten muuta postiksi
     def get(self, request, *args, **kwargs):
         exercise = get_object_or_404(
             Exercise,
@@ -160,6 +163,8 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     tarkastuslistalta. (Onko vastoin hyvää tyyliä?) Post-metodi käsittelee 
     lomakkeen lomakkeen normaalisti ilman ylimääräisiä kikkailuja
     """
+    # TODO: palautepohjan tiedostotyypin tarkastus
+    # TODO: get ei oikeastaan saisi koskaan muuttaa tietokannan tilaa
     model = Exercise
     slug_field = "exercise_id"
     slug_url_kwarg = "exercise_id"
@@ -253,9 +258,6 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
     Lomakenäkymä, jolla palautuksen arvostelija voidaan vaihtaa/asettaa.
 
     """
-
-    # TODO: palautusten päivittäminen tähän näkymään tultaessa
-
     form_class = modelformset_factory(Feedback, form=ChangeGraderForm, extra=0)
     template_name = "submissions/submissions_form.html"
     
