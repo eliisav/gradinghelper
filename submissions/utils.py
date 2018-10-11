@@ -595,6 +595,9 @@ def create_json(feedbacks):
         penalty = int(feedback.staff_grade * feedback.penalty)
         points = feedback.auto_grade + feedback.staff_grade - penalty
 
+        if points < 14 or points > 100:
+            return f"KOKONAISPISTEMÄTÄ! {feedback.sub_id}"
+
         header = f"{otsikko}\n{selite}\nTARKASTAJA: {feedback.grader}\n\n"
         auto_grade = f"Automaatin pisteet: {feedback.auto_grade}\n"
         staff_grade = f"Tarkastajan pisteet: {feedback.staff_grade}\n"
