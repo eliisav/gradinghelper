@@ -23,6 +23,9 @@ class Course(models.Model):
     def is_teacher(self, user):
         return user in self.teachers.all()
 
+    def is_staff(self, user):
+        return self.is_teacher(user) or user in self.assistants.all()
+
 
 def feedback_base_path(instance, filename):
     """
@@ -37,6 +40,7 @@ def feedback_base_path(instance, filename):
 
 
 class Exercise(models.Model):
+
     EVEN_DIV = 0
     NO_DIV = 1
 
@@ -52,6 +56,7 @@ class Exercise(models.Model):
     consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
+    penalty = models.BooleanField(default=True)
     feedback_base = models.FileField(null=True, blank=True,
                                      upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
@@ -67,6 +72,10 @@ class Exercise(models.Model):
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
     work_div = models.PositiveSmallIntegerField(choices=DIV_CHOICES,
                                                 default=EVEN_DIV)
+    graders = models.ManyToManyField(User, blank=True,
+                                     related_name="my_gradings"
+                                     )
+    num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -79,8 +88,11 @@ class Exercise(models.Model):
     def set_defaults(self):
         self.consent_exercise = None
         self.min_points = 1
+        self.penalty = True
         self.in_grading = False
         self.work_div = self.EVEN_DIV
+        self.graders.all = None
+        self.num_of_graders = None
 
 
 class Student(models.Model):
@@ -121,6 +133,3 @@ class Feedback(models.Model):
         
     def __str__(self):
         return str(self.sub_id)
-
-
-

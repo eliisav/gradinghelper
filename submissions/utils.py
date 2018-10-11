@@ -8,6 +8,7 @@ import io
 import json
 import datetime
 import logging
+import math
 import pep8
 import requests
 import sys
@@ -363,24 +364,40 @@ def divide_submissions(exercise):
     Jakaa palautukset kurssille merkittyjen assareiden kesken.
     param exercise: (models.Exercise) Tehtäväobjekti
     """
-    graders = Course.objects.get(
-        course_id=exercise.course.course_id).assistants.all()
+
+    # graders = Course.objects.get(
+    #   course_id=exercise.course.course_id).assistants.all()
+
+    graders = exercise.graders.all()
     subs = exercise.feedback_set.all()
-        
+    grader_max_now = subs.count() // exercise.num_of_graders
+    no_grader = []
+
     for sub in subs:
         if sub.grader is None:
             if sub in debug_feedbacks:
                 LOGGER.debug(f"TÄLLÄ PITI OLLA JO GRADER: {sub} {sub.grader}")
-            grader = choose_grader(exercise, graders)
-            grader.feedback_set.add(sub)
 
-    print("Palautusta per assari:", len(subs) / len(graders))
+            grader = choose_grader(exercise, graders, grader_max_now)
+
+            if grader:
+                grader.feedback_set.add(sub)
+            elif graders.count() == exercise.num_of_graders:
+                no_grader.append(sub)
+            else:
+                break
+
+    for sub in no_grader:
+        grader = choose_grader(exercise, graders)
+        grader.feedback_set.add(sub)
+
+    print("Palautusta per assari:", subs.count() / exercise.num_of_graders)
     print("Assareilla arvostelussa:")
     for grader in graders:
         print(len(grader.feedback_set.filter(exercise=exercise)))
 
 
-def choose_grader(exercise, graders):
+def choose_grader(exercise, graders, max_sub_count=None):
     """
     Jonkinlainen algoritmi töiden jakamiseen. Jakaa työ tasan kaikkien 
     kurssiin liitettyjen assareiden kesken. Ei ole kunnolla testattu ja 
@@ -396,15 +413,22 @@ def choose_grader(exercise, graders):
     for grader in graders:
         # Valitaan pienimmän arvostelumäärän omaavaksi ensimmäinen
         # vastaantuleva
-        if first:
-            min_sub_count = len(grader.feedback_set.filter(exercise=exercise))
+        if max_sub_count and grader.feedback_set.filter(
+                exercise=exercise).count() >= max_sub_count:
+            continue
+
+        elif first:
+            min_sub_count = grader.feedback_set.filter(
+                exercise=exercise).count()
             grader_to_add = grader
             first = False
+
         # Jos ensimmäinen alkio on jo käsitelty,
         # tutkitaan löytyykö sitä pienempää
-        elif len(grader.feedback_set.filter(
-                exercise=exercise)) < min_sub_count:
-            min_sub_count = len(grader.feedback_set.filter(exercise=exercise))
+        elif grader.feedback_set.filter(
+                exercise=exercise).count() < min_sub_count:
+            min_sub_count = grader.feedback_set.filter(
+                exercise=exercise).count()
             grader_to_add = grader
             
     # Tässä pitäisi ny olla se, jolla on vähiten arvosteltavaa, tai yksi

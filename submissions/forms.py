@@ -6,12 +6,16 @@ from django.db.models import Q
 class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        fields = ["min_points", "consent_exercise", "work_div",
-                  "feedback_base"]
+        fields = ["min_points", "consent_exercise", "penalty", "work_div",
+                  "graders", "num_of_graders", "feedback_base"]
         labels = {
             "min_points": "Pisteet, joilla tehtävä hyväksytään arvosteluun:",
             "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
+            "penalty": "Arvostelijan antamista pisteistä "
+                       "vähennetään myöhästymissakko",
             "work_div": "Työnjako:",
+            "graders": "Valitse arvostelijat:",
+            "num_of_graders": "Arvostelijoiden lukumäärä",
             "feedback_base": "Palautepohja:"
         }
         widgets = {
@@ -30,12 +34,22 @@ class ExerciseUpdateForm(forms.ModelForm):
             self.fields["consent_exercise"].queryset = Exercise.objects.filter(
                 course=self.course
             )
+            self.fields["graders"].queryset = User.objects.filter(
+                Q(
+                    my_courses=self.course
+                ) | Q(
+                    responsibilities=self.course
+                )).distinct()
+            self.fields["num_of_graders"].widget = forms.NumberInput(attrs={
+                "placeholder": "Tarvitaan jos eri kuin edellä "
+                               "valittujen määrä"
+            })
 
 
 class ExerciseSetGradingForm(ExerciseUpdateForm):
     class Meta(ExerciseUpdateForm.Meta):
-        fields = ["name", "min_points", "consent_exercise", "work_div",
-                  "feedback_base"]
+        fields = ["name", "min_points", "consent_exercise", "penalty",
+                  "work_div", "graders", "num_of_graders", "feedback_base"]
 
     def __init__(self, *args, **kwargs):
 
@@ -48,7 +62,7 @@ class ExerciseSetGradingForm(ExerciseUpdateForm):
                 ).filter(
                     in_grading=False)
             )
-            self.fields["name"].label = "Tehtävä:"
+            self.fields["name"].label = "Lisättävä tehtävä:"
 
 
 class ChangeGraderForm(forms.ModelForm):
@@ -71,7 +85,8 @@ class FeedbackForm(ChangeGraderForm):
         fields = ["grader", "staff_grade", "feedback", "status"]
         labels = {
             "grader": "Arvostelija",
-            "staff_grade": "Arvostelijan antamat pisteet",
+            "staff_grade": "Arvostelijan antamat pisteet "
+                           "ilman myöhästymissakkoa",
             "feedback": "Palaute",
             "status": "Palautteen tila"
         }
@@ -79,7 +94,7 @@ class FeedbackForm(ChangeGraderForm):
             "staff_grade": forms.NumberInput(attrs={
                 "placeholder": "Kirjaa pisteet ilman myöhästymissakkoa"
             }),
-            "feedback": forms.Textarea(attrs={"cols": 70, "rows": 17})
+            "feedback": forms.Textarea(attrs={"cols": 100, "rows": 17})
         }
 
 

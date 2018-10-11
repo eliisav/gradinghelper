@@ -141,9 +141,15 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
             exercise = form.save(commit=False)
             if check_filetype(exercise.feedback_base):
                 exercise.in_grading = True
+
+                if exercise.num_of_graders is None:
+                    exercise.num_of_graders = len(exercise.graders.all())
+
                 exercise.save(update_fields=["min_points", "consent_exercise",
-                                             "work_div", "feedback_base",
+                                             "penalty", "work_div",
+                                             "num_of_graders", "feedback_base",
                                              "in_grading"])
+                form.save_m2m()
                 messages.success(request, "Tehtävän lisääminen onnistui.")
             else:
                 messages.error(request, "Ladatun tiedoston pääte ei ollut "
