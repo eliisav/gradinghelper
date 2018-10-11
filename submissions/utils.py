@@ -384,7 +384,7 @@ def divide_submissions(exercise):
         grader = choose_grader(exercise, graders)
         grader.feedback_set.add(sub)
 
-    LOGGER.debug(f"Arvosteltavia palautuksia: {subs.count}")
+    LOGGER.debug(f"Arvosteltavia palautuksia: {subs.count()}")
     LOGGER.debug(f"Palautusta per assari: "
                  f"{subs.count()/exercise.num_of_graders}")
     LOGGER.debug("Assareilla arvostelussa:")
