@@ -41,12 +41,14 @@
 
       <div class="row" id="messages">
 
-          <div class="col-md-12" >
+          <div class="col-md-4 offset-md-4" >
             {% if messages %}
               <ul class="list-group list-group-flush messages">
                 {% for message in messages %}
                   {% if message.tags == "error" %}
                     <li class="list-group-item list-group-item-danger">
+                  {% elif message.tags == "warning" %}
+                    <li class="list-group-item list-group-item-warning">
                   {% elif message.tags == "success" %}
                     <li class="list-group-item list-group-item-success">
                   {% else %}
