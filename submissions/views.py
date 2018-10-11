@@ -275,9 +275,8 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
         return super().form_valid(form)
 
     def get(self, request, *args, **kwargs):
-        self.object = get_object_or_404(Exercise,
-                                        exercise_id=self.kwargs["exercise_id"])
-        if not self.object.course.is_staff(request.user):
+        context = self.get_context_data()
+        if not context["course"].is_staff(request.user):
             raise PermissionDenied
 
         return self.render_to_response(self.get_context_data())
@@ -288,7 +287,9 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
         # update_submissions(exercise)
 
         kwargs = super().get_form_kwargs()
-        kwargs["queryset"] = self.object.feedback_set.all()
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=self.kwargs["exercise_id"])
+        kwargs["queryset"] = exercise.feedback_set.all()
         return kwargs
     
     def get_success_url(self):
