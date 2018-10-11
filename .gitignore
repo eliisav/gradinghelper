@@ -6,3 +6,4 @@ create_key.py
 logfiles/*.log
 static/
 media/
+secret_key.txt
