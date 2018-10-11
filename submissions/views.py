@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.forms import modelformset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -64,6 +65,10 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
     
     def get(self, request, *args, **kwargs):
         course = get_object_or_404(Course, course_id=kwargs["course_id"])
+
+        if not course.is_staff(request.user):
+            raise PermissionDenied
+
         self.object_list = self.get_queryset().filter(
             course=course).filter(in_grading=True)
         context = self.get_context_data(user=request.user, course=course)
@@ -205,9 +210,15 @@ class GradingListView(ExerciseMixin, LoginRequiredMixin,
     def get(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
+
+        if not exercise.course.is_staff(request.user):
+            raise PermissionDenied
+
         # update_submissions(exercise)
+
         self.object_list = self.get_queryset().filter(
             exercise=exercise).filter(grader=request.user)
+
         return self.render_to_response(self.get_context_data())
 
 
@@ -255,14 +266,21 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
         messages.success(self.request, "Muutokset tallennettu.")
         return super().form_valid(form)
 
+    def get(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Exercise,
+                                        exercise_id=self.kwargs["exercise_id"])
+        if not self.object.course.is_staff(request.user):
+            raise PermissionDenied
+
+        return self.render_to_response(self.get_context_data())
+
     def get_form_kwargs(self):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=self.kwargs["exercise_id"])
         # Päivitetään palautukset rajapinnasta, tämä on huono paikka,
         # homma hidasta.
         # update_submissions(exercise)
+
         kwargs = super().get_form_kwargs()
-        kwargs["queryset"] = exercise.feedback_set.all()
+        kwargs["queryset"] = self.object.feedback_set.all()
         return kwargs
     
     def get_success_url(self):
@@ -284,9 +302,20 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
         "status": Feedback.READY
     }
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if not self.object.exercise.course.is_staff(request.user):
+            raise PermissionDenied
+
+        if request.user != self.object.grader:
+            messages.warning(request, "Palautus ei ole omalla työlistallasi!")
+
+        return self.render_to_response(self.get_context_data())
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.course = context["course"]
+
         # Haetaan palautuksen koodi/url/tekstimuotoinen vastaus jne.
         context["sub_data"] = get_submission_data(self.object)
 
@@ -309,10 +338,15 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
 
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
-    
+
+    # TODO: kun palautteet oikeasti julkaistaan sen pitää olla post
     def get(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
+
+        if not exercise.course.is_staff(request.user):
+            raise PermissionDenied
+
         feedbacks = exercise.feedback_set.filter(grader=request.user,
                                                  status=Feedback.READY,
                                                  released=False)
