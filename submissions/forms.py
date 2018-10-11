@@ -94,7 +94,7 @@ class FeedbackForm(ChangeGraderForm):
             "staff_grade": forms.NumberInput(attrs={
                 "placeholder": "Kirjaa pisteet ilman myöhästymissakkoa"
             }),
-            "feedback": forms.Textarea(attrs={"cols": 100, "rows": 17})
+            "feedback": forms.Textarea(attrs={"cols": 80, "rows": 17})
         }
 
 

@@ -107,10 +107,12 @@ class Student(models.Model):
 
 
 class Feedback(models.Model):
-    DRAFT = 0
-    READY = 1
+    BASE = 0
+    DRAFT = 1
+    READY = 2
     
     STATUS_CHOICES = (
+        (BASE, "Palautepohja"),
         (DRAFT, "Luonnos"),
         (READY, "Valmis"),
     )
@@ -125,7 +127,7 @@ class Feedback(models.Model):
     staff_grade = models.PositiveSmallIntegerField(default=0)
     penalty = models.DecimalField(default=0.0, max_digits=4, decimal_places=2)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES,
-                                              null=True)
+                                              default=BASE)
     released = models.BooleanField(default=False)
 
     class Meta:

@@ -12,7 +12,7 @@
 
 {% block content %}
 
-  <div class="col-xl">
+  <div class="col-xl-6">
 
     {% for obj in sub_data %}
       {% if obj.title %}
@@ -47,7 +47,7 @@
   </div>
   
   
-  <div class="col-xl">
+  <div class="col-xl-6">
 
     <form method="post" style="position: sticky;top: 50px;">
       {% csrf_token %}
