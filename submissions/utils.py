@@ -8,7 +8,6 @@ import io
 import json
 import datetime
 import logging
-import math
 import pep8
 import requests
 import sys
@@ -337,11 +336,6 @@ def add_student(student_dict, new_feedback):
                           end=" ")
                     new_feedback.delete()
                     return False
-                
-            else:
-                print("Ne on samat, ei tartte tehdä mitään:", end=" ")
-                
-            # print(student_obj.email)
 
         except Feedback.DoesNotExist:
             print("Aikaisempaa palautusta ei löytynyt:", student_obj.email)
@@ -354,7 +348,6 @@ def add_student(student_dict, new_feedback):
         )
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
-        print("Eka hyväksytty palautus opiskelijalle:", student_obj.email)
 
     return True
 
@@ -391,10 +384,12 @@ def divide_submissions(exercise):
         grader = choose_grader(exercise, graders)
         grader.feedback_set.add(sub)
 
-    print("Palautusta per assari:", subs.count() / exercise.num_of_graders)
-    print("Assareilla arvostelussa:")
+    LOGGER.debug(f"Arvosteltavia palautuksia: {subs.count}")
+    LOGGER.debug(f"Palautusta per assari: "
+                 f"{subs.count()/exercise.num_of_graders}")
+    LOGGER.debug("Assareilla arvostelussa:")
     for grader in graders:
-        print(len(grader.feedback_set.filter(exercise=exercise)))
+        LOGGER.debug(f"{grader.feedback_set.filter(exercise=exercise).count()}")
 
 
 def choose_grader(exercise, graders, max_sub_count=None):
@@ -411,12 +406,12 @@ def choose_grader(exercise, graders, max_sub_count=None):
     first = True
     
     for grader in graders:
-        # Valitaan pienimmän arvostelumäärän omaavaksi ensimmäinen
-        # vastaantuleva
         if max_sub_count and grader.feedback_set.filter(
                 exercise=exercise).count() >= max_sub_count:
             continue
 
+        # Valitaan pienimmän arvostelumäärän omaavaksi ensimmäinen
+        # vastaantuleva
         elif first:
             min_sub_count = grader.feedback_set.filter(
                 exercise=exercise).count()
