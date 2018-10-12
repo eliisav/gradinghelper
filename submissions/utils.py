@@ -280,7 +280,9 @@ def add_feedback_base(exercise, feedback):
     if exercise.feedback_base:
         # print(exercise.feedback_base.name)
         try:
-            feedback.feedback = exercise.feedback_base.open("r").read()
+            feedback.feedback = exercise.feedback_base.open().read().decode(
+                "utf-8"
+            )
         except ValueError as e:
             feedback.feedback = f"Virhe luettaessa palautepohjaa: {e}"
 
