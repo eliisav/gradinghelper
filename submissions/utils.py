@@ -96,7 +96,8 @@ def get_exercises(course):
 
     exercises_url = f"{API_URL}courses/{course.course_id}/exercises/"
     modules = get_json(exercises_url)["results"]
-    cache.set(course.course_id, modules)
+
+    # cache.set(course.course_id, modules)
 
     # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
     for sub_module in modules:
@@ -147,7 +148,7 @@ def update_submissions(exercise):
 
         # print(submissiondata)
 
-        cache.set(exercise.exercise_id, submissiondata)
+        # cache.set(exercise.exercise_id, submissiondata)
 
         accepted = sort_submissions(submissiondata, exercise.min_points,
                                     deadline_passed, consent_data)
@@ -301,7 +302,7 @@ def add_student(student_dict, new_feedback):
         # mahdollista, että opiskelija saa opnumin vasta myöhemmin.
         student_obj.student_id = student_dict["id"]
         student_obj.save()
-        
+        LOGGER.debug(f"Opiskelija oli olemassa: {student_obj}")
         try:
             old_feedback = student_obj.my_feedbacks.get(
                 exercise=new_feedback.exercise
@@ -335,7 +336,6 @@ def add_student(student_dict, new_feedback):
                     return False
 
         except Feedback.DoesNotExist:
-            print("Aikaisempaa palautusta ei löytynyt:", student_obj.email)
             student_obj.my_feedbacks.add(new_feedback)
             
     except Student.DoesNotExist:
@@ -345,7 +345,7 @@ def add_student(student_dict, new_feedback):
         )
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
-
+        LOGGER.debug(f"Luotiin uusi opiskelija: {student_obj}")
     return True
 
 
@@ -354,7 +354,7 @@ def divide_submissions(exercise):
     Jakaa palautukset kurssille merkittyjen assareiden kesken.
     param exercise: (models.Exercise) Tehtäväobjekti
     """
-    if exercise.num_of_graders <= 0:
+    if exercise.num_of_graders == 0:
         return
 
     graders = exercise.graders.all()

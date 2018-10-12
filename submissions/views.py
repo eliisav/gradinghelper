@@ -143,7 +143,7 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
                 exercise.in_grading = True
 
                 if exercise.num_of_graders is None:
-                    exercise.num_of_graders = len(exercise.graders.all())
+                    exercise.num_of_graders = exercise.graders.all().count()
 
                 exercise.save(update_fields=["min_points", "consent_exercise",
                                              "penalty", "work_div",
