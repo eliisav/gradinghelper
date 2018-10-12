@@ -162,13 +162,11 @@ def update_submissions(exercise):
                     sub_id=sub,
                     auto_grade=accepted[sub]["grade"],
                 )
-
                 if accepted[sub]["penalty"]:
                     feedback.penalty = accepted[sub]["penalty"]
 
+                add_feedback_base(exercise, feedback)
                 feedback.save()
-
-            add_feedback_base(exercise, feedback)
 
             for student in accepted[sub]["students"]:
                 if not add_student(student, feedback):
@@ -310,7 +308,6 @@ def add_student(student_dict, new_feedback):
             )
             
             if old_feedback != new_feedback:
-                print("Ei ole samat! Poista vanha ja lisää uusi tilalle:")
                 if old_feedback.status is None:
 
                     #grader = User.objects.get(pk=old_feedback.grader.pk)
@@ -332,8 +329,8 @@ def add_student(student_dict, new_feedback):
                 else:
                     # TODO: huomautus arvostelijalle siitä, että uudempi
                     # palautus olisi olemassa.
-                    print("Eipäs poisteta. Arvostelu oli jo aloitettu!",
-                          end=" ")
+
+                    # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
                     new_feedback.delete()
                     return False
 
@@ -357,9 +354,8 @@ def divide_submissions(exercise):
     Jakaa palautukset kurssille merkittyjen assareiden kesken.
     param exercise: (models.Exercise) Tehtäväobjekti
     """
-
-    # graders = Course.objects.get(
-    #   course_id=exercise.course.course_id).assistants.all()
+    if exercise.num_of_graders <= 0:
+        return
 
     graders = exercise.graders.all()
     subs = exercise.feedback_set.all()

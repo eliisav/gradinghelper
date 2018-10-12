@@ -177,6 +177,11 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     form_class = ExerciseUpdateForm
 
     def form_valid(self, form):
+        self.object = form.save()
+
+        for feedback in self.object.feedback_set.all():
+            add_feedback_base(self.object, feedback)
+
         messages.success(self.request, "Muutokset tallennettu.")
         return super().form_valid(form)
 
