@@ -8,17 +8,16 @@ https://github.com/Aalto-LeTech/a-plus
 ## Getting Started
 
 ### Prerequisites
-Python 3.6
-pip
+Vähintään Python 3.6, pip
 
 ### Installing
 
-Kloonaa repo esim.
+Kloonaa repo, esim:
 ```
 git clone git@github.com:eliisav/gradinghelper.git
 ```
 
-Luo ja aktivoi virtuaaliympäristö:
+Luo ja aktivoi virtuaaliympäristö, esim:
 ```
 python3 -m venv ghelpervenv
 source ghelpervenv/bin/activate
@@ -31,11 +30,11 @@ pip install -r requirements.txt
 
 ### Local Settings
 
-Projektihakemistoon tulee lisätä tiedosto local_settings.py, joka sisältää
-vähintään seuraavat asetukset:
+Projektihakemistoon tulee lisätä tiedosto local_settings.py, jossa
+määritellään ```SECRET_KEY```, ```TOKEN``` sekä ```DATABASES```. Esim:
 
 ```
-# Unique secret key for Djanog project
+# Unique secret key for Django project
 SECRET_KEY = 'abc123defg45hij678klm90nop'
 
 # API token for A+ user. Needed to make API requests.
@@ -50,6 +49,11 @@ DATABASES = {
     }
 }
 ```
+
+Tarpeen mukaan voidaan määritellä myös ```LOGGING```.
+
+Tuotantoa varten tulee edellisten lisäksi määritellä ```ALLOWED_HOSTS```
+ja asettaa ```DEBUG = False```.
 
 ### LTI-login
 
