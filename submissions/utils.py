@@ -137,6 +137,8 @@ def update_submissions(exercise):
         return
     """
 
+    LOGGER.debug(f"{datetime.datetime.now()} updating submissions: {exercise}")
+
     consent_data = None
     if exercise.consent_exercise is not None:
         consent_data = get_submissions(exercise.consent_exercise)
@@ -304,13 +306,17 @@ def add_student(student_dict, new_feedback):
         # mahdollista, että opiskelija saa opnumin vasta myöhemmin.
         student_obj.student_id = student_dict["id"]
         student_obj.save()
-        LOGGER.debug(f"Opiskelija oli olemassa: {student_obj}")
+
         try:
             old_feedback = student_obj.my_feedbacks.get(
                 exercise=new_feedback.exercise
             )
             
             if old_feedback != new_feedback:
+
+                LOGGER.debug(f"Uudempi palautus tulossa: {student_obj}")
+                LOGGER.debug(f"tehtävään: {new_feedback.exercise}")
+
                 if old_feedback.status is None:
 
                     #grader = User.objects.get(pk=old_feedback.grader.pk)
@@ -318,13 +324,13 @@ def add_student(student_dict, new_feedback):
                     new_feedback.grader = old_feedback.grader
                     new_feedback.save()
 
-                    LOGGER.debug(f"{student_obj} {new_feedback.exercise}")
-                    LOGGER.debug(f"Vanha: {old_feedback} "
+                    LOGGER.debug(f"poistetaan vanha: {old_feedback} "
                                  f"{old_feedback.grader}")
 
                     old_feedback.delete()
 
-                    LOGGER.debug(f"Uusi: {new_feedback} {new_feedback.grader}")
+                    LOGGER.debug(f"lisätään uusi: {new_feedback} "
+                                 f"{new_feedback.grader}")
 
                     debug_feedbacks.append(new_feedback)
 
@@ -332,6 +338,8 @@ def add_student(student_dict, new_feedback):
                 else:
                     # TODO: huomautus arvostelijalle siitä, että uudempi
                     # palautus olisi olemassa.
+
+                    LOGGER.debug(f"Arvostelu oli aloitettu, poistetaan uusi.")
 
                     # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
                     new_feedback.delete()
