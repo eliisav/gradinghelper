@@ -55,12 +55,18 @@ Tarpeen mukaan voidaan määritellä myös ```LOGGING```.
 Tuotantoa varten tulee edellisten lisäksi määritellä ```ALLOWED_HOSTS```
 ja asettaa ```DEBUG = False```.
 
+### Migraatiot
+
+```
+python3 manage.py migrate
+```
+
 ### LTI-login
 
 LTI-kirjautumista varten tulee luoda tunnukset esim.
 
 ```
-python3 manage.py add_lti_key
+python3 manage.py add_lti_key -d "my_lms"
 ```
 
 Luodut tunnukset sekä arviointityökalun kirjautumislinkki tulee lisätä
