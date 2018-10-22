@@ -56,6 +56,8 @@ class Exercise(models.Model):
     consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
                                          null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
+    # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
+    max_points = models.PositiveSmallIntegerField(null=True, blank=True)
     penalty = models.BooleanField(default=True)
     feedback_base = models.FileField(null=True, blank=True,
                                      upload_to=feedback_base_path)
@@ -64,9 +66,6 @@ class Exercise(models.Model):
     # TODO: Tarvittaisiinko tämmöinen, ettei suotta loputtomiin haeta
     # palautuksia tehtävään, joka on jo arvosteltu?
     # grading_ready = models.BooleanField(default=False)
-
-    # TODO: Tarvitaanko kuitenkin joku max-pisteet rästiprojekteja varten?
-    # max_points = models.PositiveSmallIntegerField(null=True, blank=True)
 
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.

@@ -6,16 +6,17 @@ from django.db.models import Q
 class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        fields = ["min_points", "consent_exercise", "penalty", "work_div",
-                  "graders", "num_of_graders", "feedback_base"]
+        fields = ["min_points", "max_points", "consent_exercise", "penalty",
+                  "work_div", "graders", "num_of_graders", "feedback_base"]
         labels = {
             "min_points": "Pisteet, joilla tehtävä hyväksytään arvosteluun:",
+            "max_points": "Automaattitarkastuksen maksimipisteet:",
             "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
             "penalty": "Arvostelijan antamista pisteistä "
                        "vähennetään myöhästymissakko",
             "work_div": "Työnjako:",
             "graders": "Valitse arvostelijat:",
-            "num_of_graders": "Arvostelijoiden lukumäärä",
+            "num_of_graders": "Arvostelijoiden kokonaislukumäärä:",
             "feedback_base": "Palautepohja:"
         }
         widgets = {
@@ -44,12 +45,16 @@ class ExerciseUpdateForm(forms.ModelForm):
                 "placeholder": "Tarvitaan jos eri kuin edellä "
                                "valittujen määrä"
             })
+            self.fields["max_points"].widget = forms.NumberInput(attrs={
+                "placeholder": "Tarvitaan vain ohj1 rästiprojekteissa."
+            })
 
 
 class ExerciseSetGradingForm(ExerciseUpdateForm):
     class Meta(ExerciseUpdateForm.Meta):
-        fields = ["name", "min_points", "consent_exercise", "penalty",
-                  "work_div", "graders", "num_of_graders", "feedback_base"]
+        fields = ["name", "min_points", "max_points", "consent_exercise",
+                  "penalty", "work_div", "graders", "num_of_graders",
+                  "feedback_base"]
 
     def __init__(self, *args, **kwargs):
 

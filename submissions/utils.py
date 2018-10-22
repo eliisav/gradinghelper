@@ -152,7 +152,7 @@ def update_submissions(exercise):
 
         # cache.set(exercise.exercise_id, submissiondata)
 
-        accepted = sort_submissions(submissiondata, exercise.min_points,
+        accepted = sort_submissions(submissiondata, exercise,
                                     deadline_passed, consent_data)
 
         for sub in accepted:
@@ -199,7 +199,7 @@ def check_consent(student_email, consent_data):
     return False
 
 
-def sort_submissions(submissions, min_points, deadline_passed, consent_data):
+def sort_submissions(submissions, exercise, deadline_passed, consent_data):
     """
     Käydään läpi jsonin palautukset ja lisätään hyväksytyt accepted-dictiin. 
     Pääsääntöisesti täysin turhaa ajan tuhlausta, mutta tarvitaan jos 
@@ -223,7 +223,10 @@ def sort_submissions(submissions, min_points, deadline_passed, consent_data):
         # Huomioidaan vain palautukset, jotka ovat läpäisseet testit
         # TODO: huomioi max-pisteet tai jotenkin muuten se jos palautus
         #       on jo arvioitu. Toimii ehkä jo...?
-        if sub["Grade"] < min_points:
+        if sub["Grade"] < exercise.min_points:
+            continue
+
+        if exercise.max_points and sub["Grade"] > exercise.max_points:
             continue
 
         # TODO: Ota tämä pois! Väliaikainen viritys askelmittaria varten
