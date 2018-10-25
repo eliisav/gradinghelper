@@ -58,7 +58,7 @@ class Exercise(models.Model):
     min_points = models.PositiveSmallIntegerField(default=1)
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
-    penalty = models.BooleanField(default=True)
+    add_penalty = models.BooleanField(default=True)
     feedback_base = models.FileField(null=True, blank=True,
                                      upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)

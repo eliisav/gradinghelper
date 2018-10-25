@@ -6,14 +6,15 @@ from django.db.models import Q
 class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        fields = ["min_points", "max_points", "consent_exercise", "penalty",
-                  "work_div", "graders", "num_of_graders", "feedback_base"]
+        fields = ["min_points", "max_points", "consent_exercise",
+                  "add_penalty", "work_div", "graders", "num_of_graders",
+                  "feedback_base"]
         labels = {
             "min_points": "Pisteet, joilla palautus hyväksytään arvosteluun:",
             "max_points": "Automaattitarkastuksen maksimipisteet:",
             "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
-            "penalty": "Arvostelijan antamista pisteistä "
-                       "vähennetään myöhästymissakko",
+            "add_penalty": "Arvostelijan antamista pisteistä "
+                           "vähennetään myöhästymissakko",
             "work_div": "Työnjako:",
             "graders": "Valitse arvostelijat:",
             "num_of_graders": "Arvostelijoiden kokonaislukumäärä:",
@@ -53,7 +54,7 @@ class ExerciseUpdateForm(forms.ModelForm):
 class ExerciseSetGradingForm(ExerciseUpdateForm):
     class Meta(ExerciseUpdateForm.Meta):
         fields = ["name", "min_points", "max_points", "consent_exercise",
-                  "penalty", "work_div", "graders", "num_of_graders",
+                  "add_penalty", "work_div", "graders", "num_of_graders",
                   "feedback_base"]
 
     def __init__(self, *args, **kwargs):

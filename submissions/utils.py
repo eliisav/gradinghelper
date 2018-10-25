@@ -601,7 +601,7 @@ def create_json(feedbacks):
         for student in feedback.students.all():
             students.append(student.email)
 
-        if feedback.penalty:
+        if feedback.exercise.add_penalty:
             penalty = int(feedback.staff_grade * feedback.penalty)
         else:
             penalty = 0
