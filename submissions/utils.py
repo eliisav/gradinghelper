@@ -168,7 +168,9 @@ def update_submissions(exercise):
                 if accepted[sub]["penalty"]:
                     feedback.penalty = accepted[sub]["penalty"]
 
-                add_feedback_base(exercise, feedback)
+                if exercise.feedback_base:
+                    add_feedback_base(exercise, feedback)
+
                 feedback.save()
 
             for student in accepted[sub]["students"]:
@@ -278,12 +280,11 @@ def sort_submissions(submissions, exercise, deadline_passed, consent_data):
 
 def add_feedback_base(exercise, feedback):
     """
-    Lisätään/päivitetään palautepohja, jos sellainen on tehtävään liitetty.
+    Lisätään/päivitetään palautepohja mikäli palautetta ei ole vielä muokattu.
     :param exercise: (Exercise model object)
     :param feedback: (Feedback model object)
     """
-    if exercise.feedback_base:
-        # print(exercise.feedback_base.name)
+    if feedback.status == feedback.BASE:
         try:
             feedback.feedback = exercise.feedback_base.open().read().decode(
                 "utf-8"
@@ -320,9 +321,7 @@ def add_student(student_dict, new_feedback):
                 LOGGER.debug(f"Uudempi palautus tulossa: {student_obj}")
                 LOGGER.debug(f"tehtävään: {new_feedback.exercise}")
 
-                if old_feedback.status is None:
-
-                    #grader = User.objects.get(pk=old_feedback.grader.pk)
+                if old_feedback.status == Feedback.BASE:
 
                     new_feedback.grader = old_feedback.grader
                     new_feedback.save()
@@ -359,6 +358,7 @@ def add_student(student_dict, new_feedback):
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
         LOGGER.debug(f"Luotiin uusi opiskelija: {student_obj}")
+
     return True
 
 
@@ -588,8 +588,8 @@ def create_json(feedbacks):
     arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
     """
 
-    otsikko = "TIE-02101 OHJELMOINTI 1: JOHDANTO / ASKELMITTARI\n"
-    selite = "Arvostelua koskevat mahdolliset tiedustelut voit lähettää " \
+    kurssi = "TIE-02100 JOHDATUS OHJELMOINTIIN /"
+    selite = "\nArvostelua koskevat mahdolliset tiedustelut voit lähettää " \
              "työsi tarkastajalle.\nHUOM! Muista sisällyttää viestisi " \
              "otsikkoon myös opiskelijanumerosi!\n"
 
@@ -601,13 +601,19 @@ def create_json(feedbacks):
         for student in feedback.students.all():
             students.append(student.email)
 
-        penalty = int(feedback.staff_grade * feedback.penalty)
+        if feedback.penalty:
+            penalty = int(feedback.staff_grade * feedback.penalty)
+        else:
+            penalty = 0
+
         points = feedback.auto_grade + feedback.staff_grade - penalty
 
         if points < 14 or points > 100:
             return f"KOKONAISPISTEMÄTÄ! {feedback.sub_id}"
 
-        header = f"{otsikko}\n{selite}\nTARKASTAJA: {feedback.grader}\n\n"
+        tehtava = feedback.exercise.name
+
+        header = f"{kurssi} {tehtava}\n{selite}\nTARKASTAJA: {feedback.grader}\n\n"
         auto_grade = f"Automaatin pisteet: {feedback.auto_grade}\n"
         staff_grade = f"Tarkastajan pisteet: {feedback.staff_grade}\n"
         sakko = f"Myöhästymissakko tarkastajan pisteistä: -{penalty}\n"
