@@ -9,7 +9,7 @@ class ExerciseUpdateForm(forms.ModelForm):
         fields = ["min_points", "max_points", "consent_exercise", "penalty",
                   "work_div", "graders", "num_of_graders", "feedback_base"]
         labels = {
-            "min_points": "Pisteet, joilla tehtävä hyväksytään arvosteluun:",
+            "min_points": "Pisteet, joilla palautus hyväksytään arvosteluun:",
             "max_points": "Automaattitarkastuksen maksimipisteet:",
             "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
             "penalty": "Arvostelijan antamista pisteistä "
@@ -46,7 +46,7 @@ class ExerciseUpdateForm(forms.ModelForm):
                                "valittujen määrä"
             })
             self.fields["max_points"].widget = forms.NumberInput(attrs={
-                "placeholder": "Tarvitaan vain ohj1 rästiprojekteissa."
+                "placeholder": "Tarvitaan jos osa palautuksista on jo arvioitu"
             })
 
 
