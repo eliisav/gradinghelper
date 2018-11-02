@@ -588,9 +588,9 @@ def create_json(feedbacks):
     arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
     """
 
-    kurssi = "TIE-02100 JOHDATUS OHJELMOINTIIN /"
-    selite = "\nArvostelua koskevat mahdolliset tiedustelut voit lähettää " \
-             "työsi tarkastajalle.\nHUOM! Muista sisällyttää viestisi " \
+    kurssi = "TIE-02101 OHJELMOINTI 1: Johdanto /"
+    selite = "\nArvostelua koskevat mahdolliset tiedustelut voit lähettää" \
+             "\ntyösi tarkastajalle.\nHUOM! Muista sisällyttää viestisi " \
              "otsikkoon myös opiskelijanumerosi!\n"
 
     object_list = []
