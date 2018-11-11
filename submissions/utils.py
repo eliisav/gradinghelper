@@ -630,6 +630,8 @@ def create_json(feedbacks):
         }
 
         object_list.append(obj)
+        feedback.released = True
+        feedback.save()
 
     objects = {"objects": object_list}
     return json.dumps(objects, indent=2)

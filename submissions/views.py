@@ -358,8 +358,7 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
 
-    # TODO: kun palautteet oikeasti julkaistaan sen pitää olla post
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
 
@@ -383,7 +382,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
 class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
     template_name = "submissions/json.html"
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
         feedbacks = exercise.feedback_set.filter(status=Feedback.READY,

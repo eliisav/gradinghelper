@@ -48,7 +48,11 @@
           </td>
 
           <td>
-            {% if sub.status == sub.READY %}
+            {% if sub.released %}
+              <div class="alert alert-success" role="alert">
+                JULKAISTU
+              </div>
+            {% elif sub.status == sub.READY %}
               <div class="alert alert-warning" role="alert">
                 VALMIS
               </div>
@@ -56,10 +60,7 @@
               <div class="alert alert-danger" role="alert">
                 LUONNOS
               </div>
-            {% elif sub.released %}
-              <div class="alert alert-success" role="alert">
-                JULKAISTU
-              </div>
+
             {% else %}
               <div class="alert alert-info" role="alert">
                 EI ALOITETTU
@@ -72,9 +73,12 @@
       </tbody>
     </table>
 
-    <a class="btn btn-primary" href="{% url 'submissions:release' exercise.exercise_id %}" role="button">
-    Julkaise arvostelut
-    </a>
+    <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">
+        Julkaise arvostelut
+      </button>
+    </form>
 
     {% else %}
 

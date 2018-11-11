@@ -18,7 +18,12 @@
     <h6> Arvosteltu: {{ ready_count }} / {{ feedback_count }} </h6>
 
     {% if user_is_teacher %}
-      <a class="btn btn-primary mb-4" href="{% url 'submissions:json' exercise.exercise_id %}" role="button">Luo json palautteista</a>
+      <form method="post" action="{% url 'submissions:json' exercise.exercise_id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary mb-4">
+          Luo json palautteista
+        </button>
+      </form>
     {% endif %}
       
     {% if form.forms %}
@@ -57,7 +62,11 @@
                 </td>
 
                 <td>
-                    {% if sub_form.instance.status == sub_form.instance.READY %}
+                    {% if sub_form.instance.released %}
+                      <div class="alert alert-success" role="alert">
+                        JULKAISTU
+                      </div>
+                    {% elif sub_form.instance.status == sub_form.instance.READY %}
                       <div class="alert alert-warning" role="alert">
                         VALMIS
                       </div>
@@ -65,10 +74,7 @@
                       <div class="alert alert-danger" role="alert">
                         LUONNOS
                       </div>
-                    {% elif sub_form.instance.released %}
-                      <div class="alert alert-success" role="alert">
-                        JULKAISTU
-                      </div>
+
                     {% else %}
                       <div class="alert alert-info" role="alert">
                         EI ALOITETTU
