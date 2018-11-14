@@ -13,6 +13,7 @@
     {% bootstrap_css %}
     {% bootstrap_javascript jquery='full' %}
 
+    <link rel="stylesheet" type="text/css" href="{% static 'submissions/sticky-footer.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'submissions/pygments_default.css' %}">
 
     <title>Grading Helper</title>
@@ -21,23 +22,24 @@
  
 
   <body>
+    <header>
 
-    {% block breadcrumbs %}
-      {% clear_breadcrumbs %}
-      {% breadcrumb "Grading Helper" "submissions:index" %}
-    {% endblock %}
+      {% block breadcrumbs %}
+        {% clear_breadcrumbs %}
+        {% breadcrumb "Grading Helper" "submissions:index" %}
+      {% endblock %}
 
-    <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 border-bottom bg-light">
-      <nav class="my-2 my-md-0 mr-md-3">
-        {% render_breadcrumbs %}
-      </nav>
-      <h5 class="my-0 mr-3 ml-md-auto font-weight-normal">{{ user }}</h5>
-      <a class="btn btn-outline-primary" href="{% url 'submissions:logout' %}">Log out</a>
-    </div>
-    
+      <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 border-bottom bg-light">
+        <nav class="my-2 my-md-0 mr-md-3">
+          {% render_breadcrumbs %}
+        </nav>
+        <span class="my-0 mr-3 ml-md-auto">{{ user }}</span>
+        <a class="btn btn-outline-primary" href="{% url 'submissions:logout' %}">Log out</a>
+      </div>
 
-    <div class="container-fluid">
+    </header>
 
+    <main class="container-fluid" role="main">
 
       <div class="row" id="messages">
 
@@ -70,7 +72,15 @@
       </div> <!-- row -->
       
 
-    </div> <!-- container -->
+    </main> <!-- container -->
+
+    <footer class="footer">
+      <div class="container-fluid">
+        <div>Bugiraportit ja kehitysehdotukset:
+          <a href="mailto:eliisa.vakeva@tut.fi">eliisa.vakeva@tut.fi</a>
+        </div>
+      </div>
+    </footer>
     
   </body>
   
