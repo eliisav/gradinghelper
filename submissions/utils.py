@@ -139,46 +139,45 @@ def update_submissions(exercise):
 
     LOGGER.debug(f"{datetime.datetime.now()} updating submissions: {exercise}")
 
-    consent_data = None
-    if exercise.consent_exercise is not None:
-        consent_data = get_submissions(exercise.consent_exercise)
+    #consent_data = None
+    #if exercise.consent_exercise is not None:
+    #    consent_data = get_submissions(exercise.consent_exercise)
 
     deadline_passed = check_deadline(exercise)
 
-    if deadline_passed or consent_data:
-        submissiondata = get_submissions(exercise)
+    # if deadline_passed or consent_data:
+    submissiondata = get_submissions(exercise)
 
-        # print(submissiondata)
+    # print(submissiondata)
 
-        # cache.set(exercise.exercise_id, submissiondata)
+    # cache.set(exercise.exercise_id, submissiondata)
 
-        accepted = sort_submissions(submissiondata, exercise,
-                                    deadline_passed, consent_data)
+    accepted = sort_submissions(submissiondata, exercise, deadline_passed)
 
-        for sub in accepted:
-            try:
-                feedback = Feedback.objects.get(sub_id=sub)
+    for sub in accepted:
+        try:
+            feedback = Feedback.objects.get(sub_id=sub)
 
-            except Feedback.DoesNotExist:
-                feedback = Feedback(
-                    exercise=exercise,
-                    sub_id=sub,
-                    auto_grade=accepted[sub]["grade"],
-                )
-                if accepted[sub]["penalty"]:
-                    feedback.penalty = accepted[sub]["penalty"]
+        except Feedback.DoesNotExist:
+            feedback = Feedback(
+                exercise=exercise,
+                sub_id=sub,
+                auto_grade=accepted[sub]["grade"],
+            )
+            if accepted[sub]["penalty"]:
+                feedback.penalty = accepted[sub]["penalty"]
 
-                if exercise.feedback_base:
-                    add_feedback_base(exercise, feedback)
+            if exercise.feedback_base:
+                add_feedback_base(exercise, feedback)
 
-                feedback.save()
+            feedback.save()
 
-            for student in accepted[sub]["students"]:
-                if not add_student(student, feedback):
-                    break
+        for student in accepted[sub]["students"]:
+            if not add_student(student, feedback):
+                break
 
-        if exercise.work_div == Exercise.EVEN_DIV:
-            divide_submissions(exercise)
+    if exercise.work_div == Exercise.EVEN_DIV:
+        divide_submissions(exercise)
 
 
 def check_deadline(exercise):
@@ -201,16 +200,14 @@ def check_consent(student_email, consent_data):
     return False
 
 
-def sort_submissions(submissions, exercise, deadline_passed, consent_data):
+def sort_submissions(submissions, exercise, deadline_passed):
     """
     Käydään läpi jsonin palautukset ja lisätään hyväksytyt accepted-dictiin. 
     Pääsääntöisesti täysin turhaa ajan tuhlausta, mutta tarvitaan jos 
     ryhmäpalautuksen ryhmä on jälkikäteen tehty henkilökunnan toimesta.
-    
     :param submissions: (dict) tehtävän viimeisimmät/parhaat palautukset 
-    :param min_points: (int) minimipisteet joilla tehtävä otetaan arvosteluun
+    :param exercise: (Exercise model object) tarkastettavan tehtävän tiedot
     :param deadline_passed: (boolean) True, jos tehtävän deadline on mennyt
-    :param consent_data: (dict) hyväksyntätehtävään tehdyt palautukset
     :return: (dict) hyväksytyt palautukset, jotka otetaan arvosteluun
     """
 
@@ -231,12 +228,7 @@ def sort_submissions(submissions, exercise, deadline_passed, consent_data):
         if exercise.max_points and sub["Grade"] > exercise.max_points:
             continue
 
-        # TODO: Ota tämä pois! Väliaikainen viritys askelmittaria varten
-        if sub["Penalty"] is None and sub["Grade"] < 20:
-            continue
-
-        if not deadline_passed and not check_consent(sub["Email"],
-                                                     consent_data):
+        if not deadline_passed and "ready_for_review" not in sub:
             continue
 
         if sub["SubmissionID"] not in accepted:

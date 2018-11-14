@@ -53,8 +53,6 @@ class Exercise(models.Model):
     exercise_id = models.PositiveIntegerField(unique=True)
     module_id = models.PositiveIntegerField()
     name = models.CharField(max_length=200)
-    consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
-                                         null=True, blank=True)
     min_points = models.PositiveSmallIntegerField(default=1)
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -62,10 +60,7 @@ class Exercise(models.Model):
     feedback_base = models.FileField(null=True, blank=True,
                                      upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
-
-    # TODO: Tarvittaisiinko tämmöinen, ettei suotta loputtomiin haeta
-    # palautuksia tehtävään, joka on jo arvosteltu?
-    # grading_ready = models.BooleanField(default=False)
+    grading_ready = models.BooleanField(default=False)
 
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
@@ -75,6 +70,10 @@ class Exercise(models.Model):
                                      related_name="my_gradings"
                                      )
     num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    # Tätä ei enää tarvita
+    # consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
+    #                                      null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -89,6 +88,7 @@ class Exercise(models.Model):
         self.min_points = 1
         self.penalty = True
         self.in_grading = False
+        self.grading_ready = False
         self.work_div = self.EVEN_DIV
         self.graders.all = None
         self.num_of_graders = None
