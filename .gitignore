@@ -4,6 +4,6 @@ create_key.py
 db.sqlite3
 local_settings.py
 local_templates/
-logfiles/*.log
+logfiles/*
 /media/
 /static/
