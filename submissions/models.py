@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import AbstractUser
+from django.contrib.postgres.fields import ArrayField
 
 
 class User(AbstractUser):
@@ -70,6 +71,7 @@ class Exercise(models.Model):
                                      related_name="my_gradings"
                                      )
     num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
+    latest_release = ArrayField(models.IntegerField(), default=list)
 
     # Tätä ei enää tarvita
     # consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,

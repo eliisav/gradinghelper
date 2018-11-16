@@ -24,6 +24,12 @@
           Luo json palautteista
         </button>
       </form>
+      <form method="post" action="{% url 'submissions:undo' exercise.exercise_id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary mb-4">
+          Peruuta edellinen julkaisu
+        </button>
+      </form>
     {% endif %}
       
     {% if form.forms %}

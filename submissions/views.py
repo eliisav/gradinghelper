@@ -390,11 +390,33 @@ class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
         context = super().get_context_data()
 
         if feedbacks:
+            exercise.latest_release.clear()
             context["json"] = create_json(feedbacks)
+            exercise.save()
         else:
             context["json"] = "JULKAISTAVIA PALAUTTEITA EI LÖYTYNYT!"
 
         return self.render_to_response(context)
+
+
+class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
+    pattern_name = "submissions:submissions"
+
+    def post(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
+
+        if not exercise.course.is_staff(request.user):
+            raise PermissionDenied
+
+        for sub_id in exercise.latest_release:
+            feedback = get_object_or_404(Feedback, sub_id=sub_id)
+            feedback.released = False
+            feedback.save()
+
+        messages.success(request, "Julkaisu peruutettu.")
+
+        return super().get(request, *args, **kwargs)
 
 
 # -----------------------------------------------------------------
