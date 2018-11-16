@@ -580,10 +580,10 @@ def create_json(feedbacks):
     arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
     """
 
-    kurssi = "TIE-02101 OHJELMOINTI 1: Johdanto /"
-    selite = "\nArvostelua koskevat mahdolliset tiedustelut voit lähettää" \
-             "\ntyösi tarkastajalle.\nHUOM! Muista sisällyttää viestisi " \
-             "otsikkoon myös opiskelijanumerosi!\n"
+    kurssi = "TIE-02107 PROGRAMMING 1: Introduction /"
+    selite = "\nYou may direct any inquiries regarding this feedback to the " \
+             "\ninspector of this assignment.\nATTENTION! Remember to include " \
+             "your student number in the title of your e-mail.\n"
 
     object_list = []
 
@@ -605,11 +605,11 @@ def create_json(feedbacks):
 
         tehtava = feedback.exercise.name
 
-        header = f"{kurssi} {tehtava}\n{selite}\nTARKASTAJA: {feedback.grader}\n\n"
-        auto_grade = f"Automaatin pisteet: {feedback.auto_grade}\n"
-        staff_grade = f"Tarkastajan pisteet: {feedback.staff_grade}\n"
-        sakko = f"Myöhästymissakko tarkastajan pisteistä: -{penalty}\n"
-        yht = f"Pisteet yhteensä: {points}\n\n"
+        header = f"{kurssi} {tehtava}\n{selite}\nTA: {feedback.grader}\n\n"
+        auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
+        staff_grade = f"Assistant points: {feedback.staff_grade}\n"
+        sakko = f"Late penalty for assistant points: -{penalty}\n"
+        yht = f"Total points: {points}\n\n"
         grade = f"{auto_grade}{staff_grade}{sakko}{yht}"
 
         obj = {
@@ -622,7 +622,7 @@ def create_json(feedbacks):
         }
 
         object_list.append(obj)
-        feedback.released = True
+        #feedback.released = True
         feedback.save()
 
     objects = {"objects": object_list}
