@@ -1,4 +1,3 @@
-import logging
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 from django.core.exceptions import PermissionDenied
@@ -33,19 +32,20 @@ def store_course_info(sender, **kwargs):
     oauth = getattr(request, 'oauth', None)
 
     if request and user and oauth:
-        course_lms = getattr(oauth, 'tool_consumer_instance_name', None) # Example LMS
-        course_id = getattr(oauth, 'launch_presentation_return_url', None) # https://lms.example.com/it-101/
         course_label = getattr(oauth, 'context_label', None) # IT-101
         course_name = getattr(oauth, 'context_title', None) # Basics on IT
         user_role = getattr(oauth, 'roles', None)
+        api_url = getattr(oauth, 'custom_context_api', None)
+        api_id = getattr(oauth, 'custom_context_api_id', None)
 
-        if course_id is None or course_label is None or course_name is None:
+        if api_id is None or api_url is None or user_role is None:
             # Invalid lti login due to missing information
             print("LTI login request doesn't contain all required "
-                         "fields (context_id, context_label, context_title) "
-                         "for course membership update."
-                         "User that tried to login: {}".format(user))
-            raise PermissionDenied("Not all required fields present in LTI login")
+                  "fields (context_id, context_label, context_title) "
+                  "for course membership update. "
+                  "User that tried to login: {}".format(user))
+            raise PermissionDenied("Not all required fields "
+                                   "present in LTI login")
 
         print("New authentication by {user} for {label} {name}.".format(
             user=user,
@@ -53,14 +53,15 @@ def store_course_info(sender, **kwargs):
             name=course_name,
         ))
 
-        session['course_id'] = course_id
+        session['course_id'] = api_id
         session['course_label'] = course_label
         session['course_name'] = course_name
-        session['course_lms'] = course_lms
+        session['course_url'] = api_url
         session['user_role'] = user_role
 
         # Liitetään käyttäjä kirjautumistietojen mukaiseen kurssiin.
-        add_user_to_course(user, user_role, course_id)
+        add_user_to_course(user, user_role, course_label, course_name,
+                           api_url, api_id)
 
         # Redirect to notresponded page after login
         oauth.redirect_url = reverse('submissions:index')

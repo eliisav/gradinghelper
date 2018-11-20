@@ -18,7 +18,7 @@ from django.core.cache import cache
 
 
 AUTH = {'Authorization': settings.TOKEN}
-API_URL = "https://plus.cs.tut.fi/api/v2/"
+# API_ROOT = "https://plus.cs.tut.fi/api/v2/"  # TÄSTÄ PITÄÄ PÄÄSTÄ EROON!
 
 LOGGER = logging.getLogger(__name__)
 debug_feedbacks = []
@@ -29,53 +29,38 @@ def get_json(url):
     return resp.json()
 
 
-def add_user_to_course(user, user_role, course_html_url):
+def add_user_to_course(user, user_role, course_label, course_name, api_url,
+                       api_id):
     """
-    Lisätään käyttäjä kurssille LTI-kirjautumisessa saatujen tietojen mukaan.
-    :param user: (User) käyttäjäobjekti
-    :param user_role: (str) Kirjautumistietojen mukainen rooli kurssilla.
-    :param course_html_url: (str) Kurssisivuston verkko-osoite.
+    Add user to course. Course is created first if it doesn't exist.
+    :param user: (User) User object
+    :param user_role: (str) User could be instructor or teachin assistant
+    :param course_label: (str) Course code eg. "TIE-02101"
+    :param course_name: (str) Course name eg. "Ohjelmointi 1: Johdanto"
+    :param api_url: (str) api url for course instance
+    :param api_id: (int) id number of course instance
     :return: 
     """
     try:
-        course = Course.objects.get(html_url=course_html_url)
+        course = Course.objects.get(course_id=api_id)
         
     except Course.DoesNotExist:
-        course = create_course(course_html_url)
-    
+        instance_name = get_json(api_url)['instance_name']
+        name = f"{course_label} {course_name} {instance_name}"
+        course = Course(course_id=api_id, name=name, api_url=api_url)
+        course.save()
+
+    instance_name = get_json(api_url)['instance_name']
+    name = f"{course_label} {course_name} {instance_name}"
+    course.name = name
+    course.api_url = api_url
+    course.save()
+
     if course:
         if user_role == "Instructor":
             course.teachers.add(user)
         if user_role == "TA,TeachingAssistant":
             course.assistants.add(user)
-
-
-def create_course(html_url):
-    # Html_urlin pitäisi olla muotoa: plus.cs.tut.fi/{kurssi}/{instanssi}/
-    # Tallennetaan nimeksi kurssin ja instanssin tunnisteet
-    name = "".join(html_url.replace("https://plus.cs.tut.fi/", "").split("/"))
-
-    courses_url = f"{API_URL}courses/"
-    course_id = None
-    
-    while True:
-        course_list = get_json(courses_url)
-        for course in course_list["results"]:
-            if html_url in course["html_url"]:
-                course_id = course["id"]
-                break
-                
-        if not course_list["next"]:
-            break
-        else:
-            courses_url = course_list["next"]
-    
-    if course_id is None:
-        return None
-    else:        
-        course = Course(course_id=course_id, name=name, html_url=html_url)
-        course.save()
-        return course
 
 
 def get_exercises(course):
@@ -94,8 +79,7 @@ def get_exercises(course):
         return
     """
 
-    exercises_url = f"{API_URL}courses/{course.course_id}/exercises/"
-    modules = get_json(exercises_url)["results"]
+    modules = get_json(f"{course.api_url}exercises/")["results"]
 
     # cache.set(course.course_id, modules)
 
@@ -125,7 +109,7 @@ def get_submissions(exercise):
     pyydettyä tiedot kyseisen tehtävän viimeisimmistä/parhaista palautuksista.
     param exercise: (models.Exercise) tehtäväobjekti
     """
-    data_url = f"{API_URL}courses/{exercise.course.course_id}/submissiondata/"
+    data_url = f"{exercise.course.api_url}submissiondata/"
     query_url = f"{data_url}?exercise_id={exercise.exercise_id}&format=json"
     return get_json(query_url)
 
@@ -139,13 +123,7 @@ def update_submissions(exercise):
 
     LOGGER.debug(f"{datetime.datetime.now()} updating submissions: {exercise}")
 
-    #consent_data = None
-    #if exercise.consent_exercise is not None:
-    #    consent_data = get_submissions(exercise.consent_exercise)
-
     deadline_passed = check_deadline(exercise)
-
-    # if deadline_passed or consent_data:
     submissiondata = get_submissions(exercise)
 
     # print(submissiondata)
@@ -181,23 +159,14 @@ def update_submissions(exercise):
 
 
 def check_deadline(exercise):
-    course_url = f"{API_URL}courses/{exercise.course.course_id}/"
-    module_url = f"{course_url}exercises/{exercise.module_id}"
-    exercise_module = get_json(module_url)
-    
-    if exercise_module["is_open"]:
-        # print("Moduuli on vielä auki!")
+    module_url = f"{exercise.course.api_url}exercises/{exercise.module_id}"
+
+    # Get info related to exercise module and check if module is open or not
+    if get_json(module_url)["is_open"]:
+        LOGGER.debug(f"{exercise} moduuli on vielä auki!")
         return False
         
     return True
-
-
-def check_consent(student_email, consent_data):
-    for sub in consent_data:
-        if sub["Email"] == student_email:
-            return True
-
-    return False
 
 
 def sort_submissions(submissions, exercise, deadline_passed):
@@ -434,10 +403,11 @@ def choose_grader(exercise, graders, max_sub_count=None):
 
 
 def get_submission_data(feedback):
-    exercise_url = f"{API_URL}exercises/{feedback.exercise.exercise_id}/"
+    api_root = "/".join(feedback.exercise.course.api_url.split("/")[:-3])
+    exercise_url = f"{api_root}/exercises/{feedback.exercise.exercise_id}/"
     form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
 
-    sub_url = f"{API_URL}submissions/{feedback.sub_id}/"
+    sub_url = f"{api_root}/submissions/{feedback.sub_id}/"
     sub_info = get_json(sub_url)
 
     sub_data = []
@@ -580,7 +550,6 @@ def create_json(feedbacks):
     arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
     """
 
-    kurssi = "TIE-02107 PROGRAMMING 1: Introduction /"
     selite = "\nYou may direct any inquiries regarding this feedback to the " \
              "\ninspector of this assignment.\nATTENTION! Remember to include " \
              "your student number in the title of your e-mail.\n"
@@ -601,11 +570,14 @@ def create_json(feedbacks):
         points = feedback.auto_grade + feedback.staff_grade - penalty
 
         if points < 14 or points > 100:
-            return f"KOKONAISPISTEMÄTÄ! {feedback.sub_id}"
+            selite = feedback.sub_id
+            object_list = None
+            break
 
+
+        kurssi = feedback.exercise.course.name
         tehtava = feedback.exercise.name
-
-        header = f"{kurssi} {tehtava}\n{selite}\nTA: {feedback.grader}\n\n"
+        header = f"{kurssi} / {tehtava}\n{selite}\nTA: {feedback.grader}\n\n"
         auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
         staff_grade = f"Assistant points: {feedback.staff_grade}\n"
         sakko = f"Late penalty for assistant points: -{penalty}\n"
@@ -626,5 +598,14 @@ def create_json(feedbacks):
         feedback.released = True
         feedback.save()
 
-    objects = {"objects": object_list}
-    return json.dumps(objects, indent=2)
+    if object_list:
+        objects = {"objects": object_list}
+        return json.dumps(objects, indent=2)
+
+    else:
+
+        for feedback in feedbacks:
+            feedback.released = False
+            feedback.save()
+
+        return f"VIRHE KOKONAISPISTEISSÄ! Tutki arvostelua id: {selite}"
