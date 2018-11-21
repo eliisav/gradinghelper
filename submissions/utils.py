@@ -41,19 +41,16 @@ def add_user_to_course(user, user_role, course_label, course_name, api_url,
     :param api_id: (int) id number of course instance
     :return: 
     """
-    try:
-        course = Course.objects.get(course_id=api_id)
-        
-    except Course.DoesNotExist:
-        instance_name = get_json(api_url)['instance_name']
-        name = f"{course_label} {course_name} {instance_name}"
-        course = Course(course_id=api_id, name=name, api_url=api_url)
-        course.save()
-
     instance_name = get_json(api_url)['instance_name']
     name = f"{course_label} {course_name} {instance_name}"
-    course.name = name
-    course.api_url = api_url
+
+    try:
+        course = Course.objects.get(course_id=api_id)
+        course.name = name
+        
+    except Course.DoesNotExist:
+        course = Course(course_id=api_id, name=name, api_url=api_url)
+
     course.save()
 
     if course:
