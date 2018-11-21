@@ -77,6 +77,9 @@ class Exercise(models.Model):
     # consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
     #                                      null=True, blank=True)
 
+    class Meta:
+        ordering = ["grading_ready", "name"]
+
     def __str__(self):
         return self.name
 
@@ -120,6 +123,7 @@ class Feedback(models.Model):
     
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     sub_id = models.IntegerField(unique=True)
+    grading_time = models.DateTimeField(null=True)
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
     grader = models.ForeignKey(User, on_delete=models.CASCADE,
                                null=True, blank=True)
@@ -132,7 +136,7 @@ class Feedback(models.Model):
     released = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["status"]
+        ordering = ["status", "released", "sub_id"]
         
     def __str__(self):
         return str(self.sub_id)
