@@ -191,7 +191,7 @@ def sort_submissions(submissions, exercise, deadline_passed):
         if sub["Grade"] < exercise.min_points:
             continue
 
-        if exercise.max_points and sub["Grade"] > exercise.max_points:
+        if exercise.max_points is not None and sub["Grade"] > exercise.max_points:
             continue
 
         if not deadline_passed and "ready_for_review" not in sub:
@@ -224,6 +224,10 @@ def sort_submissions(submissions, exercise, deadline_passed):
             # ja poistetaan tarpeettomat palautukset seuraavassa vaiheessa.
             students[sub["Email"]].append(sub["SubmissionID"])
             duplicates.append(sub["Email"])
+
+    # print(duplicates)
+    # print(students)
+    # print(accepted)
 
     for student in duplicates:
         for sub in students[student]:
@@ -540,16 +544,12 @@ def check_filetype(fileobject):
 def create_json(feedbacks):
     """
     HUOM! Tämä on väliaikainen purkkaliima. 
-    
-    Nyt kaikkiin palautteisiin menee arvostelijaksi aps.
-    
-    Rästiprojekteja ajatellen ei voida laittaa useita opiskelijoita samaan 
-    arvosteluobjektiin, koska ryhmän jäsenet saattavat saada eri pisteet.
+
     """
 
-    selite = "\nYou may direct any inquiries regarding this feedback to the " \
-             "\ninspector of this assignment.\nATTENTION! Remember to include " \
-             "your student number in the title of your e-mail.\n"
+    selite = ""  #"\nYou may direct any inquiries regarding this feedback to the " \
+                 #"\ninspector of this assignment.\nATTENTION! Remember to include " \
+                 #"your student number in the title of your e-mail.\n"
 
     object_list = []
 
@@ -566,10 +566,10 @@ def create_json(feedbacks):
 
         points = feedback.auto_grade + feedback.staff_grade - penalty
 
-        if points < 14 or points > 100:
-            selite = feedback.sub_id
-            object_list = None
-            break
+        #if points < 14 or points > 100:
+        #    selite = feedback.sub_id
+        #    object_list = None
+        #    break
 
 
         kurssi = feedback.exercise.course.name
@@ -584,7 +584,6 @@ def create_json(feedbacks):
         obj = {
             "students_by_email": students,
             "feedback": f"<pre>{header}{grade}{feedback.feedback}</pre>",
-            "grader": 191,
             "exercise_id": feedback.exercise.exercise_id,
             "submission_time": f"{datetime.datetime.now()}",
             "points": points  # TODO: pyöristys?
