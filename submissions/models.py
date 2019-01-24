@@ -90,8 +90,9 @@ class Exercise(models.Model):
         )
 
     def set_defaults(self):
-        self.consent_exercise = None
+        # self.consent_exercise = None  # Ei ole enää tarpeellinen
         self.min_points = 1
+        self.max_points = None
         self.penalty = True
         self.in_grading = False
         self.grading_ready = False
@@ -103,6 +104,7 @@ class Exercise(models.Model):
 class Student(models.Model):
     email = models.EmailField(unique=True)
     student_id = models.IntegerField(default=None, null=True)
+    aplus_user_id = models.IntegerField(unique=True, null=True)
     
     def __str__(self):
         if self.student_id:
