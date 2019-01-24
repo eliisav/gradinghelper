@@ -91,6 +91,8 @@ class ChangeGraderForm(forms.ModelForm):
 
 class FeedbackForm(ChangeGraderForm):
     class Meta(ChangeGraderForm.Meta):
+        # TODO: students hidden field (ongelma oli ehkä manytomany)
+        # fields = ["feedback", "staff_grade", "grader", "status", "students"]
         fields = ["grader", "staff_grade", "feedback", "status"]
         labels = {
             "grader": "Arvostelija",
@@ -103,7 +105,8 @@ class FeedbackForm(ChangeGraderForm):
             "staff_grade": forms.NumberInput(attrs={
                 "placeholder": "Kirjaa pisteet ilman myöhästymissakkoa"
             }),
-            "feedback": forms.Textarea(attrs={"cols": 80, "rows": 17})
+            "feedback": forms.Textarea(attrs={"cols": 80, "rows": 17}),
+            # "students": forms.HiddenInput()
         }
 
 

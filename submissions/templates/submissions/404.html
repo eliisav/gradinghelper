@@ -1,0 +1,18 @@
+{% extends "submissions/base.html" %}
+
+{% load bootstrap4 %}
+
+{% block content %}
+
+  <div class="col-md-8 offset-md-2 mt-4">
+    <div class="alert alert-danger">
+      Arvostelemaasi palautusta ei enää ole, koska opiskelijalta on tullut
+      uusi palautus. Tämä on mahdollista etenkin tehtävän eräpäivän jälkeen,
+      jolloin palautukset haetaan arvosteluun vaikka niitä ei olisi
+      erikseen merkitty valmiiksi. Voit kopioida talteen kirjoittamasi
+      palautteen:
+    </div>
+    <pre>{{ text }}</pre>
+  </div>
+
+{% endblock %}
