@@ -90,7 +90,17 @@
 
 
     <h4>Joukkoarvostelu</h4>
-
+    <p>
+        Joukkoarvostele kaikki "EI ALOITETTU"-tilassa olevat palautukset.
+        Palautuksille annetaan kaikille sama pistemäärä ja jos halutaan,
+        myös lyhyt palauteteksti. Toiminto muuttaa palautteet tilaan
+        "VALMIS".
+        HUOM 1. Toistaiseksi ei ole olemassa "peruuta"-toimintoa, joten älä
+        mokaa :D!
+        HUOM 2. Julkaisussa pisteet lasketaan yhteen automaatin pisteiden
+        kanssa. Esim. automaatti on antanut 10 pistettä ja merkitset alla
+        olevaan lomakkeeseen pisteiksi 10, niin lopullinen pistemäärä on 20.
+    </p>
     <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
       {% csrf_token %}
       {% bootstrap_form batch_assess_form %}
