@@ -181,6 +181,9 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     def form_valid(self, form):
         self.object = form.save()
 
+        if self.object.num_of_graders is None:
+            self.object.num_of_graders = self.object.graders.all().count()
+
         # Jos tehtävällä on palautepohja, niin päivitetään se
         # kaikkiin muokkaamattomiin palautteisiin
         if self.object.feedback_base:
