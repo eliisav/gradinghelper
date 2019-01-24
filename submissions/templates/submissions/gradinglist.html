@@ -17,7 +17,8 @@
 
     <h6> Omat arvostelut: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
     <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
-
+    
+    {% if gradinglist %}
 
     <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
       {% csrf_token %}
@@ -33,7 +34,6 @@
       Toiminnon suorittaminen kestää kauan, jos julkaistavaa on paljon.
     </p>
 
-    {% if gradinglist %}
 
     <table class="table table-bordered table-sm table-hover my-4">
       <thead class="thead-light">
