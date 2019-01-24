@@ -46,12 +46,11 @@ def add_user_to_course(user, user_role, course_label, course_name, api_url,
 
     try:
         course = Course.objects.get(course_id=api_id)
-        course.name = name
         
     except Course.DoesNotExist:
-        course = Course(course_id=api_id, name=name, api_url=api_url)
-
-    course.save()
+        course = Course(course_id=api_id, name=name, api_url=api_url,
+                        api_root="/".join(api_url.split("/")[:-3]))
+        course.save()
 
     if course:
         if user_role == "Instructor":
@@ -404,7 +403,7 @@ def choose_grader(exercise, graders, max_sub_count=None):
 
 
 def get_submission_data(feedback):
-    api_root = "/".join(feedback.exercise.course.api_url.split("/")[:-3])
+    api_root = feedback.exercise.course.api_root
     exercise_url = f"{api_root}/exercises/{feedback.exercise.exercise_id}/"
     form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
 
@@ -541,7 +540,7 @@ def check_filetype(fileobject):
         return False
 
 
-def create_json(feedbacks):
+def create_json_to_batch_assess(feedbacks):
     """
     HUOM! Tämä on väliaikainen purkkaliima. 
 
@@ -605,3 +604,34 @@ def create_json(feedbacks):
             feedback.save()
 
         return f"VIRHE KOKONAISPISTEISSÄ! Tutki arvostelua id: {selite}"
+
+
+def create_json_to_post(feedback):
+    students = []
+
+    for student in feedback.students.all():
+        students.append(student.email)
+
+    if feedback.exercise.add_penalty:
+        penalty = int(feedback.staff_grade * feedback.penalty)
+    else:
+        penalty = 0
+
+    points = feedback.auto_grade + feedback.staff_grade - penalty
+
+    # kurssi = feedback.exercise.course.name
+    # tehtava = feedback.exercise.name
+    grader = f"Grader: {feedback.grader}\n\n"
+    auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
+    staff_grade = f"Grader points: {feedback.staff_grade}\n"
+    late_penalty = f"Late penalty for grader points: -{penalty}\n"
+    total = f"Total points: {points}\n\n"
+    header = f"{grader}{auto_grade}{staff_grade}{late_penalty}{total}"
+
+    json_object = {
+        "students_by_email": students,
+        "feedback": f"<pre>{header}{feedback.feedback}</pre>",
+        "points": points  # TODO: pyöristys?
+    }
+
+    return json_object

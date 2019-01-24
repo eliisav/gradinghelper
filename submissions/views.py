@@ -368,11 +368,23 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
         feedbacks = exercise.feedback_set.filter(grader=request.user,
                                                  status=Feedback.READY,
                                                  released=False)
+        api_root = exercise.course.api_root
+        url = f"{api_root}/exercises/{exercise.exercise_id}/submissions/"
         
         if feedbacks:
-            messages.success(request, "Julkaistavia palautteita löytyi, "
-                                      "mutta ominaisuus on keskeneräinen "
-                                      "eikä palautteita julkaistu.")
+            for feedback in feedbacks:
+                json_object = create_json_to_post(feedback)
+                resp = requests.post(url, json=json_object, headers=AUTH)
+
+                if resp.status_code == 201:
+                    feedback.released = True
+                    feedback.save()
+                else:
+                    messages.error(request, f"{resp.status_code} {resp.text}")
+                    break
+
+            messages.success(request, "Valmiiksi merkityt palautteet on "
+                                      "julkaistu.")
         else:
             messages.info(request, "Julkaistavia palautteita ei löytynyt.")
             
@@ -391,7 +403,7 @@ class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
 
         if feedbacks:
             exercise.latest_release.clear()
-            context["json"] = create_json(feedbacks)
+            context["json"] = create_json_to_batch_assess(feedbacks)
             exercise.save()
         else:
             context["json"] = "JULKAISTAVIA PALAUTTEITA EI LÖYTYNYT!"

@@ -13,6 +13,7 @@ class Course(models.Model):
     course_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
     api_url = models.URLField()
+    api_root = models.URLField()  # no slash at the end of this
     teachers = models.ManyToManyField(User, related_name="responsibilities",
                                       blank=True)
     assistants = models.ManyToManyField(User, related_name="my_courses",
