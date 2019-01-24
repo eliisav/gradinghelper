@@ -23,10 +23,10 @@ class ExerciseMixin:
             context["user_is_teacher"] = exercise.course.is_teacher(
                 self.request.user
             )
-            context["feedback_count"] = len(exercise.feedback_set.all())
-            context["ready_count"] = len(exercise.feedback_set.filter(
+            context["feedback_count"] = exercise.feedback_set.all().count()
+            context["ready_count"] = exercise.feedback_set.filter(
                 status=Feedback.READY
-            ))
+            ).count()
 
         return context
 
@@ -221,10 +221,12 @@ class GradingListView(ExerciseMixin, LoginRequiredMixin,
             exercise=context["exercise"]).filter(grader=None)
         context["formset"] = SetGraderFormset(queryset=no_grader_set)
 
-        context["my_ready_count"] = len(
-            self.object_list.filter(status=Feedback.READY)
-        )
-        context["my_feedback_count"] = len(self.object_list)
+        context["my_ready_count"] = self.object_list.filter(
+            status=Feedback.READY
+        ).count()
+
+        context["my_feedback_count"] = self.object_list.count()
+        context["batch_assess_form"] = BatchAssessForm()
         
         return context
     
@@ -354,6 +356,69 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
         exercise_id = self.object.exercise.exercise_id
         return reverse("submissions:grading", args=(exercise_id,))
 
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            pass
+            # return super().post(request, *args, **kwargs)
+        except Http404:
+
+            # TODO: Tässä pitäisi etsiä opiskelija ja mahd. myös hänen
+            # uudempi palautuksensa, johon palauutten voisi kopioida.
+            print()
+            for students in request.POST["students"]:
+                for student in students:
+                    print(student)
+
+            return render(
+                request, "submissions/404.html",
+                {
+                    "text": request.POST["feedback"]
+                }
+            )
+    """
+
+
+class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):
+    pattern_name = "submissions:grading"
+
+    def post(self, request, *args, **kwargs):
+        exercise = get_object_or_404(Exercise,
+                                     exercise_id=kwargs["exercise_id"])
+
+        if not exercise.course.is_staff(request.user):
+            raise PermissionDenied
+
+        form = BatchAssessForm(request.POST)
+
+        if form.is_valid():
+            points = form.cleaned_data["points"]
+            feedback_text = form.cleaned_data["feedback"]
+
+            feedbacks = exercise.feedback_set.filter(grader=request.user,
+                                                     status=Feedback.BASE,
+                                                     released=False
+                                                     )
+            if feedbacks:
+                for feedback in feedbacks:
+                    feedback.staff_grade = points
+                    feedback.feedback = feedback_text
+                    feedback.status = Feedback.READY
+                    feedback.save()
+
+                messages.success(
+                    request,
+                    f"Joukkoarvosteltiin {feedbacks.count()} palautusta "
+                    f"pistemäärällä {points}."
+                )
+            else:
+                messages.info(request, "Arvosteltavia palautuksia ei löytynyt.")
+
+        else:
+            messages.error(request, "Virheellinen lomake.")
+
+        return self.get(request, *args, **kwargs)
+
 
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
@@ -383,12 +448,12 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                     messages.error(request, f"{resp.status_code} {resp.text}")
                     break
 
-            messages.success(request, "Valmiiksi merkityt palautteet on "
-                                      "julkaistu.")
+            messages.success(request, f"Julkaistiin {feedbacks.count()} "
+                                      f"VALMIS-tilassa ollutta palautetta.")
         else:
             messages.info(request, "Julkaistavia palautteita ei löytynyt.")
             
-        return super().get(request, *args, **kwargs)
+        return self.get(request, *args, **kwargs)
 
 
 class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
@@ -428,7 +493,7 @@ class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
 
         messages.success(request, "Julkaisu peruutettu.")
 
-        return super().get(request, *args, **kwargs)
+        return self.get(request, *args, **kwargs)
 
 
 # -----------------------------------------------------------------

@@ -116,3 +116,17 @@ class SetGraderMeForm(forms.ModelForm):
         help_texts = {
             "check_this": "Valitse arvosteltavaksi.",
         }
+
+
+class BatchAssessForm(forms.Form):
+    points = forms.IntegerField(
+        label="Pisteet",
+        min_value=0,
+        help_text="Joukkoarvostele kaikki 'Ei aloitettu'-tilassa olevat "
+                  "palautukset tällä pistemäärällä."
+    )
+    feedback = forms.CharField(
+        label="Palauteteksti",
+        required=False,
+        help_text="Lyhyt palauteteksi, ei pakollinen."
+    )

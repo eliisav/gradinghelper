@@ -18,9 +18,16 @@
     <h6> Omat arvostelut: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
     <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
 
+    <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary mb-4 mt-2">
+        Julkaise "VALMIS"-tilassa olevat arvostelut
+      </button>
+    </form>
+
     {% if gradinglist %}
 
-    <table class="table table-bordered table-sm table-hover">
+    <table class="table table-bordered table-sm table-hover mb-4">
       <thead class="thead-light">
         <tr>
             <th scope="col">ID</th>
@@ -73,11 +80,13 @@
       </tbody>
     </table>
 
-    <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
+
+    <h4>Joukkoarvostelu</h4>
+
+    <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-primary">
-        Julkaise arvostelut
-      </button>
+      {% bootstrap_form batch_assess_form %}
+      <input type="submit" value="Joukkoarvostele">
     </form>
 
     {% else %}
