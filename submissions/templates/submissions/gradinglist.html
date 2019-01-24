@@ -18,16 +18,24 @@
     <h6> Omat arvostelut: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
     <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
 
+
     <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-primary mb-4 mt-2">
+      <button type="submit" class="btn btn-primary mt-4">
         Julkaise "VALMIS"-tilassa olevat arvostelut
       </button>
     </form>
 
+    <p>
+      Tämän napin klikkaaminen käy läpi kaikki "VALMIS"-tilassa olevat
+      palautteet ja lähettää ne Plussaan. Tämän jälkeen palaute ja pisteet
+      ovat opiskelijoiden nähtävillä Plussassa. Tätä ei voi peruuttaa.
+      Toiminnon suorittaminen kestää kauan, jos julkaistavaa on paljon.
+    </p>
+
     {% if gradinglist %}
 
-    <table class="table table-bordered table-sm table-hover mb-4">
+    <table class="table table-bordered table-sm table-hover my-4">
       <thead class="thead-light">
         <tr>
             <th scope="col">ID</th>
