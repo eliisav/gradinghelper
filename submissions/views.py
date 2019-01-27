@@ -440,13 +440,22 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
         url = f"{api_root}/exercises/{exercise.exercise_id}/submissions/"
         
         if feedbacks:
-            for feedback in feedbacks:
-                json_object = create_json_to_post(feedback)
-                resp = requests.post(url, json=json_object, headers=AUTH)
+            i = 0
+            while i < len(feedbacks):
+                json_object = create_json_to_post(feedbacks[i])
+
+                try:
+                    LOGGER.debug(f"POST {i}")
+                    resp = requests.post(url, json=json_object, headers=AUTH)
+                except Exception as e:
+                    LOGGER.debug(e)
+                    continue
 
                 if resp.status_code == 201:
-                    feedback.released = True
-                    feedback.save()
+                    LOGGER.debug(f"Onnistui, tallennetaan {i}")
+                    feedbacks[i].released = True
+                    feedbacks[i].save()
+                    i += 1
                 else:
                     messages.error(request, f"{resp.status_code} {resp.text}")
                     break
