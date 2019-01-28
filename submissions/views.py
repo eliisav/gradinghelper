@@ -149,9 +149,9 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
                     exercise.num_of_graders = exercise.graders.all().count()
 
                 exercise.save(update_fields=["min_points", "max_points",
-                                             "add_penalty", "work_div",
-                                             "num_of_graders", "feedback_base",
-                                             "in_grading"])
+                                             "add_penalty", "add_auto_grade",
+                                             "work_div", "num_of_graders",
+                                             "feedback_base", "in_grading"])
 
                 messages.success(request, "Tehtävän lisääminen onnistui.")
             else:

@@ -6,8 +6,8 @@ from django.db.models import Q
 class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        fields = ["min_points", "max_points", "add_penalty", "work_div",
-                  "graders", "num_of_graders", "feedback_base",
+        fields = ["min_points", "max_points", "add_penalty", "add_auto_grade",
+                  "work_div", "graders", "num_of_graders", "feedback_base",
                   "grading_ready"]
         labels = {
             "min_points": "Pisteet, joilla palautus hyväksytään arvosteluun:",
@@ -15,12 +15,14 @@ class ExerciseUpdateForm(forms.ModelForm):
             # "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
             "add_penalty": "Arvostelijan antamista pisteistä "
                            "vähennetään myöhästymissakko",
+            "add_auto_grade": "Automaatin pisteet ja arvostelijan pisteet "
+                              "lasketaan yhteen",
             "work_div": "Työnjako:",
             "graders": "Valitse arvostelijat:",
             "num_of_graders": "Arvostelijoiden kokonaislukumäärä:",
             "feedback_base": "Palautepohja:",
             "grading_ready": "Arvostelu valmis, "
-                             "lopetetaan palautusten hakeminen."
+                             "lopetetaan palautusten hakeminen"
         }
         widgets = {
             "work_div": forms.RadioSelect,
@@ -58,7 +60,8 @@ class ExerciseUpdateForm(forms.ModelForm):
 class ExerciseSetGradingForm(ExerciseUpdateForm):
     class Meta(ExerciseUpdateForm.Meta):
         fields = ["name", "min_points", "max_points", "add_penalty",
-                  "work_div", "graders", "num_of_graders", "feedback_base"]
+                  "add_auto_grade", "work_div", "graders", "num_of_graders",
+                  "feedback_base"]
 
     def __init__(self, *args, **kwargs):
 

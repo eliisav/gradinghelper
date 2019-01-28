@@ -540,16 +540,40 @@ def check_filetype(fileobject):
         return False
 
 
+def calculate_points(feedback):
+    """
+    Calculate a grade for a submission.
+    :param feedback: (models.Feedback) database object
+    :return: (int) points, (str) info
+    """
+    if feedback.exercise.add_penalty:
+        penalty = int(feedback.staff_grade * feedback.penalty)
+        penalty_info = f"Late penalty for grader points: -{penalty}\n"
+    else:
+        penalty = 0
+        penalty_info = ""
+
+    if feedback.exercise.add_auto_grade:
+        points = feedback.auto_grade + feedback.staff_grade - penalty
+        auto_grade_info = f"Automatic evaluation: {feedback.auto_grade}\n"
+    else:
+        points = feedback.staff_grade - penalty
+        auto_grade_info = ""
+
+    grader = f"Grader: {feedback.grader}\n\n"
+    staff_grade = f"Grader points: {feedback.staff_grade}\n"
+    total = f"Total points: {points}\n\n"
+    info = f"{grader}{auto_grade_info}{staff_grade}{penalty_info}{total}"
+
+    return points, info
+
+
 def create_json_to_batch_assess(feedbacks):
     """
-    HUOM! Tämä on väliaikainen purkkaliima. 
-
+    Create a json to copy and paste to course page in Plussa
+    :param feedbacks: (Queryset) Feedbacks to be released
+    :return: json
     """
-
-    selite = ""  #"\nYou may direct any inquiries regarding this feedback to the " \
-                 #"\ninspector of this assignment.\nATTENTION! Remember to include " \
-                 #"your student number in the title of your e-mail.\n"
-
     object_list = []
 
     for feedback in feedbacks:
@@ -558,31 +582,11 @@ def create_json_to_batch_assess(feedbacks):
         for student in feedback.students.all():
             students.append(student.email)
 
-        if feedback.exercise.add_penalty:
-            penalty = int(feedback.staff_grade * feedback.penalty)
-        else:
-            penalty = 0
-
-        points = feedback.auto_grade + feedback.staff_grade - penalty
-
-        #if points < 14 or points > 100:
-        #    selite = feedback.sub_id
-        #    object_list = None
-        #    break
-
-
-        kurssi = feedback.exercise.course.name
-        tehtava = feedback.exercise.name
-        header = f"{kurssi} / {tehtava}\n{selite}\nTA: {feedback.grader}\n\n"
-        auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
-        staff_grade = f"Assistant points: {feedback.staff_grade}\n"
-        sakko = f"Late penalty for assistant points: -{penalty}\n"
-        yht = f"Total points: {points}\n\n"
-        grade = f"{auto_grade}{staff_grade}{sakko}{yht}"
+        points, info = calculate_points(feedback)
 
         obj = {
             "students_by_email": students,
-            "feedback": f"<pre>{header}{grade}{feedback.feedback}</pre>",
+            "feedback": f"<pre>{info}{feedback.feedback}</pre>",
             "exercise_id": feedback.exercise.exercise_id,
             "submission_time": f"{datetime.datetime.now()}",
             "points": points  # TODO: pyöristys?
@@ -593,44 +597,26 @@ def create_json_to_batch_assess(feedbacks):
         feedback.released = True
         feedback.save()
 
-    if object_list:
-        objects = {"objects": object_list}
-        return json.dumps(objects, indent=2)
-
-    else:
-
-        for feedback in feedbacks:
-            feedback.released = False
-            feedback.save()
-
-        return f"VIRHE KOKONAISPISTEISSÄ! Tutki arvostelua id: {selite}"
+    objects = {"objects": object_list}
+    return json.dumps(objects, indent=2)
 
 
 def create_json_to_post(feedback):
+    """
+    Form a json object to create a new submission by POST
+    :param feedback: (models.Feedback) database object
+    :return: (dict) information needed to form a submission by POST
+    """
     students = []
 
     for student in feedback.students.all():
         students.append(student.email)
 
-    if feedback.exercise.add_penalty:
-        penalty = int(feedback.staff_grade * feedback.penalty)
-    else:
-        penalty = 0
-
-    points = feedback.auto_grade + feedback.staff_grade - penalty
-
-    # kurssi = feedback.exercise.course.name
-    # tehtava = feedback.exercise.name
-    grader = f"Grader: {feedback.grader}\n\n"
-    auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
-    staff_grade = f"Grader points: {feedback.staff_grade}\n"
-    late_penalty = f"Late penalty for grader points: -{penalty}\n"
-    total = f"Total points: {points}\n\n"
-    header = f"{grader}{auto_grade}{staff_grade}{late_penalty}{total}"
+    points, info = calculate_points(feedback)
 
     json_object = {
         "students_by_email": students,
-        "feedback": f"<pre>{header}{feedback.feedback}</pre>",
+        "feedback": f"<pre>{info}{feedback.feedback}</pre>",
         "points": points  # TODO: pyöristys?
     }
 

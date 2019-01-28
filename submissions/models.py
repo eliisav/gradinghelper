@@ -59,6 +59,7 @@ class Exercise(models.Model):
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
     add_penalty = models.BooleanField(default=True)
+    add_auto_grade = models.BooleanField(default=True)
     feedback_base = models.FileField(null=True, blank=True,
                                      upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
@@ -93,7 +94,8 @@ class Exercise(models.Model):
         # self.consent_exercise = None  # Ei ole enää tarpeellinen
         self.min_points = 1
         self.max_points = None
-        self.penalty = True
+        self.add_penalty = True
+        self.add_auto_grade = True
         self.in_grading = False
         self.grading_ready = False
         self.work_div = self.EVEN_DIV
