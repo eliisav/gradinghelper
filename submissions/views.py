@@ -144,7 +144,8 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
 
                 form.save_m2m()
 
-                if exercise.num_of_graders is None:
+                if exercise.num_of_graders is None or \
+                        exercise.num_of_graders < exercise.graders.all().count():
                     exercise.num_of_graders = exercise.graders.all().count()
 
                 exercise.save(update_fields=["min_points", "max_points",
@@ -181,7 +182,8 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     def form_valid(self, form):
         self.object = form.save()
 
-        if self.object.num_of_graders is None:
+        if self.object.num_of_graders is None or \
+                self.object.num_of_graders < self.object.graders.all().count():
             self.object.num_of_graders = self.object.graders.all().count()
 
         # Jos tehtävällä on palautepohja, niin päivitetään se
