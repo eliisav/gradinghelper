@@ -48,8 +48,7 @@ def add_user_to_course(user, user_role, course_label, course_name, api_url,
         course = Course.objects.get(course_id=api_id)
         
     except Course.DoesNotExist:
-        course = Course(course_id=api_id, name=name, api_url=api_url,
-                        api_root="/".join(api_url.split("/")[:-3]))
+        course = Course(course_id=api_id, name=name, api_url=api_url)
         course.save()
 
     if course:
@@ -404,12 +403,13 @@ def choose_grader(exercise, graders, max_sub_count=None):
 
 def get_submission_data(feedback):
     api_root = feedback.exercise.course.api_root
-    exercise_url = f"{api_root}/exercises/{feedback.exercise.exercise_id}/"
+    exercise_url = f"{api_root}exercises/{feedback.exercise.exercise_id}/"
     form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
 
-    sub_url = f"{api_root}/submissions/{feedback.sub_id}/"
+    sub_url = f"{api_root}submissions/{feedback.sub_id}/"
     sub_info = get_json(sub_url)
 
+    inspect_url = sub_info["html_url"] + "inspect"
     sub_data = []
 
     # Kun palautetaan git-url, "form_spec" näyttää jäävän tyhjäksi

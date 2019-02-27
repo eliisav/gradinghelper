@@ -13,12 +13,17 @@ class Course(models.Model):
     course_id = models.PositiveIntegerField(unique=True)
     name = models.CharField(max_length=200)
     api_url = models.URLField()
-    api_root = models.URLField()  # no slash at the end of this
+    api_root = models.URLField(null=True, blank=True)
     teachers = models.ManyToManyField(User, related_name="responsibilities",
                                       blank=True)
     assistants = models.ManyToManyField(User, related_name="my_courses",
                                         blank=True)
-    
+
+    def save(self, *args, **kwargs):
+        if not self.api_root:
+            self.api_root = "/".join(str(self.api_url).split("/")[:-3]) + "/"
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
         
