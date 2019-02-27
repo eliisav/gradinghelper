@@ -427,7 +427,7 @@ def get_submission_data(feedback):
             get_text(sub_data, field, sub_info["submission_data"])
 
     # print(sub_data)
-    return sub_data
+    return inspect_url, sub_data
 
 
 def get_git_url(sub_data, url):
@@ -438,7 +438,7 @@ def get_git_url(sub_data, url):
         {
             "title": None,
             "url": url,
-            "text": "Siirry opiskelijan repositorioon oheisesta linkistä.",
+            "text": "Siirry opiskelijan repositorioon oheisesta linkistä",
             "code": None
         }
     )
@@ -456,7 +456,8 @@ def get_filecontent(sub_data, form_field, files):
         if file["param_name"] == form_field["key"]:
             resp = requests.get(file["url"], headers=AUTH)
 
-            text = ""
+            title = None
+            text = None
             code = None
             style = None
 
@@ -480,11 +481,12 @@ def get_filecontent(sub_data, form_field, files):
                 style = buffer.getvalue()
 
             else:
-                text = "Lataa tiedosto oheisesta linkistä."
+                title = form_field["title"]
+                text = "Lataa tiedosto oheisesta linkistä"
 
             sub_data.append(
                 {
-                    "title": None,
+                    "title": title,
                     "url": file["url"],
                     "text": text,
                     "code": code,
@@ -503,18 +505,19 @@ def get_text(sub_data, form_field, textareas):
     :param textareas: 
     :return: 
     """
-    for area in textareas:
-        if area[0] == form_field["key"]:
-            sub_data.append(
-                {
-                    "title": form_field["title"],
-                    "url": "",
-                    "text": area[1],
-                    "code": None
-                }
-            )
+    if textareas:
+        for area in textareas:
+            if area[0] == form_field["key"]:
+                sub_data.append(
+                    {
+                        "title": form_field["title"],
+                        "url": None,
+                        "text": area[1],
+                        "code": None
+                    }
+                )
 
-            return
+                return
 
 
 def check_filetype(fileobject):

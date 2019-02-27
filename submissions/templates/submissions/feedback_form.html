@@ -6,13 +6,41 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Palaute" "submissions:feedback" exercise_id sub_id %}
+  {% breadcrumb "Palaute" "submissions:feedback" exercise.exercise_id form.instance.sub_id %}
 {% endblock %}
 
 
 {% block content %}
 
+  <script>document.title = "{{ form.instance.sub_id }}";</script>
+
   <div class="col-xl-6">
+
+    <div class="card mb-4">
+
+      <div class="card-header">
+        <ul class="nav nav-pills card-header-pills">
+          <li class="nav-item">
+            <a class="nav-link active" data-toggle="collapse" data-target="#sub_info">Palauttajat</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ inspect_url }}" target="_blank">Tarkastele Plussassa</a>
+          </li>
+        </ul>
+      </div> <!-- card-header -->
+
+      <div id="sub_info" class="collapse show">
+        <div class="card-body">
+          <ul class="list-unstyled">
+            {% for student in form.instance.students.all %}
+              <li>{{ student }}</li>
+            {% endfor %}
+          </ul>
+        </div>  <!-- card-body -->
+      </div> <!-- sub_info -->
+
+    </div> <!-- card -->
+
 
     {% for obj in sub_data %}
       {% if obj.title %}
@@ -23,8 +51,12 @@
       {% endif %}
 
       <div class="p-2">
-        <a href="{{ obj.url }}">{{ obj.url }}</a>
-        <div style="white-space:pre-wrap;">{{ obj.text }}</div>
+        {% if obj.text %}
+          <div style="white-space:pre-wrap;">{{ obj.text }}</div>
+        {% endif %}
+        {% if obj.url %}
+          <a href="{{ obj.url }}">{{ obj.url }}</a>
+        {% endif %}
       </div>
 
 
@@ -51,6 +83,12 @@
 
     <form method="post" style="position: sticky;top: 50px;">
       {% csrf_token %}
+      <div class="form-group">
+        {% for student in form.instance.students.all %}
+          <label>Opiskelijanro ja s-posti:</label>
+          <div class="form-control"> {{ student }} </div>
+        {% endfor %}
+      </div>
       {% bootstrap_form form %}
       <a class="btn btn-warning" href="{% url referer_url feedback.exercise.exercise_id %}" role="button">Peruuta</a>
       <button type="submit" class="btn btn-success float-right">Tallenna</button>

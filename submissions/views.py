@@ -317,7 +317,7 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
 class FeedbackView(ExerciseMixin, LoginRequiredMixin,
                    generic.edit.UpdateView):
     """
-    Näyttää yhden palautuksen koodin/urlin/kysymykset/vastauksekset ja 
+    Näyttää yhden palautuksen koodin/urlin/kysymykset/vastaukset ja
     lomakkeen palautetta varten.
     """
     model = Feedback
@@ -342,8 +342,10 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Haetaan palautuksen koodi/url/tekstimuotoinen vastaus jne.
-        context["sub_data"] = get_submission_data(self.object)
+        # Get the information about the submission and add it to the context.
+        inspect_url, sub_data = get_submission_data(self.object)
+        context["inspect_url"] = inspect_url
+        context["sub_data"] = sub_data
 
         # Näkymään pääsee kahden eri sivun kautta, joten murupolkua
         # varten lisätään kontekstiin tieto siitä mistä tultiin.
