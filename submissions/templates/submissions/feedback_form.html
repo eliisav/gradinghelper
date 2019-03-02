@@ -9,10 +9,9 @@
   {% breadcrumb "Palaute" "submissions:feedback" exercise.exercise_id form.instance.sub_id %}
 {% endblock %}
 
+{% block title %}{{ form.instance.sub_id }}{% endblock %}
 
 {% block content %}
-
-  <script>document.title = "{{ form.instance.sub_id }}";</script>
 
   <div class="col-xl-6">
 
