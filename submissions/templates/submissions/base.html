@@ -16,7 +16,7 @@
     <link rel="stylesheet" type="text/css" href="{% static 'submissions/sticky-footer.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'submissions/pygments_default.css' %}">
 
-    <title>Grading Helper</title>
+    <title>{% block title %} Grading Helper {% endblock %}</title>
 
   </head>
  
@@ -33,6 +33,9 @@
         <nav class="my-2 my-md-0 mr-md-3">
           {% render_breadcrumbs %}
         </nav>
+        <h5 class="ml-md-auto text-center">
+          {% block coursename %}{% endblock %}
+        </h5>
         <span class="my-0 mr-3 ml-md-auto">{{ user }}</span>
         <a class="btn btn-outline-primary" href="{% url 'submissions:logout' %}">Log out</a>
       </div>
@@ -41,30 +44,13 @@
 
     <main class="container-fluid" role="main">
 
-      <div class="row" id="messages">
-
+      {% if messages %}
+        <div class="row" id="messages">
           <div class="col-md-4 offset-md-4" >
-            {% if messages %}
-              <ul class="list-group list-group-flush messages">
-                {% for message in messages %}
-                  {% if message.tags == "error" %}
-                    <li class="list-group-item list-group-item-danger">
-                  {% elif message.tags == "warning" %}
-                    <li class="list-group-item list-group-item-warning">
-                  {% elif message.tags == "success" %}
-                    <li class="list-group-item list-group-item-success">
-                  {% else %}
-                    <li class="list-group-item list-group-item-info">
-                  {% endif %}
-                    {{ message }}
-                    </li>
-                {% endfor %}
-              </ul>
-            {% endif %}
+            {% bootstrap_messages %}
           </div> <!-- column -->
-
-      </div> <!-- row -->
-
+        </div> <!-- row -->
+      {% endif %}
 
       <div class="row" id="content">
         {% block content %}
@@ -77,7 +63,7 @@
     <footer class="footer">
       <div class="container-fluid">
         <div>Bugiraportit ja kehitysehdotukset:
-          <a href="mailto:eliisa.vakeva@tut.fi">eliisa.vakeva@tut.fi</a>
+          <a href="mailto:eliisa.vakeva@tuni.fi">eliisa.vakeva@tuni.fi</a>
         </div>
       </div>
     </footer>
