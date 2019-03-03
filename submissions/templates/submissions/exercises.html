@@ -3,77 +3,88 @@
 {% load bootstrap4 %}
 {% load django_bootstrap_breadcrumbs %}
 
-
-
-{% block content %}
-
 {% block breadcrumbs %}
   {{ block.super }}
   {% breadcrumb "Tehtävät" "submissions:exercises" course.course_id %}
 {% endblock %}
 
+{% block coursename %} {{ course.name }} {% endblock %}
 
-  <div class="col-md-8">
-    <div class="card card-body m-2 bg-light">
-      <h2> Arvosteltavat tehtävät </h2>
-      <h4> {{ course.name }} </h4>
+{% block content %}
 
+  <div class="col-md-8 offset-md-2">
 
-      {% if exercises %}
-        <ul class="list-group exercises">
+    <ul class="nav nav-tabs m-4">
+      <li class="nav-item">
+        <a class="nav-link {% if not show_set_grading %} active {% endif %}"
+           data-toggle="tab" href="#exercises">
+          Arvosteltavat tehtävät
+        </a>
+      </li>
+      {% if user_is_teacher %}
+        <li class="nav-item">
+          <a class="nav-link {% if show_set_grading %} active {% endif %}" data-toggle="tab"
+             href="#set_grading">
+            Lisää tehtäviä arvosteluun
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+
+    <div class="tab-content">
+
+      <div class="tab-pane fade {% if not show_set_grading %} show active {% endif %}" id="exercises">
+        <div class="card card-body bg-light">
+
           {% for exercise in exercises %}
-            <li class="list-group-item {{ exercise.exercise_id }}">
 
-              <div class="d-flex align-items-center">
+            <ul class="list-group exercises">
+              <li class="list-group-item {{ exercise.exercise_id }}">
+                <div class="d-flex align-items-center">
 
-                <div class="flex-grow-1">
+                  <div class="flex-grow-1">
                     {{ exercise }}
-                </div> <!-- Tehtävän nimi -->
+                  </div>
 
 
-                <div class="ml-auto">
+                  <div class="ml-auto">
 
-                  <a class="btn btn-primary btn-sm" href="{% url 'submissions:grading' exercise.exercise_id %}" role="button">
-                    Omat arvosteltavat
-                  </a>
+                    <a class="btn btn-primary btn-sm" href="{% url 'submissions:grading' exercise.exercise_id %}" role="button">
+                      Omat arvosteltavat
+                    </a>
 
-                  <a class="btn btn-primary btn-sm" href="{% url 'submissions:submissions' exercise.exercise_id %}" role="button">
-                    Kaikki arvosteltavat
-                  </a>
+                    <a class="btn btn-primary btn-sm" href="{% url 'submissions:submissions' exercise.exercise_id %}" role="button">
+                      Kaikki arvosteltavat
+                    </a>
 
-
-                  {% if user_is_teacher %}
-
-                  <!-- <a class="btn btn-primary btn-sm" href="{% url 'submissions:update_exercise' course.course_id exercise.exercise_id %}" role="button">
-                    Muokkaa arvosteluasetuksia
-                  </a> -->
-
-                  <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
-                    Asetukset
-                  </button>
-
-
-                </div> <!-- nappulat -->
-              </div> <!-- d-flex -->
-
-
-              <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
-                <div class="card card-body bg-light">
-
-                  <form action="{% url 'submissions:update_exercise' course.course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    {% bootstrap_form exercise.form %}
-                    <button class="btn btn-danger " type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
-                      Poista tehtävä
+                {% if user_is_teacher %}
+                    <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
+                      Asetukset
                     </button>
-                    <button type="submit" class="btn btn-success float-right">
-                      Tallenna muutokset
-                    </button>
-                  </form>
 
-                </div>
-              </div> <!-- collapse -->
-              <div class="collapse mt-4" id="delete {{ exercise.exercise_id }}">
+                  </div> <!-- buttons -->
+                </div> <!-- d-flex -->
+
+
+                <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
+                  <div class="card card-body bg-light">
+
+                    <form action="{% url 'submissions:update_exercise' course.course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
+                      {% csrf_token %}
+                      {% bootstrap_form exercise.form %}
+                      <button class="btn btn-danger " type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
+                        Poista tehtävä
+                      </button>
+                      <button type="submit" class="btn btn-success float-right">
+                        Tallenna muutokset
+                      </button>
+                    </form>
+
+                  </div>
+                </div> <!-- collapse -->
+
+
+                <div class="collapse mt-4" id="delete {{ exercise.exercise_id }}">
 
                   <div class="alert alert-danger" role="alert">
                     Tehtävä ja siihen liittyvät arvostelut poistetaan. Oletko varma, että haluat jatkaa?
@@ -85,41 +96,46 @@
                     Poista
                   </a>
 
-              </div>
-              {% endif %}
+                </div> <!-- collapse -->
 
+                {% endif %}
 
-            </li>
+              </li>
+            </ul>
+
+          {% empty %}
+            <div class="alert alert-info" role="alert">
+              Kurssille ei ole asetettu arvosteltavia tehtäviä.
+            </div>
           {% endfor %}
-        </ul>
-      {% else %}
-      <div class="alert alert-info" role="alert">
-        Yhtään tehtävää ei ole vielä lisätty.
-      </div>
 
+        </div> <!-- tab-pane -->
+      </div> <!-- card -->
+
+      {% if user_is_teacher %}
+        <div class="tab-pane fade {% if show_set_grading %} show active {% endif %}" id="set_grading">
+          <div class="card card-body m-2 bg-light">
+
+            <form action="{% url 'submissions:update_exercise_list' course.course_id %}" method="post" class="form">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-lg m-4">Päivitä kurssin sisältö</button>
+              <small>Kurssin sisältöä ei haeta automaattisesti. Alla oleva tehtävävalikko päivittyy viereisestä napista.</small>
+            </form>
+
+            <form action="{% url 'submissions:grading_on' course.course_id %}" method="post" class="form" enctype="multipart/form-data">
+              {% csrf_token %}
+              {% bootstrap_form form %}
+              <button type="submit" class="btn btn-primary">Lisää</button>
+            </form>
+
+          </div> <!-- tab-pane -->
+        </div> <!-- card -->
       {% endif %}
-    </div>
-  </div>
 
-  <div class="col-md-4">
-
-    {% if user_is_teacher %}
-      <div class="card card-body m-2 bg-light">
-      <h2> Lisää tehtäviä arvosteluun </h2>
-      <h4> {{ course.name }} </h4>
-      
-      <a class="btn btn-primary m-4" href="{% url 'submissions:update_exercise_list' course.course_id %}" role="button">Päivitä kurssin sisältö</a>
-
-      <form action="{% url 'submissions:grading_on' course.course_id %}" method="post" class="form" enctype="multipart/form-data">
-        {% csrf_token %}
-        {% bootstrap_form form %}
-        <button type="submit" class="btn btn-primary">Lisää</button>
-      </form>
-      </div>
-
-    {% endif %}
+    </div> <!-- tab-content -->
 
   </div> <!-- column -->
+
 {% endblock %}
 
     <!--

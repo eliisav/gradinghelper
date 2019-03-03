@@ -71,12 +71,27 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
 
         self.object_list = self.get_queryset().filter(
             course=course).filter(in_grading=True)
-        context = self.get_context_data(user=request.user, course=course)
+
+        # If exercise list is just updated the information is saved
+        # to session and it is passed forward to create context data.
+        if "exercises_updated" in request.session:
+            updated=request.session["exercises_updated"]
+            request.session["exercises_updated"] = False
+        else:
+            updated = False
+
+        context = self.get_context_data(
+            user=request.user,
+            course=course,
+            updated=updated
+        )
+
         return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["course"] = kwargs["course"]
+        context["show_set_grading"] = False
 
         if kwargs["course"].is_teacher(kwargs["user"]):
             context["user_is_teacher"] = True
@@ -86,22 +101,34 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
                 exercise.form = ExerciseUpdateForm(instance=exercise,
                                                    course=kwargs["course"])
 
+            # If user is teacher and exercise list is empty or
+            # exercise list is just updated, the ExerciseSetGradinForm
+            # will be viewed.
+            if self.object_list.count() == 0 or kwargs["updated"]:
+                context["show_set_grading"] = True
+
+
         return context
 
 
 class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
     """
-    Lisätään/päivitetään kurssin tehtävät tietokantaan.
+    Handles the request to retrieve exercises of the specific course.
     """
     pattern_name = "submissions:exercises"
 
-    # TODO: muuttaa tietokannan tilaa, joten muuta postiksi
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         course = get_object_or_404(Course, course_id=kwargs["course_id"])
+
+        # TODO: voiko jotain mennä pieleen, että tehtäviä ei päivitetäkään?
+        # get exercises from Plussa and save them to database
         get_exercises(course)
+
+        # information passed to template
+        request.session["exercises_updated"] = True
         messages.success(request, "Kurssin sisältö päivitetty.")
             
-        return super().get(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
 
 
 class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
