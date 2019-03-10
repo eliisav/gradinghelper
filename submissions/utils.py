@@ -554,15 +554,16 @@ def calculate_points(feedback):
 
     if feedback.exercise.add_auto_grade:
         points = feedback.auto_grade + feedback.staff_grade - penalty
-        auto_grade_info = f"Automatic evaluation: {feedback.auto_grade}\n"
+        auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
+        total = f"Total points: {points}\n"
     else:
         points = feedback.staff_grade - penalty
-        auto_grade_info = ""
+        auto_grade = ""
+        total = ""
 
     grader = f"Grader: {feedback.grader}\n\n"
     staff_grade = f"Grader points: {feedback.staff_grade}\n"
-    total = f"Total points: {points}\n\n"
-    info = f"{grader}{auto_grade_info}{staff_grade}{penalty_info}{total}"
+    info = f"{grader}{auto_grade}{staff_grade}{penalty_info}{total}\n"
 
     return points, info
 
