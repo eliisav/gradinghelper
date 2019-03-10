@@ -499,11 +499,10 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                                                  status=Feedback.READY,
                                                  released=False)
         api_root = exercise.course.api_root
-        url = f"{api_root}/exercises/{exercise.exercise_id}/submissions/"
+        url = f"{api_root}exercises/{exercise.exercise_id}/submissions/"
         
         if feedbacks:
-            i = 0
-            while i < len(feedbacks):
+            for i in range(0, len(feedbacks)):
                 json_object = create_json_to_post(feedbacks[i])
 
                 try:
@@ -511,19 +510,31 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                     resp = requests.post(url, json=json_object, headers=AUTH)
                 except Exception as e:
                     LOGGER.debug(e)
-                    continue
+                    messages.error(
+                        request,
+                        f"{e}\nJulkaistiin {i} VALMIS-tilassa ollutta "
+                        f"palautetta.\nJulkaisematta jäi "
+                        f"{feedbacks.count()-i} palautetta."
+                    )
+                    break
 
                 if resp.status_code == 201:
                     LOGGER.debug(f"Onnistui, tallennetaan {i}")
                     feedbacks[i].released = True
                     feedbacks[i].save()
-                    i += 1
                 else:
-                    messages.error(request, f"{resp.status_code} {resp.text}")
+                    messages.error(
+                        request,
+                        f"{resp.status_code} {resp.text}\n"
+                        f"Julkaistiin {i} VALMIS-tilassa ollutta "
+                        f"palautetta.\nJulkaisematta jäi "
+                        f"{feedbacks.count()-i} palautetta."
+                    )
                     break
-
-            messages.success(request, f"Julkaistiin {feedbacks.count()} "
-                                      f"VALMIS-tilassa ollutta palautetta.")
+            else:
+                messages.success(request,
+                                 f"Julkaistiin {feedbacks.count()} "
+                                 f"VALMIS-tilassa ollutta palautetta.")
         else:
             messages.info(request, "Julkaistavia palautteita ei löytynyt.")
             
