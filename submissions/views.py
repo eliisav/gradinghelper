@@ -72,28 +72,29 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
         self.object_list = self.get_queryset().filter(
             course=course).filter(in_grading=True)
 
-        # If exercise list is just updated the information is saved
-        # to session and it is passed forward to create context data.
-        if "exercises_updated" in request.session:
-            updated=request.session["exercises_updated"]
-            request.session["exercises_updated"] = False
+        # There are two tabs in the template and this
+        # information tells which one to show.
+        if "show_set_grading" in request.session:
+            show_set_grading = request.session["show_set_grading"]
+            request.session["show_set_grading"] = False
         else:
-            updated = False
+            show_set_grading = False
 
         context = self.get_context_data(
             user=request.user,
             course=course,
-            updated=updated
+            show_set_grading=show_set_grading
         )
 
         return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["course"] = kwargs["course"]
-        context["show_set_grading"] = False
 
-        if kwargs["course"].is_teacher(kwargs["user"]):
+        if not kwargs["course"].is_teacher(kwargs["user"]):
+            context["show_set_grading"] = False
+
+        else:
             context["user_is_teacher"] = True
             context["form"] = ExerciseSetGradingForm(course=kwargs["course"])
 
@@ -101,12 +102,10 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
                 exercise.form = ExerciseUpdateForm(instance=exercise,
                                                    course=kwargs["course"])
 
-            # If user is teacher and exercise list is empty or
-            # exercise list is just updated, the ExerciseSetGradinForm
-            # will be viewed.
-            if self.object_list.count() == 0 or kwargs["updated"]:
+            # If user is teacher and exercise list is empty
+            # the ExerciseSetGradinForm will be viewed.
+            if self.object_list.count() == 0:
                 context["show_set_grading"] = True
-
 
         return context
 
@@ -124,11 +123,11 @@ class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
         # get exercises from Plussa and save them to database
         get_exercises(course)
 
-        # information passed to template
-        request.session["exercises_updated"] = True
+        # Information passed to template which tab to show
+        request.session["show_set_grading"] = True
         messages.success(request, "Kurssin sisältö päivitetty.")
-            
-        return super().post(request, *args, **kwargs)
+
+        return self.get(request, *args, **kwargs)
 
 
 class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
@@ -155,7 +154,7 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
 class EnableExerciseGradingRedirectView(LoginRequiredMixin,
                                         generic.RedirectView):
     """
-    Lisätään tehtävä tarkastukseen.
+    Handles the request to enable exercise grading with submitted settings.
     """
     pattern_name = "submissions:exercises"
     
@@ -166,41 +165,38 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
 
         if form.is_valid():
             exercise = form.save(commit=False)
-            if check_filetype(exercise.feedback_base):
-                exercise.in_grading = True
+            exercise.in_grading = True
+            form.save_m2m()
 
-                form.save_m2m()
+            if exercise.num_of_graders is None or \
+                    exercise.num_of_graders < exercise.graders.count():
+                exercise.num_of_graders = exercise.graders.count()
 
-                if exercise.num_of_graders is None or \
-                        exercise.num_of_graders < exercise.graders.all().count():
-                    exercise.num_of_graders = exercise.graders.all().count()
+            exercise.save(update_fields=["min_points", "max_points",
+                                         "add_penalty", "add_auto_grade",
+                                         "work_div", "num_of_graders",
+                                         "feedback_base", "in_grading"])
 
-                exercise.save(update_fields=["min_points", "max_points",
-                                             "add_penalty", "add_auto_grade",
-                                             "work_div", "num_of_graders",
-                                             "feedback_base", "in_grading"])
-
-                messages.success(request, "Tehtävän lisääminen onnistui.")
-            else:
-                messages.error(request, "Ladatun tiedoston pääte ei ollut "
-                                        ".txt tai tiedosto on liian suuri.")
+            messages.success(request, "Tehtävän lisääminen onnistui.")
 
         else:
-            messages.error(request, "Virheellinen lomake!")
-            
+            message = "Virheellinen kenttä."
+
+            if "file_error" in form.errors:
+                message = form.errors["file_error"]
+
+            messages.error(self.request, f"{message} Muutoksia ei tallennettu.")
+
+            # Information passed to template which tab to show
+            request.session["show_set_grading"] = True
+
         return self.get(request, *args, **kwargs)
         
 
 class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     """
-    Käsittelee lomakkeen, jolla muutetaan arvosteltavan tehtävän asetuksia.
-    Huom. get-metodi ei renderöi lomaketta, vaan se tapahtuu luokassa 
-    ExerciseListView. Get-metodi käsittelee tehtävän poistamisen 
-    tarkastuslistalta. (Onko vastoin hyvää tyyliä?) Post-metodi käsittelee 
-    lomakkeen lomakkeen normaalisti ilman ylimääräisiä kikkailuja
+    Handle the request to update exercise grading settings.
     """
-    # TODO: palautepohjan tiedostotyypin tarkastus
-    # TODO: get ei oikeastaan saisi koskaan muuttaa tietokannan tilaa
     model = Exercise
     slug_field = "exercise_id"
     slug_url_kwarg = "exercise_id"
@@ -210,11 +206,23 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
         self.object = form.save()
 
         if self.object.num_of_graders is None or \
-                self.object.num_of_graders < self.object.graders.all().count():
-            self.object.num_of_graders = self.object.graders.all().count()
+                self.object.num_of_graders < self.object.graders.count():
+            self.object.num_of_graders = self.object.graders.count()
+            self.object.save()
 
-        # Jos tehtävällä on palautepohja, niin päivitetään se
-        # kaikkiin muokkaamattomiin palautteisiin
+        self.object.feedback_set.filter(
+            status=Feedback.BASE,
+            auto_grade__lt=self.object.min_points
+        ).delete()
+
+        if self.object.max_points is not None:
+            self.object.feedback_set.filter(
+                status=Feedback.BASE,
+                auto_grade__gt=self.object.max_points
+            ).delete()
+
+        # Update feedback base if it exists. Update is done only
+        # if Feedback object's status is Feedback.BASE
         if self.object.feedback_base:
             for feedback in self.object.feedback_set.all():
                 add_feedback_base(self.object, feedback)
@@ -222,15 +230,36 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
         messages.success(self.request, "Muutokset tallennettu.")
         return super().form_valid(form)
 
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.set_defaults()
-        self.object.feedback_base.delete()
-        self.object.feedback_set.all().delete()
-        self.object.save()
+    def form_invalid(self, form):
+        message = "Virheellinen kenttä."
+
+        if "file_error" in form.errors:
+            message = form.errors["file_error"]
+
+        messages.error(self.request, f"{message} Muutoksia ei tallennettu.")
+
+        return HttpResponseRedirect(self.object.get_absolute_url())
+
+
+class DisableExerciseGradingRedirectView(LoginRequiredMixin,
+                                         generic.RedirectView):
+    """
+    Handles the request to remove the exercise from grading list.
+    """
+    pattern_name = "submissions:exercises"
+
+    def post(self, request, *args, **kwargs):
+        exercise = get_object_or_404(
+            Exercise,
+            exercise_id=kwargs.pop("exercise_id")
+        )
+        exercise.set_defaults()
+        exercise.feedback_base.delete()
+        exercise.feedback_set.all().delete()
+        exercise.save()
         messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
 
-        return HttpResponseRedirect(self.get_success_url())
+        return self.get(request, *args, **kwargs)
 
 
 class GradingListView(ExerciseMixin, LoginRequiredMixin,

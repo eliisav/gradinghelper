@@ -26,6 +26,20 @@ class ExerciseUpdateForm(forms.ModelForm):
         }
         widgets = {
             "work_div": forms.RadioSelect,
+            "max_points": forms.NumberInput(attrs={
+                "placeholder": "Tarvitaan, jos osa palautuksista on arvioitu "
+                               "jotenkin muuten kuin tämän palvelun kautta"
+            }),
+            "num_of_graders": forms.NumberInput(attrs={
+                "placeholder": "Tarvitaan tasajakoa varten, jos suurempi kuin "
+                               "edellä valittujen määrä"
+            }),
+            "feedback_base": forms.FileInput(attrs={"accept": ".txt"})
+        }
+        help_texts = {
+            "graders": "Kaikki arvostelijat eivät välttämättä näy listassa, "
+                       "jos he eivät ole vielä kirjautuneet kurssille.",
+            "feedback_base": "Tiedoston tulee olla tekstitiedosto (.txt)"
         }
 
     def __init__(self, *args, **kwargs):
@@ -48,13 +62,25 @@ class ExerciseUpdateForm(forms.ModelForm):
                 ) | Q(
                     responsibilities=self.course
                 )).distinct()
-            self.fields["num_of_graders"].widget = forms.NumberInput(attrs={
-                "placeholder": "Tarvitaan jos eri kuin edellä "
-                               "valittujen määrä"
-            })
-            self.fields["max_points"].widget = forms.NumberInput(attrs={
-                "placeholder": "Tarvitaan jos osa palautuksista on jo arvioitu"
-            })
+
+    def is_valid(self):
+        valid = super().is_valid()
+
+        if not valid:
+            return valid
+
+        fileobject = self.cleaned_data["feedback_base"]
+
+        # It's ok if there is no file
+        if not fileobject:
+            return True
+        # Let's assume that it is a textfile if extension is .txt and
+        # file size is less than 500 kB
+        elif fileobject.name.endswith("txt") and fileobject.size < 500000:
+            return True
+        else:
+            self._errors["file_error"] = "Tiedosto ei ollut tekstitiedosto."
+            return False
 
 
 class ExerciseSetGradingForm(ExerciseUpdateForm):

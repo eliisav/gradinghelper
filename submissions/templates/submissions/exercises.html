@@ -72,7 +72,7 @@
                     <form action="{% url 'submissions:update_exercise' course.course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
                       {% csrf_token %}
                       {% bootstrap_form exercise.form %}
-                      <button class="btn btn-danger " type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
+                      <button class="btn btn-danger" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
                         Poista tehtävä
                       </button>
                       <button type="submit" class="btn btn-success float-right">
@@ -89,12 +89,16 @@
                   <div class="alert alert-danger" role="alert">
                     Tehtävä ja siihen liittyvät arvostelut poistetaan. Oletko varma, että haluat jatkaa?
                   </div>
-                  <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
-                    Peruuta
-                  </button>
-                  <a class="btn btn-danger float-right" href="{% url 'submissions:update_exercise' course.course_id exercise.exercise_id %}" role="button">
-                    Poista
-                  </a>
+
+                  <form action="{% url 'submissions:grading_off' course.course_id exercise.exercise_id %}" method="post">
+                    {% csrf_token %}
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
+                      Peruuta
+                    </button>
+                    <button type="submit" class="btn btn-danger float-right">
+                      Poista
+                    </button>
+                  </form>
 
                 </div> <!-- collapse -->
 
