@@ -202,7 +202,8 @@ def sort_submissions(submissions, exercise, deadline_passed):
                 "students": [
                     {
                         "email": sub["Email"],
-                        "id": sub["StudentID"]
+                        "student_id": sub["StudentID"],
+                        "user_id": sub["UserID"]
                     }
                 ]
             }
@@ -210,18 +211,19 @@ def sort_submissions(submissions, exercise, deadline_passed):
             accepted[sub["SubmissionID"]]["students"].append(
                 {
                     "email": sub["Email"],
-                    "id": sub["StudentID"]
+                    "student_id": sub["StudentID"],
+                    "user_id": sub["UserID"]
                 }
             )
 
-        if sub["Email"] not in students:
-            students[sub["Email"]] = [sub["SubmissionID"]]
+        if sub["UserID"] not in students:
+            students[sub["UserID"]] = [sub["SubmissionID"]]
         else:
             # Parityösähläyksissä opiskelijalle on voinut tallentua
             # useampi kuin yksi palautus. Laitetaan tuplat talteen
             # ja poistetaan tarpeettomat palautukset seuraavassa vaiheessa.
-            students[sub["Email"]].append(sub["SubmissionID"])
-            duplicates.append(sub["Email"])
+            students[sub["UserID"]].append(sub["SubmissionID"])
+            duplicates.append(sub["UserID"])
 
     # print(duplicates)
     # print(students)
@@ -265,10 +267,16 @@ def add_student(student_dict, new_feedback):
     :return: (bool) False, jos opiskelijalla on jo palautus arvostelussa.
     """
     try:
-        student_obj = Student.objects.get(email=student_dict["email"])
-        # Päivitetään varmuuden vuoksi opnum. Joissain tapauksissa on
-        # mahdollista, että opiskelija saa opnumin vasta myöhemmin.
-        student_obj.student_id = student_dict["id"]
+        #student_obj = Student.objects.get(email=student_dict["email"])
+        student_obj = Student.objects.get(aplus_user_id=student_dict["user_id"])
+
+        # Update student_id and email. Email can change and student_id
+        # is sometimes given later
+        student_obj.student_id = student_dict["student_id"]
+        student_obj.email = student_dict["email"]
+
+        #student_obj.aplus_user_id = student_dict["user_id"]
+
         student_obj.save()
 
         try:
@@ -282,7 +290,6 @@ def add_student(student_dict, new_feedback):
                 LOGGER.debug(f"tehtävään: {new_feedback.exercise}")
 
                 if old_feedback.status == Feedback.BASE:
-
                     new_feedback.grader = old_feedback.grader
                     new_feedback.save()
 
@@ -313,7 +320,8 @@ def add_student(student_dict, new_feedback):
     except Student.DoesNotExist:
         student_obj = Student(
             email=student_dict["email"],
-            student_id=student_dict["id"]
+            student_id=student_dict["student_id"],
+            aplus_user_id=student_dict["user_id"]
         )
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
@@ -541,6 +549,16 @@ def check_filetype(fileobject):
 
     else:
         return False
+        sub_data.append(
+            {
+                "title": None,
+                "url": None,
+                "text": "Tekstiä ei löytynyt. Palautus saattaa olla jo "
+                        "pisteytetty ja päätynyt uudelleen arvosteluun "
+                        "sähköpostisekoilun vuoksi.",
+                "code": None
+            }
+        )
 
 
 def calculate_points(feedback):

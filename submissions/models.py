@@ -75,8 +75,7 @@ class Exercise(models.Model):
     work_div = models.PositiveSmallIntegerField(choices=DIV_CHOICES,
                                                 default=EVEN_DIV)
     graders = models.ManyToManyField(User, blank=True,
-                                     related_name="my_gradings"
-                                     )
+                                     related_name="my_gradings")
     num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
     latest_release = ArrayField(models.IntegerField(), default=list)
 
@@ -110,7 +109,8 @@ class Exercise(models.Model):
 
 class Student(models.Model):
     email = models.EmailField(unique=True)
-    student_id = models.IntegerField(default=None, null=True)
+    student_id = models.CharField(max_length=200, unique=True,
+                                  default=None, null=True)
     aplus_user_id = models.IntegerField(unique=True, null=True)
     
     def __str__(self):
@@ -137,7 +137,7 @@ class Feedback(models.Model):
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
     grader = models.ForeignKey(User, on_delete=models.CASCADE,
                                null=True, blank=True)
-    feedback = models.TextField()
+    feedback = models.TextField(blank=True)
     auto_grade = models.PositiveIntegerField(default=0)
     staff_grade = models.PositiveSmallIntegerField(default=0)
     penalty = models.DecimalField(default=0.0, max_digits=4, decimal_places=2)
