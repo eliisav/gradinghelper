@@ -82,12 +82,6 @@
 
     <form method="post" style="position: sticky;top: 50px;">
       {% csrf_token %}
-      <div class="form-group">
-        {% for student in form.instance.students.all %}
-          <label>Opiskelijanro ja s-posti:</label>
-          <div class="form-control"> {{ student }} </div>
-        {% endfor %}
-      </div>
       {% bootstrap_form form %}
       <a class="btn btn-warning" href="{% url referer_url feedback.exercise.exercise_id %}" role="button">Peruuta</a>
       <button type="submit" class="btn btn-success float-right">Tallenna</button>

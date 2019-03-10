@@ -150,3 +150,6 @@ class Feedback(models.Model):
         
     def __str__(self):
         return str(self.sub_id)
+
+    def get_students(self):
+        return self.students.all()

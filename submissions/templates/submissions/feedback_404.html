@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fi">
+
+{% load bootstrap4 %}
+
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    {% bootstrap_css %}
+    {% bootstrap_javascript jquery='full' %}
+
+    <title>Grading Helper</title>
+
+  </head>
+
+  <body>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-8 offset-md-2 mt-4">
+
+          <div class="alert alert-danger alert-dismissible fade show">
+            Arvostelemaasi palautusta ei enää ole. Todennäköisin syy tähän on se,
+            että opiskelijalta on tullut uusi palautus. Tämä on mahdollista etenkin
+            varsinaisen eräpäivän jälkeisellä jatkoajalla, jolloin palautukset
+            haetaan arvosteluun vaikka niitä ei olisi erikseen merkitty valmiiksi.
+            Sulje tämä ruutu ja kopioi alla olevat tiedot talteen näppäinyhdistelmällä
+            ctrl+A ja ctrl+C.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+
+          <a class="btn btn-primary my-4" href="{% url 'submissions:grading' exercise_id %}" role="button">
+            Palaa "Omat arvosteltavat"-listaan
+          </a>
+
+          <h6>Opiskelijat:</h6>
+          {% for student in students %}
+            <p>{{ student }}</p>
+          {% endfor %}
+
+          <p></p>
+
+          <h6>Palaute:</h6>
+          <pre>{{ text }}</pre>
+
+        </div> <!-- column -->
+      </div> <!-- row -->
+    </div> <!-- container -->
+
+  </body>
+
+</html>
+
+
+

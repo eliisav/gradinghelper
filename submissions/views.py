@@ -2,8 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.forms import modelformset_factory
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 
@@ -390,27 +390,29 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
         exercise_id = self.object.exercise.exercise_id
         return reverse("submissions:grading", args=(exercise_id,))
 
-    """
     def post(self, request, *args, **kwargs):
         try:
-            pass
-            # return super().post(request, *args, **kwargs)
-        except Http404:
+            return super().post(request, *args, **kwargs)
 
-            # TODO: Tässä pitäisi etsiä opiskelija ja mahd. myös hänen
-            # uudempi palautuksensa, johon palauutten voisi kopioida.
-            print()
-            for students in request.POST["students"]:
-                for student in students:
-                    print(student)
+        except Http404:
+            # Feecback object doesn't exist anymore if student(s) have made
+            # a new submission. This is possible in rare cases.
+            # TODO: Tässä voisi yrittää etsiä mahdollista uudempaa
+            # palautusta ja näyttää suoraan se
+
+            students = []
+
+            for student in request.POST.getlist("students"):
+                students.append(str(Student.objects.get(pk=student)))
 
             return render(
-                request, "submissions/404.html",
+                request, "submissions/feedback_404.html",
                 {
-                    "text": request.POST["feedback"]
+                    "text": request.POST["feedback"],
+                    "students": students,
+                    "exercise_id": kwargs["exercise_id"]
                 }
             )
-    """
 
 
 class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):

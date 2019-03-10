@@ -94,9 +94,7 @@ class ChangeGraderForm(forms.ModelForm):
 
 class FeedbackForm(ChangeGraderForm):
     class Meta(ChangeGraderForm.Meta):
-        # TODO: students hidden field (ongelma oli ehkä manytomany)
-        # fields = ["feedback", "staff_grade", "grader", "status", "students"]
-        fields = ["grader", "staff_grade", "feedback", "status"]
+        fields = ["grader", "staff_grade", "feedback", "status", "students"]
         labels = {
             "grader": "Arvostelija",
             "staff_grade": "Arvostelijan antamat pisteet "
@@ -109,8 +107,12 @@ class FeedbackForm(ChangeGraderForm):
                 "placeholder": "Kirjaa pisteet ilman myöhästymissakkoa"
             }),
             "feedback": forms.Textarea(attrs={"cols": 80, "rows": 17}),
-            # "students": forms.HiddenInput()
+            "students": forms.MultipleHiddenInput()
         }
+
+    def __init__(self, *args, **kwargs):
+       super().__init__(*args, **kwargs)
+       self.fields["students"].queryset = kwargs["instance"].get_students()
 
 
 class SetGraderMeForm(forms.ModelForm):
