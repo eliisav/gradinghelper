@@ -526,29 +526,7 @@ def get_text(sub_data, form_field, textareas):
                 )
 
                 return
-
-
-def check_filetype(fileobject):
-    """
-    Tarkastellaan ladatun tiedoston kokoa ja tiedostopäätettä.
-    :param fileobject: (InMemoryUploadedFile)
-    :return: True jos tiedostoa ei ole lainkaan tai se on pääteltävissä 
-    tekstitiedostoksi.
-    """
-
-    # print(fileobject.size)
-
-    # Jos tiedostoa ei ole annettu, kyseessä ei ole virhe
-    if not fileobject:
-        return True
-
-    # Oletetaan tiedoston olevan tekstitiedosto, jos tiedoston koko on
-    # alle 500 kB ja tiedostopääte on .txt.
-    elif fileobject.name.endswith("txt") and fileobject.size < 500000:
-        return True
-
     else:
-        return False
         sub_data.append(
             {
                 "title": None,
