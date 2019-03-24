@@ -75,6 +75,19 @@
 
     {% endfor %}
 
+
+
+    {% if grading_data.grading_data %}
+      {% autoescape off %}
+
+        <p>{{ grading_data.grading_data }}</p>
+        <p>{{ grading_data.feedback }}</p>
+
+      {% endautoescape %}
+    {% endif %}
+
+
+
   </div>
   
   

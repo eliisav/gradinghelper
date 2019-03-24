@@ -399,9 +399,10 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
         context = super().get_context_data(**kwargs)
 
         # Get the information about the submission and add it to the context.
-        inspect_url, sub_data = get_submission_data(self.object)
+        inspect_url, sub_data, grading_data = get_submission_data(self.object)
         context["inspect_url"] = inspect_url
         context["sub_data"] = sub_data
+        context["grading_data"] = grading_data
 
         # Näkymään pääsee kahden eri sivun kautta, joten murupolkua
         # varten lisätään kontekstiin tieto siitä mistä tultiin.
@@ -486,6 +487,8 @@ class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):
 
 
 class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
+    # TODO: näytä errorviestissä mistä palautuksesta error tuli
+    # TODO: pitää tehdä koko julkaisujuttu kokonaan toisella tavalla
     pattern_name = "submissions:grading"
 
     def post(self, request, *args, **kwargs):

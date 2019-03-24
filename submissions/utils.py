@@ -435,7 +435,7 @@ def get_submission_data(feedback):
             get_text(sub_data, field, sub_info["submission_data"])
 
     # print(sub_data)
-    return inspect_url, sub_data
+    return inspect_url, sub_data, sub_info["grading_data"]
 
 
 def get_git_url(sub_data, url):
@@ -516,9 +516,15 @@ def get_text(sub_data, form_field, textareas):
     if textareas:
         for area in textareas:
             if area[0] == form_field["key"]:
+
+                title = form_field["title"]
+
+                if title == "":
+                    title = form_field["key"]
+
                 sub_data.append(
                     {
-                        "title": form_field["title"],
+                        "title": title,
                         "url": None,
                         "text": area[1],
                         "code": None
