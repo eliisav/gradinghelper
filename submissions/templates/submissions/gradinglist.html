@@ -34,110 +34,119 @@
         <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
 
         {% if gradinglist %}
+          <table class="table table-bordered table-sm table-hover my-4">
+            <thead class="thead-light">
+              <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Opiskelijanro ja s-posti</th>
+                  <th scope="col">Arvostelun tila</th>
+              </tr>
+            </thead>
 
-        <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-primary mt-4">
+            <tbody>
+              {% for sub in gradinglist %}
+              <tr>
+                <td>
+                  <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
+                    {{ sub }}
+                  </a>
+                </td>
+
+                <td>
+                  {% for student in sub.students.all %}
+                  <div>
+                    {{ student }}
+                  </div>
+                  {% endfor %}
+
+                </td>
+
+                <td>
+                  {% if sub.released %}
+                    <div class="alert alert-success" role="alert">
+                      JULKAISTU
+                    </div>
+                  {% elif sub.status == sub.READY %}
+                    <div class="alert alert-warning" role="alert">
+                      VALMIS
+                    </div>
+                  {% elif sub.status == sub.DRAFT %}
+                    <div class="alert alert-danger" role="alert">
+                      LUONNOS
+                    </div>
+
+                  {% else %}
+                    <div class="alert alert-info" role="alert">
+                      EI ALOITETTU
+                    </div>
+                  {% endif %}
+                </td>
+
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="alert alert-info" role="alert">
+            Työlistallasi ei ole arvosteltavaa.
+          </div>
+        {% endif %}
+
+
+        <div class="d-flex justify-content-around mt-2">
+          {% if gradinglist %}
+          <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#release">
             Julkaise "VALMIS"-tilassa olevat arvostelut
           </button>
-        </form>
+          <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#mass_grading">
+            Joukkoarvostelu
+          </button>
+          {% endif %}
+          <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">
+            Hae uusimmat palautukset
+          </a>
+        </div> <!-- data-toggle buttons -->
 
-        <p>
-          Tämän napin klikkaaminen käy läpi kaikki "VALMIS"-tilassa olevat
-          palautteet ja lähettää ne Plussaan. Tämän jälkeen palaute ja pisteet
-          ovat opiskelijoiden nähtävillä Plussassa. Tätä ei voi peruuttaa.
-          Toiminnon suorittaminen kestää kauan, jos julkaistavaa on paljon.
-        </p>
-
-
-        <table class="table table-bordered table-sm table-hover my-4">
-          <thead class="thead-light">
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Opiskelijanro ja s-posti</th>
-                <th scope="col">Arvostelun tila</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {% for sub in gradinglist %}
-            <tr>
-              <td>
-                <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
-                  {{ sub }}
-                </a>
-              </td>
-
-              <td>
-                {% for student in sub.students.all %}
-                <div>
-                  {{ student }}
-                </div>
-                {% endfor %}
-
-              </td>
-
-              <td>
-                {% if sub.released %}
-                  <div class="alert alert-success" role="alert">
-                    JULKAISTU
-                  </div>
-                {% elif sub.status == sub.READY %}
-                  <div class="alert alert-warning" role="alert">
-                    VALMIS
-                  </div>
-                {% elif sub.status == sub.DRAFT %}
-                  <div class="alert alert-danger" role="alert">
-                    LUONNOS
-                  </div>
-
-                {% else %}
-                  <div class="alert alert-info" role="alert">
-                    EI ALOITETTU
-                  </div>
-                {% endif %}
-              </td>
-
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-
-
-        <h4>Joukkoarvostelu</h4>
-        <p>
+        <div class="collapse mt-4" id="release">
+          <div class="alert alert-danger" role="alert">
+            Kaikki "VALMIS"-tilassa olevat palautteet lähetetään Plussaan.
+            Tämän jälkeen palautteet ja pisteet ovat opiskelijoiden nähtävillä
+            Plussassa. Toimintoa ei voi peruuttaa. Toiminnon suorittaminen
+            kestää kauan, jos julkaistavaa on paljon.
+            Jatka valitsemalla "Julkaise".
+          </div>
+          <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+              Julkaise
+            </button>
+          </form>
+        </div> <!-- collapse release -->
+        
+        <div class="collapse mt-4" id="mass_grading">
+          <div class="alert alert-info" role="alert">
             Joukkoarvostele kaikki "EI ALOITETTU"-tilassa olevat palautukset.
-            Palautuksille annetaan kaikille sama pistemäärä ja jos halutaan,
+            Kaikille palautuksille annetaan sama pistemäärä ja jos halutaan,
             myös lyhyt palauteteksti. Toiminto muuttaa palautteet tilaan
             "VALMIS".
-            HUOM 1. Toistaiseksi ei ole olemassa "peruuta"-toimintoa, joten älä
-            mokaa :D!
+            HUOM 1. Tätä ei voi peruuttaa.
             HUOM 2. Opettaja voi valita tehtävän asetuksista lasketaanko
             automaatin ja arvostelijan antamat pisteet yhteen. Varmista
             vastuuhenkilöltä kumpi tapa on käytössä ja mikä pistemäärä alla
-            olevaan lomakkeeseen tulee kirjata!
-        </p>
-        <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
-          {% csrf_token %}
-          {% bootstrap_form batch_assess_form %}
-          <input type="submit" value="Joukkoarvostele">
-        </form>
-
-        {% else %}
-
-          <div class="alert alert-info" role="alert">
-            Arvosteltavia palautuksia ei löytynyt.
-            {% if user_is_teacher %}
-              <a class="btn btn-primary m-4" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">Päivitä</a>
-            {% endif %}
+            olevaan lomakkeeseen tulee kirjata.
           </div>
+          <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
+            {% csrf_token %}
+            {% bootstrap_form batch_assess_form %}
+            <input type="submit" value="Joukkoarvostele">
+          </form>
+        </div> <!-- collapse mass_grading -->
 
-        {% endif %}
 
       </div> <!-- tab-pane grading_list -->
 
 
-      
+
       <div class="tab-pane fade" id="no_grader">
         <h4> {{ exercise.name }} </h4>
 
