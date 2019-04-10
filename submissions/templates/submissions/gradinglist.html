@@ -10,176 +10,191 @@
 
 {% block content %}
 
-  <div class="col-md-7">
+  <div class="col-md-8 offset-md-2">
 
-    <h2> Omat arvosteltavat </h2>
-    <h4> {{ exercise.name }} </h4>
+    <ul class="nav nav-tabs m-4">
+      <li class="nav-item">
+        <a class="nav-link active" data-toggle="tab" href="#my_grading_list">
+          Omat arvosteltavat
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " data-toggle="tab"
+           href="#no_grader">
+          Palautukset joilla ei vielä ole arvostelijaa
+        </a>
+      </li>
+    </ul>
 
-    <h6> Omat arvostelut: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
-    <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
-    
-    {% if gradinglist %}
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="my_grading_list">
+        <h4> {{ exercise.name }} </h4>
 
-    <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-primary mt-4">
-        Julkaise "VALMIS"-tilassa olevat arvostelut
-      </button>
-    </form>
+        <h6> Omat arvostelut: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
+        <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
 
-    <p>
-      Tämän napin klikkaaminen käy läpi kaikki "VALMIS"-tilassa olevat
-      palautteet ja lähettää ne Plussaan. Tämän jälkeen palaute ja pisteet
-      ovat opiskelijoiden nähtävillä Plussassa. Tätä ei voi peruuttaa.
-      Toiminnon suorittaminen kestää kauan, jos julkaistavaa on paljon.
-    </p>
+        {% if gradinglist %}
 
+        <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary mt-4">
+            Julkaise "VALMIS"-tilassa olevat arvostelut
+          </button>
+        </form>
 
-    <table class="table table-bordered table-sm table-hover my-4">
-      <thead class="thead-light">
-        <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Opiskelijanro ja s-posti</th>
-            <th scope="col">Arvostelun tila</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for sub in gradinglist %}
-        <tr>
-          <td>
-            <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
-              {{ sub }}
-            </a>
-          </td>
-
-          <td>
-            {% for student in sub.students.all %}
-            <div>
-              {{ student }}
-            </div>
-            {% endfor %}
-
-          </td>
-
-          <td>
-            {% if sub.released %}
-              <div class="alert alert-success" role="alert">
-                JULKAISTU
-              </div>
-            {% elif sub.status == sub.READY %}
-              <div class="alert alert-warning" role="alert">
-                VALMIS
-              </div>
-            {% elif sub.status == sub.DRAFT %}
-              <div class="alert alert-danger" role="alert">
-                LUONNOS
-              </div>
-
-            {% else %}
-              <div class="alert alert-info" role="alert">
-                EI ALOITETTU
-              </div>
-            {% endif %}
-          </td>
-
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
+        <p>
+          Tämän napin klikkaaminen käy läpi kaikki "VALMIS"-tilassa olevat
+          palautteet ja lähettää ne Plussaan. Tämän jälkeen palaute ja pisteet
+          ovat opiskelijoiden nähtävillä Plussassa. Tätä ei voi peruuttaa.
+          Toiminnon suorittaminen kestää kauan, jos julkaistavaa on paljon.
+        </p>
 
 
-    <h4>Joukkoarvostelu</h4>
-    <p>
-        Joukkoarvostele kaikki "EI ALOITETTU"-tilassa olevat palautukset.
-        Palautuksille annetaan kaikille sama pistemäärä ja jos halutaan,
-        myös lyhyt palauteteksti. Toiminto muuttaa palautteet tilaan
-        "VALMIS".
-        HUOM 1. Toistaiseksi ei ole olemassa "peruuta"-toimintoa, joten älä
-        mokaa :D!
-        HUOM 2. Opettaja voi valita tehtävän asetuksista lasketaanko
-        automaatin ja arvostelijan antamat pisteet yhteen. Varmista
-        vastuuhenkilöltä kumpi tapa on käytössä ja mikä pistemäärä alla
-        olevaan lomakkeeseen tulee kirjata!
-    </p>
-    <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
-      {% csrf_token %}
-      {% bootstrap_form batch_assess_form %}
-      <input type="submit" value="Joukkoarvostele">
-    </form>
-
-    {% else %}
-
-      <div class="alert alert-info" role="alert">
-        Arvosteltavia palautuksia ei löytynyt.
-        {% if user_is_teacher %}
-          <a class="btn btn-primary m-4" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">Päivitä</a>
-        {% endif %}
-      </div>
-
-    {% endif %}
-    
-  </div> <!-- column -->
-
-
-
-  <div class="col-md-5">
-
-    <h2> Palautukset joilla ei vielä ole arvostelijaa </h2>
-    <h4> {{ exercise.name }} </h4>
-
-    <!-- formset.total_form_count saadaan lomakkeen objektien määrä-->
-
-    {% if formset.forms %}
-      <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
-        {% csrf_token %}
-        {{ formset.management_form }}
-
-        <table class="table table-bordered table-sm table-hover">
+        <table class="table table-bordered table-sm table-hover my-4">
           <thead class="thead-light">
             <tr>
                 <th scope="col">ID</th>
                 <th scope="col">Opiskelijanro ja s-posti</th>
-                <th scope="col">Valitse</th>
+                <th scope="col">Arvostelun tila</th>
             </tr>
           </thead>
 
           <tbody>
-            {% for form in formset %}
+            {% for sub in gradinglist %}
             <tr>
-              {{ form.id }}
               <td>
-                {{ form.instance.sub_id }}
+                <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
+                  {{ sub }}
+                </a>
               </td>
 
               <td>
-                {% for student in form.instance.students.all %}
-                  <div>
-                    {{ student }}
-                  </div>
+                {% for student in sub.students.all %}
+                <div>
+                  {{ student }}
+                </div>
                 {% endfor %}
+
               </td>
 
               <td>
-                {{ form.check_this }}
+                {% if sub.released %}
+                  <div class="alert alert-success" role="alert">
+                    JULKAISTU
+                  </div>
+                {% elif sub.status == sub.READY %}
+                  <div class="alert alert-warning" role="alert">
+                    VALMIS
+                  </div>
+                {% elif sub.status == sub.DRAFT %}
+                  <div class="alert alert-danger" role="alert">
+                    LUONNOS
+                  </div>
+
+                {% else %}
+                  <div class="alert alert-info" role="alert">
+                    EI ALOITETTU
+                  </div>
+                {% endif %}
               </td>
 
             </tr>
-            {% endfor %}
+          {% endfor %}
           </tbody>
         </table>
 
-        <button type="submit" class="btn btn-primary">Lisää omalle listalle</button>
 
-      </form>
+        <h4>Joukkoarvostelu</h4>
+        <p>
+            Joukkoarvostele kaikki "EI ALOITETTU"-tilassa olevat palautukset.
+            Palautuksille annetaan kaikille sama pistemäärä ja jos halutaan,
+            myös lyhyt palauteteksti. Toiminto muuttaa palautteet tilaan
+            "VALMIS".
+            HUOM 1. Toistaiseksi ei ole olemassa "peruuta"-toimintoa, joten älä
+            mokaa :D!
+            HUOM 2. Opettaja voi valita tehtävän asetuksista lasketaanko
+            automaatin ja arvostelijan antamat pisteet yhteen. Varmista
+            vastuuhenkilöltä kumpi tapa on käytössä ja mikä pistemäärä alla
+            olevaan lomakkeeseen tulee kirjata!
+        </p>
+        <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
+          {% csrf_token %}
+          {% bootstrap_form batch_assess_form %}
+          <input type="submit" value="Joukkoarvostele">
+        </form>
 
-    {% else %}
+        {% else %}
 
-      <div class="alert alert-info" role="alert">
-        Ei palautuksia.
-      </div>
+          <div class="alert alert-info" role="alert">
+            Arvosteltavia palautuksia ei löytynyt.
+            {% if user_is_teacher %}
+              <a class="btn btn-primary m-4" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">Päivitä</a>
+            {% endif %}
+          </div>
 
-    {% endif %}
+        {% endif %}
+
+      </div> <!-- tab-pane grading_list -->
+
+
+      
+      <div class="tab-pane fade" id="no_grader">
+        <h4> {{ exercise.name }} </h4>
+
+        <!-- formset.total_form_count saadaan lomakkeen objektien määrä-->
+
+        {% if formset.forms %}
+          <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            <table class="table table-bordered table-sm table-hover">
+              <thead class="thead-light">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Opiskelijanro ja s-posti</th>
+                    <th scope="col">Valitse</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for form in formset %}
+                <tr>
+                  {{ form.id }}
+                  <td>
+                    {{ form.instance.sub_id }}
+                  </td>
+
+                  <td>
+                    {% for student in form.instance.students.all %}
+                      <div>
+                        {{ student }}
+                      </div>
+                    {% endfor %}
+                  </td>
+
+                  <td>
+                    {{ form.check_this }}
+                  </td>
+
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <button type="submit" class="btn btn-primary">Lisää omalle listalle</button>
+
+          </form>
+
+        {% else %}
+
+          <div class="alert alert-info" role="alert">
+            Ei palautuksia.
+          </div>
+
+        {% endif %}
+      </div> <!-- tab-pane no_grader -->
+    </div> <!-- tab-content -->
 
 
   </div> <!-- column -->
