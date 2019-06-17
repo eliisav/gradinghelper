@@ -71,5 +71,7 @@ urlpatterns = [
          views.CreateJsonFromFeedbacksView.as_view(), name='json'),
 
     path('exercises/<int:exercise_id>/submissions/undo_release/',
-         views.UndoLatestReleaseRedirectView.as_view(), name='undo')
+         views.UndoLatestReleaseRedirectView.as_view(), name='undo'),
+    path('exercises/<int:exercise_id>/submissions/csv/',
+         views.DownloadCsvView.as_view(), name='csv'),
 ]

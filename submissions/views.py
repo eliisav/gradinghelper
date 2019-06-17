@@ -1,8 +1,14 @@
+"""
+Module comment here
+"""
+
+import csv
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.forms import modelformset_factory
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.views import generic
@@ -584,46 +590,26 @@ class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
         return self.get(request, *args, **kwargs)
 
 
-# -----------------------------------------------------------------
-# Hylättyjä funktioita, testailua, kokeiluja jne.
-
-"""
-class SubmissionsView(LoginRequiredMixin, generic.ListView):
-
-    Listaa yhden tehtävän viimeisimmät/parhaat palautukset.
-    TODO: mieti, miten työt saadaan jaettua assareille tarvittaessa 
-    manuaalisesti.
-    TODO: Arvosteltujen palautusten huomiotta jättäminen. Tämä toimii ehkä jo, 
-          silloin jos arvostelu on tehty alusta lähtien tämän palvelun kautta.
-
-
-    template_name = "submissions/submissions.html"
-    context_object_name = "submissions"
-    model = Feedback
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["exercise_id"] = self.kwargs["exercise_id"]
-        
-        ChangeGraderFormset = modelformset_factory(Feedback, 
-                                                   form=ChangeGraderForm, 
-                                                   extra=0)
-        context["formset"] = ChangeGraderFormset(
-            queryset=self.get_queryset().filter(
-                exercise=kwargs["exercise_id"]
-            )
-        )
-        
-        return context
-    
+class DownloadCsvView(LoginRequiredMixin, generic.View):
     def get(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise,
                                      exercise_id=kwargs["exercise_id"])
-        
-        update_submissions(exercise)
-        
-        self.object_list = self.get_queryset().filter(
-            exercise=exercise).filter(grader=request.user)
-        
-        return self.render_to_response(self.get_context_data())
-"""
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="grading.csv"'
+
+        header = ["SubmissionID", "StudentID", "StudentEmail",
+                   "FeedbackStatus", "GraderEmail", "GraderPoints"]
+
+        writer = csv.writer(response)
+        writer.writerow(header)
+
+        for feedback in exercise.feedback_set.all():
+            status = Feedback.STATUS_CHOICES[feedback.status][1]
+
+            for student in feedback.students.all():
+                writer.writerow([feedback.sub_id, student.student_id,
+                                 student.email, status, feedback.grader,
+                                 feedback.staff_grade])
+
+        return response

@@ -17,27 +17,42 @@
 
     <h6> Arvosteltu: {{ ready_count }} / {{ feedback_count }} </h6>
 
+
+    <div class="d-flex justify-content-around m-4">
     {% if user_is_teacher %}
-      <form method="post" action="{% url 'submissions:json' exercise.exercise_id %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary mb-4">
-          Luo json palautteista
-        </button>
-      </form>
-      <form method="post" action="{% url 'submissions:undo' exercise.exercise_id %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary mb-4">
-          Peruuta edellinen julkaisu
-        </button>
-      </form>
+      {% if form.forms %}
+        <form method="post" action="{% url 'submissions:json' exercise.exercise_id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">
+            Luo json julkaisua varten
+          </button>
+        </form>
+        <form method="post" action="{% url 'submissions:undo' exercise.exercise_id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">
+            Peruuta edellinen julkaisu
+          </button>
+        </form>
+
+        <a class="btn btn-primary" href="{% url 'submissions:csv' exercise.exercise_id %}" role="button">
+          Arvostelutilanne csv -tiedostona
+        </a>
+
+      {% endif %}
+
+      <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">
+        Hae uusimmat palautukset
+      </a>
+
     {% endif %}
-      
+    </div> <!-- d-flex -->
+
+
     {% if form.forms %}
         <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
           {% csrf_token %}
           {{ form.management_form }}
-
-
+          
           <table class="table table-bordered table-hover table-sm">
             <thead class="thead-light">
               <tr>
@@ -97,23 +112,12 @@
             </tbody>
           </table>
 
-
           <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
         </form>
 
-
-    {% else %}
-      <div class="alert alert-info" role="alert">
-        Palautuksia ei löytynyt.
-        {% if user_is_teacher %}
-          <a class="btn btn-primary m-4" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">Päivitä</a>
-        {% endif %}
-      </div>
     {% endif %}
 
 
-    
-   <!-- </div> collapse -->
   </div> <!-- column -->
   
 {% endblock %}
