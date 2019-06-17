@@ -52,7 +52,7 @@
         <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
           {% csrf_token %}
           {{ form.management_form }}
-          
+
           <table class="table table-bordered table-hover table-sm">
             <thead class="thead-light">
               <tr>

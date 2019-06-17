@@ -580,12 +580,18 @@ class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
         if not exercise.course.is_staff(request.user):
             raise PermissionDenied
 
-        for sub_id in exercise.latest_release:
-            feedback = get_object_or_404(Feedback, sub_id=sub_id)
-            feedback.released = False
-            feedback.save()
+        if len(exercise.latest_release) > 0:
+            for sub_id in exercise.latest_release:
+                feedback = get_object_or_404(Feedback, sub_id=sub_id)
+                feedback.released = False
+                feedback.save()
 
-        messages.success(request, "Julkaisu peruutettu.")
+            exercise.latest_release.clear()
+            exercise.save()
+            messages.success(request, "Julkaisu peruutettu.")
+
+        else:
+            messages.info(request, "Edellistä julkaisua ei löytynyt.")
 
         return self.get(request, *args, **kwargs)
 
