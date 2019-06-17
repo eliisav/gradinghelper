@@ -57,7 +57,7 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
         
 class ExerciseListView(LoginRequiredMixin, generic.ListView):
     """
-    Listaa yhden kurssin kaikki tehtävät
+    Lists the exercises which have been set for grading.
     """
     model = Exercise
     template_name = "submissions/exercises.html"
@@ -110,9 +110,9 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
         return context
 
 
-class UpdateExerciseListRedirectView(LoginRequiredMixin, generic.RedirectView):
+class GetExercisesRedirectView(LoginRequiredMixin, generic.RedirectView):
     """
-    Handles the request to retrieve exercises of the specific course.
+    Retrieve exercises of the specific course from Plussa.
     """
     pattern_name = "submissions:exercises"
 

@@ -31,8 +31,8 @@ urlpatterns = [
          views.ExerciseListView.as_view(), name='exercises'),
 
     path('courses/<int:course_id>/exercises/update/',
-         views.UpdateExerciseListRedirectView.as_view(),
-         name='update_exercise_list'),
+         views.GetExercisesRedirectView.as_view(),
+         name='get_exercises'),
 
     path('courses/<int:course_id>/exercises/grading_on/',
          views.EnableExerciseGradingRedirectView.as_view(), name='grading_on'),

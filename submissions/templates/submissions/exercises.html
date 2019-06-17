@@ -120,7 +120,7 @@
         <div class="tab-pane fade {% if show_set_grading %} show active {% endif %}" id="set_grading">
           <div class="card card-body m-2 bg-light">
 
-            <form action="{% url 'submissions:update_exercise_list' course.course_id %}" method="post" class="form">
+            <form action="{% url 'submissions:get_exercises' course.course_id %}" method="post" class="form">
               {% csrf_token %}
               <button type="submit" class="btn btn-primary btn-lg m-4">Päivitä kurssin sisältö</button>
               <small>Kurssin sisältöä ei haeta automaattisesti. Alla oleva tehtävävalikko päivittyy viereisestä napista.</small>
