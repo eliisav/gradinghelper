@@ -3,6 +3,7 @@ Module comment here
 """
 
 import csv
+from requests.exceptions import HTTPError
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -147,8 +148,12 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
             Exercise,
             exercise_id=kwargs["exercise_id"]
         )
-        update_submissions(exercise)
-        messages.success(request, "Palautukset päivitetty.")
+        try:
+            update_submissions(exercise)
+            messages.success(request, "Palautukset päivitetty.")
+        except HTTPError:
+            messages.error(request, "Tehtävää ei löydy Plussasta!")
+
 
         return super().get(request, *args, **kwargs)
 

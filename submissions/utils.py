@@ -26,7 +26,11 @@ debug_feedbacks = []
 
 def get_json(url):
     resp = requests.get(url, headers=AUTH)
-    return resp.json()
+
+    if resp.status_code == requests.codes.ok:
+        return resp.json()
+    else:
+        resp.raise_for_status()
 
 
 def add_user_to_course(user, user_role, course_label, course_name, api_url,
