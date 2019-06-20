@@ -120,7 +120,7 @@ def update_submissions(exercise):
         return
     """
 
-    LOGGER.debug(f"{datetime.datetime.now()} updating submissions: {exercise}")
+    util_logger.debug(f"{datetime.datetime.now()} updating submissions: {exercise}")
 
     deadline_passed = check_deadline(exercise)
     submissiondata = get_submissions(exercise)
@@ -290,19 +290,19 @@ def add_student(student_dict, new_feedback):
             
             if old_feedback != new_feedback:
 
-                LOGGER.debug(f"Uudempi palautus tulossa: {student_obj}")
-                LOGGER.debug(f"tehtävään: {new_feedback.exercise}")
+                util_logger.debug(f"Uudempi palautus tulossa: {student_obj}")
+                util_logger.debug(f"tehtävään: {new_feedback.exercise}")
 
                 if old_feedback.status == Feedback.BASE:
                     new_feedback.grader = old_feedback.grader
                     new_feedback.save()
 
-                    LOGGER.debug(f"poistetaan vanha: {old_feedback} "
+                    util_logger.debug(f"poistetaan vanha: {old_feedback} "
                                  f"{old_feedback.grader}")
 
                     old_feedback.delete()
 
-                    LOGGER.debug(f"lisätään uusi: {new_feedback} "
+                    util_logger.debug(f"lisätään uusi: {new_feedback} "
                                  f"{new_feedback.grader}")
 
                     debug_feedbacks.append(new_feedback)
@@ -312,7 +312,7 @@ def add_student(student_dict, new_feedback):
                     # TODO: huomautus arvostelijalle siitä, että uudempi
                     # palautus olisi olemassa.
 
-                    LOGGER.debug(f"Arvostelu oli aloitettu, poistetaan uusi.")
+                    util_logger.debug(f"Arvostelu oli aloitettu, poistetaan uusi.")
 
                     # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
                     new_feedback.delete()
@@ -329,7 +329,7 @@ def add_student(student_dict, new_feedback):
         )
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
-        LOGGER.debug(f"Luotiin uusi opiskelija: {student_obj}")
+        util_logger.debug(f"Luotiin uusi opiskelija: {student_obj}")
 
     return True
 
@@ -350,7 +350,7 @@ def divide_submissions(exercise):
     for sub in subs:
         if sub.grader is None:
             if sub in debug_feedbacks:
-                LOGGER.debug(f"TÄLLÄ PITI OLLA JO GRADER: {sub} {sub.grader}")
+                util_logger.debug(f"TÄLLÄ PITI OLLA JO GRADER: {sub} {sub.grader}")
 
             grader = choose_grader(exercise, graders, grader_max_now)
 
@@ -365,12 +365,12 @@ def divide_submissions(exercise):
         grader = choose_grader(exercise, graders)
         grader.feedback_set.add(sub)
 
-    LOGGER.debug(f"Arvosteltavia palautuksia: {subs.count()}")
-    LOGGER.debug(f"Palautusta per assari: "
+    util_logger.debug(f"Arvosteltavia palautuksia: {subs.count()}")
+    util_logger.debug(f"Palautusta per assari: "
                  f"{subs.count()/exercise.num_of_graders}")
-    LOGGER.debug("Assareilla arvostelussa:")
+    util_logger.debug("Assareilla arvostelussa:")
     for grader in graders:
-        LOGGER.debug(f"{grader.feedback_set.filter(exercise=exercise).count()}")
+        util_logger.debug(f"{grader.feedback_set.filter(exercise=exercise).count()}")
 
 
 def choose_grader(exercise, graders, max_sub_count=None):

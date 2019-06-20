@@ -3,19 +3,25 @@ Module comment here
 """
 
 import csv
-from requests.exceptions import HTTPError
+import logging
+import requests
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.forms import modelformset_factory
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 
-from .forms import *
-from .utils import *
+from .models import Course, Exercise, Feedback, Student
+import submissions.forms as forms
+import submissions.utils as utils
+
+
+view_logger = logging.getLogger(__name__)
 
 
 class ExerciseMixin:
@@ -103,11 +109,14 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
 
         else:
             context["user_is_teacher"] = True
-            context["form"] = ExerciseSetGradingForm(course=kwargs["course"])
+            context["form"] = forms.ExerciseSetGradingForm(
+                course=kwargs["course"]
+            )
 
             for exercise in self.object_list:
-                exercise.form = ExerciseUpdateForm(instance=exercise,
-                                                   course=kwargs["course"])
+                exercise.form = forms.ExerciseUpdateForm(
+                    instance=exercise, course=kwargs["course"]
+                )
 
             # If user is teacher and exercise list is empty
             # the ExerciseSetGradinForm will be viewed.
@@ -128,7 +137,7 @@ class GetExercisesRedirectView(LoginRequiredMixin, generic.RedirectView):
 
         # TODO: voiko jotain mennä pieleen, että tehtäviä ei päivitetäkään?
         # get exercises from Plussa and save them to database
-        get_exercises(course)
+        utils.get_exercises(course)
 
         # Information passed to template which tab to show
         request.session["show_set_grading"] = True
@@ -149,11 +158,10 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
             exercise_id=kwargs["exercise_id"]
         )
         try:
-            update_submissions(exercise)
+            utils.update_submissions(exercise)
             messages.success(request, "Palautukset päivitetty.")
-        except HTTPError:
+        except request.HTTPError:
             messages.error(request, "Tehtävää ei löydy Plussasta!")
-
 
         return super().get(request, *args, **kwargs)
 
@@ -171,7 +179,7 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
     
     def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, pk=request.POST["name"])
-        form = ExerciseSetGradingForm(request.POST, request.FILES,
+        form = forms.ExerciseSetGradingForm(request.POST, request.FILES,
                                       instance=exercise)
 
         if form.is_valid():
@@ -211,7 +219,7 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     model = Exercise
     slug_field = "exercise_id"
     slug_url_kwarg = "exercise_id"
-    form_class = ExerciseUpdateForm
+    form_class = forms.ExerciseUpdateForm
 
     def form_valid(self, form):
         self.object = form.save()
@@ -236,7 +244,7 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
         # if Feedback object's status is Feedback.BASE
         if self.object.feedback_base:
             for feedback in self.object.feedback_set.all():
-                add_feedback_base(self.object, feedback)
+                utils.add_feedback_base(self.object, feedback)
 
         messages.success(self.request, "Muutokset tallennettu.")
         return super().form_valid(form)
@@ -287,7 +295,8 @@ class GradingListView(ExerciseMixin, LoginRequiredMixin,
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm,
+        SetGraderFormset = modelformset_factory(Feedback,
+                                                form=forms.SetGraderMeForm,
                                                 extra=0)
         no_grader_set = self.get_queryset().filter(
             exercise=context["exercise"]).filter(grader=None)
@@ -298,7 +307,7 @@ class GradingListView(ExerciseMixin, LoginRequiredMixin,
         ).count()
 
         context["my_feedback_count"] = self.object_list.count()
-        context["batch_assess_form"] = BatchAssessForm()
+        context["batch_assess_form"] = forms.BatchAssessForm()
         
         return context
     
@@ -324,7 +333,8 @@ class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
 
     def post(self, request, *args, **kwargs):
-        SetGraderFormset = modelformset_factory(Feedback, form=SetGraderMeForm)
+        SetGraderFormset = modelformset_factory(Feedback,
+                                                form=forms.SetGraderMeForm)
         formset = SetGraderFormset(request.POST)
 
         if formset.is_valid():
@@ -348,7 +358,8 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
     Lomakenäkymä, jolla palautuksen arvostelija voidaan vaihtaa/asettaa.
 
     """
-    form_class = modelformset_factory(Feedback, form=ChangeGraderForm, extra=0)
+    form_class = modelformset_factory(Feedback, form=forms.ChangeGraderForm,
+                                      extra=0)
     template_name = "submissions/submissions_form.html"
     
     def form_valid(self, form):
@@ -390,7 +401,7 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
     model = Feedback
     slug_field = "sub_id"
     slug_url_kwarg = "sub_id"
-    form_class = FeedbackForm
+    form_class = forms.FeedbackForm
     initial = {
         "status": Feedback.READY
     }
@@ -410,10 +421,7 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
         context = super().get_context_data(**kwargs)
 
         # Get the information about the submission and add it to the context.
-        inspect_url, sub_data, grading_data = get_submission_data(self.object)
-        context["inspect_url"] = inspect_url
-        context["sub_data"] = sub_data
-        context["grading_data"] = grading_data
+        context.update(utils.get_submission_data(self.object))
 
         # Näkymään pääsee kahden eri sivun kautta, joten murupolkua
         # varten lisätään kontekstiin tieto siitä mistä tultiin.
@@ -466,7 +474,7 @@ class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):
         if not exercise.course.is_staff(request.user):
             raise PermissionDenied
 
-        form = BatchAssessForm(request.POST)
+        form = forms.BatchAssessForm(request.POST)
 
         if form.is_valid():
             points = form.cleaned_data["points"]
@@ -514,16 +522,17 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                                                  released=False)
         api_root = exercise.course.api_root
         url = f"{api_root}exercises/{exercise.exercise_id}/submissions/"
+        auth = {"Authorization": f"Token {exercise.course.api_token}"}
         
         if feedbacks:
             for i in range(0, len(feedbacks)):
-                json_object = create_json_to_post(feedbacks[i])
+                json_object = utils.create_json_to_post(feedbacks[i])
 
                 try:
-                    LOGGER.debug(f"POST {i}")
-                    resp = requests.post(url, json=json_object, headers=AUTH)
+                    view_logger.debug(f"POST {i}")
+                    resp = requests.post(url, json=json_object, headers=auth)
                 except Exception as e:
-                    LOGGER.debug(e)
+                    view_logger.debug(e)
                     messages.error(
                         request,
                         f"{e}\nJulkaistiin {i} VALMIS-tilassa ollutta "
@@ -533,7 +542,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                     break
 
                 if resp.status_code == 201:
-                    LOGGER.debug(f"Onnistui, tallennetaan {i}")
+                    view_logger.debug(f"Onnistui, tallennetaan {i}")
                     feedbacks[i].released = True
                     feedbacks[i].save()
                 else:
@@ -567,7 +576,7 @@ class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
 
         if feedbacks:
             exercise.latest_release.clear()
-            context["json"] = create_json_to_batch_assess(feedbacks)
+            context["json"] = utils.create_json_to_batch_assess(feedbacks)
             exercise.save()
         else:
             context["json"] = "JULKAISTAVIA PALAUTTEITA EI LÖYTYNYT!"
@@ -610,7 +619,7 @@ class DownloadCsvView(LoginRequiredMixin, generic.View):
         response['Content-Disposition'] = 'attachment; filename="grading.csv"'
 
         header = ["SubmissionID", "StudentID", "StudentEmail",
-                   "FeedbackStatus", "GraderEmail", "GraderPoints"]
+                  "FeedbackStatus", "GraderEmail", "GraderPoints"]
 
         writer = csv.writer(response)
         writer.writerow(header)
