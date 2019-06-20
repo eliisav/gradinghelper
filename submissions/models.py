@@ -11,9 +11,10 @@ class User(AbstractUser):
 
 class Course(models.Model):
     course_id = models.PositiveIntegerField(unique=True)
-    name = models.CharField(max_length=200)
-    api_url = models.URLField()
+    name = models.CharField(max_length=255)
     api_root = models.URLField(null=True, blank=True)
+    api_token = models.CharField(max_length=255)
+    api_url = models.URLField()
     teachers = models.ManyToManyField(User, related_name="responsibilities",
                                       blank=True)
     assistants = models.ManyToManyField(User, related_name="my_courses",
@@ -59,7 +60,7 @@ class Exercise(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     exercise_id = models.PositiveIntegerField(unique=True)
     module_id = models.PositiveIntegerField()
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=255)
     min_points = models.PositiveSmallIntegerField(default=1)
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -109,7 +110,7 @@ class Exercise(models.Model):
 
 class Student(models.Model):
     email = models.EmailField(unique=True)
-    student_id = models.CharField(max_length=200, unique=True,
+    student_id = models.CharField(max_length=255, unique=True,
                                   default=None, null=True)
     aplus_user_id = models.IntegerField(unique=True, null=True)
     

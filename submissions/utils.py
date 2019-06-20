@@ -13,19 +13,14 @@ import requests
 import sys
 
 from .models import Course, Exercise, Feedback, Student
-from django.conf import settings
 from django.core.cache import cache
 
-
-AUTH = {'Authorization': settings.TOKEN}
-# API_ROOT = "https://plus.cs.tut.fi/api/v2/"  # TÄSTÄ PITÄÄ PÄÄSTÄ EROON!
-
-LOGGER = logging.getLogger(__name__)
+util_logger = logging.getLogger(__name__)
 debug_feedbacks = []
 
 
-def get_json(url):
-    resp = requests.get(url, headers=AUTH)
+def get_json(url, token):
+    resp = requests.get(url, headers={"Authorization": f"Token {token}"})
 
     if resp.status_code == requests.codes.ok:
         return resp.json()
@@ -33,33 +28,45 @@ def get_json(url):
         resp.raise_for_status()
 
 
-def add_user_to_course(user, user_role, course_label, course_name, api_url,
-                       api_id):
+def add_user_to_course(user, login_info):
     """
-    Add user to course. Course is created first if it doesn't exist.
+    Add user to course. Course is created first if it doesn't exist. This
+    function is called after the user has successfully logged in.
     :param user: (User) User object
-    :param user_role: (str) User could be instructor or teachin assistant
-    :param course_label: (str) Course code eg. "TIE-02101"
-    :param course_name: (str) Course name eg. "Ohjelmointi 1: Johdanto"
-    :param api_url: (str) api url for course instance
-    :param api_id: (int) id number of course instance
-    :return: 
+    :param login_info: (dict) required fields from LTI login
     """
-    instance_name = get_json(api_url)['instance_name']
-    name = f"{course_label} {course_name} {instance_name}"
 
     try:
-        course = Course.objects.get(course_id=api_id)
-        
+        course = Course.objects.get(
+            course_id=login_info["custom_context_api_id"]
+        )
     except Course.DoesNotExist:
-        course = Course(course_id=api_id, name=name, api_url=api_url)
-        course.save()
+        if login_info["roles"] != "Instructor":
+            return False
 
-    if course:
-        if user_role == "Instructor":
-            course.teachers.add(user)
-        if user_role == "TA,TeachingAssistant":
-            course.assistants.add(user)
+        course = create_course(
+            login_info["custom_context_api_id"],
+            login_info["custom_context_api"],
+            login_info["context_label"],
+            login_info["context_title"],
+            login_info["custom_user_api_token"]
+        )
+
+    if login_info["roles"] == "Instructor":
+        course.teachers.add(user)
+    if login_info["roles"] == "TA,TeachingAssistant":
+        course.assistants.add(user)
+
+    return True
+
+
+def create_course(api_id, api_url, course_label, course_name, token):
+    course_instance = get_json(api_url, token)["instance_name"]
+    name = f"{course_label} {course_name} {course_instance}"
+    course = Course(course_id=api_id, name=name,
+                    api_url=api_url, api_token=token)
+    course.save()
+    return course
 
 
 def get_exercises(course):
@@ -78,17 +85,23 @@ def get_exercises(course):
         return
     """
 
-    modules = get_json(f"{course.api_url}exercises/")["results"]
+    modules = get_json(f"{course.api_url}exercises/", course.api_token)["results"]
 
     # cache.set(course.course_id, modules)
 
-    # Module sisältää yhden moduulin kaikki materiaalit ja tehtävät.
+    # Module consists of material pages and exercises
     for sub_module in modules:
-        # Käydään läpi jokainen materiaali/tehtävä ja tutkitaan onko kyseessä
-        # palautetava tehtävä. Jos on, niin lisätään listaan.
+        # Loop through "exercises" list and check if an exercise really is
+        # submittable exercise.
         for exercise in sub_module["exercises"]:
-            details = get_json(exercise["url"])
+            try:
+                details = get_json(exercise["url"], course.api_token)
+            except requests.HTTPError:
+                # It's not a submittable exercise if details are not found.
+                continue
+
             # print(details)
+            # Make sure that we really got a submittable exercise
             if "is_submittable" in details and details["is_submittable"]:
                 try:
                     exercise = Exercise.objects.get(exercise_id=details["id"])
@@ -110,7 +123,7 @@ def get_submissions(exercise):
     """
     data_url = f"{exercise.course.api_url}submissiondata/"
     query_url = f"{data_url}?exercise_id={exercise.exercise_id}&format=json"
-    return get_json(query_url)
+    return get_json(query_url, exercise.course.api_token)
 
 
 def update_submissions(exercise):
@@ -161,8 +174,8 @@ def check_deadline(exercise):
     module_url = f"{exercise.course.api_url}exercises/{exercise.module_id}"
 
     # Get info related to exercise module and check if module is open or not
-    if get_json(module_url)["is_open"]:
-        LOGGER.debug(f"{exercise} moduuli on vielä auki!")
+    if get_json(module_url, exercise.course.api_token)["is_open"]:
+        util_logger.debug(f"{exercise} moduuli on vielä auki!")
         return False
         
     return True
@@ -414,12 +427,15 @@ def choose_grader(exercise, graders, max_sub_count=None):
 
 
 def get_submission_data(feedback):
+    # TODO: Pitäisikö kuitenkin yrittää tehtävän api urli  kaivaa apista ja
+    # tallentaa tietokantaan, sen sijaan että askarrelleen näin?!?!
     api_root = feedback.exercise.course.api_root
     exercise_url = f"{api_root}exercises/{feedback.exercise.exercise_id}/"
-    form_spec = get_json(exercise_url)["exercise_info"]["form_spec"]
+    api_token = feedback.exercise.course.api_token
+    form_spec = get_json(exercise_url, api_token)["exercise_info"]["form_spec"]
 
     sub_url = f"{api_root}submissions/{feedback.sub_id}/"
-    sub_info = get_json(sub_url)
+    sub_info = get_json(sub_url, api_token)
 
     inspect_url = sub_info["html_url"] + "inspect"
     sub_data = []
@@ -433,13 +449,16 @@ def get_submission_data(feedback):
     # yleensä arvioida käsin, joten jätetään tyyppi "radio" huomiotta).
     for field in form_spec:
         if field["type"] == "file":
-            get_filecontent(sub_data, field, sub_info["files"])
+            get_filecontent(sub_data, field, sub_info["files"], api_token)
 
         elif field["type"] == "textarea":
             get_text(sub_data, field, sub_info["submission_data"])
 
-    # print(sub_data)
-    return inspect_url, sub_data, sub_info["grading_data"]
+    return {
+        "inspect_url": inspect_url,
+        "sub_data": sub_data,
+        "grading_data": sub_info["grading_data"]
+    }
 
 
 def get_git_url(sub_data, url):
@@ -456,7 +475,7 @@ def get_git_url(sub_data, url):
     )
 
 
-def get_filecontent(sub_data, form_field, files):
+def get_filecontent(sub_data, form_field, files, token):
     """
     Etsii halutun tiedoston ja tallentaa sen tiedot listaan sanakirjamuodossa.
     :param sub_data: (list) Opiskelijan palautuksen olennaiset tiedot dicteinä.
@@ -466,7 +485,8 @@ def get_filecontent(sub_data, form_field, files):
     """
     for file in files:
         if file["param_name"] == form_field["key"]:
-            resp = requests.get(file["url"], headers=AUTH)
+            resp = requests.get(file["url"],
+                                headers={"Authorization": f"Token {token}"})
 
             title = None
             text = None
