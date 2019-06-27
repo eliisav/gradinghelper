@@ -6,7 +6,6 @@ django-bootstrap-breadcrumbs==0.9.1
 django-bootstrap4==0.0.6
 django-extensions==2.0.7
 git+https://github.com/Aalto-LeTech/django-lti-login.git@2.0.1rc#egg=django-lti-login
-git+https://github.com/odeoncg/django-pygments.git
 django-settingsdict==1.0.1
 idna==2.6
 oauthlib==2.1.0

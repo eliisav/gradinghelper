@@ -12,6 +12,11 @@ import pep8
 import requests
 import sys
 
+from pygments import highlight
+from pygments.lexers import get_lexer_for_filename
+from pygments.util import ClassNotFound
+from pygments.formatters.html import HtmlFormatter
+
 from .models import Course, Exercise, Feedback, Student
 from django.core.cache import cache
 
@@ -487,16 +492,22 @@ def get_filecontent(sub_data, form_field, files, token):
         if file["param_name"] == form_field["key"]:
             resp = requests.get(file["url"],
                                 headers={"Authorization": f"Token {token}"})
+            resp.encoding = "utf-8"
 
             title = None
             text = None
-            code = None
             style = None
 
-            if file["filename"].endswith(".py"):
-                resp.encoding = "utf-8"
-                code = resp.text
-                lines = code.rstrip("\n").split("\n")
+            try:
+                lexer = get_lexer_for_filename(file["filename"])
+                code = highlight(resp.text, lexer,
+                                 HtmlFormatter(linenos="inline"))
+            except ClassNotFound:
+                code = None
+
+            # Run PEP8 style check for Python file
+            if code and file["filename"].endswith(".py"):
+                lines = resp.text.rstrip("\n").split("\n")
                 lines = [line + "\n" for line in lines]
                 style_checker = pep8.Checker(lines=lines, show_source=True)
 
@@ -512,7 +523,7 @@ def get_filecontent(sub_data, form_field, files, token):
                 sys.stdout = sys.__stdout__
                 style = buffer.getvalue()
 
-            else:
+            elif code is None:
                 title = form_field["title"]
                 text = "Lataa tiedosto oheisesta linkistä"
 
@@ -561,9 +572,7 @@ def get_text(sub_data, form_field, textareas):
             {
                 "title": None,
                 "url": None,
-                "text": "Tekstiä ei löytynyt. Palautus saattaa olla jo "
-                        "pisteytetty ja päätynyt uudelleen arvosteluun "
-                        "sähköpostisekoilun vuoksi.",
+                "text": "Tekstiä ei löytynyt, tarkastele palautusta Plussassa",
                 "code": None
             }
         )

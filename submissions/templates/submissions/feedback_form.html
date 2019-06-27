@@ -1,7 +1,6 @@
 {% extends referer_template %}
 
 {% load bootstrap4 %}
-{% load pygmentify %}
 
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
@@ -58,23 +57,17 @@
         {% endif %}
       </div>
 
-
       {% if obj.code %}
-        {% pygment %}
-          <pre lang="python">{{ obj.code }}</pre>
-        {% endpygment %}
-
+        {% autoescape off %}
+          {{ obj.code }}
+        {% endautoescape %}
+      {% endif %}
+      {% if obj.style %}
         <h5>PEP8 tyylitarkastuksen tulokset</h5>
-        {% if obj.style %}
-          <pre>{{ obj.style }}</pre>
-        {% else %}
-          <p>Tyylivirheitä ei löytynyt.</p>
-        {% endif %}
-
+        <pre>{{ obj.style }}</pre>
       {% endif %}
 
     {% endfor %}
-
 
 
     {% if grading_data.grading_data %}
