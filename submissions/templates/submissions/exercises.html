@@ -60,6 +60,9 @@
                 {% if user_is_teacher %}
                     <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
                       Asetukset
+                      {% if exercise.not_found_error %}
+                        <span class="badge badge-danger">Virhe</span>
+                      {% endif %}
                     </button>
 
                   </div> <!-- buttons -->
@@ -67,8 +70,25 @@
 
 
                 <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
-                  <div class="card card-body bg-light">
 
+                    {% if exercise.not_found_error %}
+                    <div class="card card-body bg-light">
+                      <div class="alert alert-danger" role="alert">
+                        Tehtävä on virhetilassa. Tehtävää ei enää löydy
+                        Plussasta tai kyse on tilapäisestä häiriöstä.
+                      </div>
+                      <form action="{% url 'submissions:handle_error' course.course_id exercise.exercise_id %}" method="post">
+                        {% csrf_token %}
+                        {% bootstrap_form error_handler %}
+                        <button type="submit" class="btn btn-primary">
+                          OK
+                        </button>
+                      </form>
+                    </div>
+                    {% endif %}
+
+
+                  <div class="card card-body bg-light">
                     <form action="{% url 'submissions:update_exercise' course.course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
                       {% csrf_token %}
                       {% bootstrap_form exercise.form %}

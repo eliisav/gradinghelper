@@ -63,7 +63,8 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     def get(self, request, *args, **kwargs):
        
         self.object_list = Course.objects.filter(
-            Q(assistants=request.user) | Q(teachers=request.user)).distinct()
+            Q(assistants=request.user) | Q(teachers=request.user)
+        ).distinct()
 
         return self.render_to_response(self.get_context_data())
         
@@ -112,6 +113,7 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
             context["form"] = forms.ExerciseSetGradingForm(
                 course=kwargs["course"]
             )
+            context["error_handler"] = forms.ErrorHandlerForm()
 
             for exercise in self.object_list:
                 exercise.form = forms.ExerciseUpdateForm(
@@ -160,7 +162,7 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
         try:
             utils.update_submissions(exercise)
             messages.success(request, "Palautukset päivitetty.")
-        except request.HTTPError:
+        except requests.HTTPError:
             messages.error(request, "Tehtävää ei löydy Plussasta!")
 
         return super().get(request, *args, **kwargs)
@@ -272,11 +274,42 @@ class DisableExerciseGradingRedirectView(LoginRequiredMixin,
             Exercise,
             exercise_id=kwargs.pop("exercise_id")
         )
-        exercise.set_defaults()
-        exercise.feedback_base.delete()
-        exercise.feedback_set.all().delete()
-        exercise.save()
+
+        if exercise.not_found_error:
+            exercise.delete()
+        else:
+            exercise.set_defaults()
+            exercise.feedback_base.delete()
+            exercise.feedback_set.all().delete()
+            exercise.save()
+
         messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
+        return self.get(request, *args, **kwargs)
+
+
+class HandleExerciseErrorRedirectView(LoginRequiredMixin,
+                                      generic.RedirectView):
+
+    pattern_name = "submissions:exercises"
+
+    def post(self, request, *args, **kwargs):
+        exercise = get_object_or_404(
+            Exercise,
+            exercise_id=kwargs.pop("exercise_id")
+        )
+
+        form = forms.ErrorHandlerForm(request.POST)
+
+        if form.is_valid():
+            handle_exercise = form.cleaned_data["handle_error"]
+
+            if handle_exercise == "keep":
+                exercise.not_found_error = False
+                exercise.save()
+                messages.success(request, "Tehtävä ok")
+            elif handle_exercise == "delete":
+                exercise.delete()
+                messages.success(request, "Tehtävä poistettu")
 
         return self.get(request, *args, **kwargs)
 

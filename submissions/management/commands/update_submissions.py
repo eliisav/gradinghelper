@@ -19,6 +19,8 @@ class Command(BaseCommand):
             in_grading=True
         ).filter(
             grading_ready=False
+        ).filter(
+            not_found_error=False
         )
         for exercise in exercises:
             try:

@@ -45,6 +45,10 @@ urlpatterns = [
          views.DisableExerciseGradingRedirectView.as_view(),
          name='grading_off'),
 
+    path('courses/<int:course_id>/exercises/<int:exercise_id>/handle_error/',
+         views.HandleExerciseErrorRedirectView.as_view(),
+         name='handle_error'),
+
     path('exercises/<int:exercise_id>/submissions/update/',
          views.UpdateSubmissionsRedirectView.as_view(),
          name='update_submissions'),
@@ -72,6 +76,7 @@ urlpatterns = [
 
     path('exercises/<int:exercise_id>/submissions/undo_release/',
          views.UndoLatestReleaseRedirectView.as_view(), name='undo'),
+
     path('exercises/<int:exercise_id>/submissions/csv/',
          views.DownloadCsvView.as_view(), name='csv'),
 ]

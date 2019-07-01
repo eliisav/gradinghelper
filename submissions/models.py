@@ -14,10 +14,12 @@ class Course(models.Model):
     name = models.CharField(max_length=255)
     api_root = models.URLField(null=True, blank=True)
     api_token = models.CharField(max_length=255)
-    api_url = models.URLField()
-    teachers = models.ManyToManyField(User, related_name="responsibilities",
+    api_url = models.URLField(null=True)
+    data_url = models.URLField(null=True)
+    #exercise_url = models.URLField(null=True)
+    teachers = models.ManyToManyField(User, related_name="courses_teacher",
                                       blank=True)
-    assistants = models.ManyToManyField(User, related_name="my_courses",
+    assistants = models.ManyToManyField(User, related_name="courses_assistant",
                                         blank=True)
 
     def save(self, *args, **kwargs):
@@ -61,6 +63,7 @@ class Exercise(models.Model):
     exercise_id = models.PositiveIntegerField(unique=True)
     module_id = models.PositiveIntegerField()
     name = models.CharField(max_length=255)
+    #api_url = models.URLField(null=True)
     min_points = models.PositiveSmallIntegerField(default=1)
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -70,6 +73,7 @@ class Exercise(models.Model):
                                      upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
     grading_ready = models.BooleanField(default=False)
+    not_found_error = models.BooleanField(default=False)
 
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.
@@ -86,6 +90,8 @@ class Exercise(models.Model):
 
     class Meta:
         ordering = ["grading_ready", "name"]
+
+
 
     def __str__(self):
         return self.name

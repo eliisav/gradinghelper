@@ -24,8 +24,10 @@ util_logger = logging.getLogger(__name__)
 debug_feedbacks = []
 
 
-def get_json(url, token):
-    resp = requests.get(url, headers={"Authorization": f"Token {token}"})
+def get_json(url, token, params=None):
+    resp = requests.get(
+        url, headers={"Authorization": f"Token {token}"}, params=params
+    )
 
     if resp.status_code == requests.codes.ok:
         return resp.json()
@@ -66,9 +68,11 @@ def add_user_to_course(user, login_info):
 
 
 def create_course(api_id, api_url, course_label, course_name, token):
-    course_instance = get_json(api_url, token)["instance_name"]
-    name = f"{course_label} {course_name} {course_instance}"
-    course = Course(course_id=api_id, name=name,
+    course_instance = get_json(api_url, token)
+    instance_name = course_instance["instance_name"]
+    data_url = course_instance["data"]
+    name = f"{course_label} {course_name} {instance_name}"
+    course = Course(course_id=api_id, name=name, data_url=data_url,
                     api_url=api_url, api_token=token)
     course.save()
     return course
@@ -76,13 +80,11 @@ def create_course(api_id, api_url, course_label, course_name, token):
 
 def get_exercises(course):
     """
-    Hakee kaikki yhden kurssi-instanssin tehtävät.
-    param course: (Course) kurssiobjekti
-    return: lista tehtävistä
+    Get the exercises of the specified course from Plussa. Remove or mark
+    as "not found" if there are exercises in database which are not found
+    in Plussa anymore.
+    param course: (Course) model object
     """
-    # TODO: pitäisikö sellaiset tehtävät poistaa, jotka on poistettu kurssilta
-    # eli niitä ei enää löydy kurssin rajapinnasta. (Jos poistetaan, niin ei
-    # voida kuitenkaan sokeasti poistaa niitä, jotka on merkitty arvosteluun.)
 
     """
     modules = cache.get(course.course_id)
@@ -93,6 +95,8 @@ def get_exercises(course):
     modules = get_json(f"{course.api_url}exercises/", course.api_token)["results"]
 
     # cache.set(course.course_id, modules)
+
+    current_exercises = []
 
     # Module consists of material pages and exercises
     for sub_module in modules:
@@ -114,21 +118,34 @@ def get_exercises(course):
                 except Exercise.DoesNotExist:
                     exercise = Exercise(course=course,
                                         exercise_id=details["id"],
-                                        module_id=sub_module["id"])
+                                        module_id=sub_module["id"],
+                                        api_url=details["url"])
                                     
                 exercise.name = details["display_name"]
                 exercise.save()
-    
+                current_exercises.append(exercise.exercise_id)
 
+    # Check that exercises in database are still found in Plussa
+    for exercise in course.exercise_set.all():
+        if exercise.exercise_id not in current_exercises:
+            if exercise.in_grading:
+                exercise.not_found_error = True
+                exercise.save()
+            else:
+                exercise.delete()
+
+
+"""
 def get_submissions(exercise):
-    """
+    
     Askarrellaan kurssin ja tehtävän id:n perusteella url, jolla saadaan 
     pyydettyä tiedot kyseisen tehtävän viimeisimmistä/parhaista palautuksista.
     param exercise: (models.Exercise) tehtäväobjekti
-    """
+    
     data_url = f"{exercise.course.api_url}submissiondata/"
     query_url = f"{data_url}?exercise_id={exercise.exercise_id}&format=json"
     return get_json(query_url, exercise.course.api_token)
+"""
 
 
 def update_submissions(exercise):
@@ -138,10 +155,20 @@ def update_submissions(exercise):
         return
     """
 
-    util_logger.debug(f"{datetime.datetime.now()} updating submissions: {exercise}")
+    try:
+        submissiondata = get_json(
+            exercise.course.data_url, exercise.course.api_token,
+            {"exercise_id": exercise.exercise_id, "format": "json"}
+        )
+    except requests.HTTPError:
+        exercise.not_found_error = True
+        exercise.save()
+        raise
+
+    util_logger.debug(f"{datetime.datetime.now()} updating submissions: "
+                      f"{exercise}")
 
     deadline_passed = check_deadline(exercise)
-    submissiondata = get_submissions(exercise)
 
     # print(submissiondata)
 

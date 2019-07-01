@@ -58,10 +58,11 @@ class ExerciseUpdateForm(forms.ModelForm):
             """
             self.fields["graders"].queryset = User.objects.filter(
                 Q(
-                    my_courses=self.course
+                    courses_assistant=self.course
                 ) | Q(
-                    responsibilities=self.course
-                )).distinct()
+                    courses_teacher=self.course
+                )
+            ).distinct()
 
     def is_valid(self):
         valid = super().is_valid()
@@ -115,7 +116,8 @@ class ChangeGraderForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         course = kwargs["instance"].exercise.course
         self.fields["grader"].queryset = User.objects.filter(
-            Q(my_courses=course) | Q(responsibilities=course)).distinct()
+            Q(courses_assistant=course) | Q(courses_teacher=course)
+        ).distinct()
 
 
 class FeedbackForm(ChangeGraderForm):
@@ -137,8 +139,8 @@ class FeedbackForm(ChangeGraderForm):
         }
 
     def __init__(self, *args, **kwargs):
-       super().__init__(*args, **kwargs)
-       self.fields["students"].queryset = kwargs["instance"].get_students()
+        super().__init__(*args, **kwargs)
+        self.fields["students"].queryset = kwargs["instance"].get_students()
 
 
 class SetGraderMeForm(forms.ModelForm):
@@ -163,4 +165,15 @@ class BatchAssessForm(forms.Form):
         label="Palauteteksti",
         required=False,
         help_text="Lyhyt palauteteksi, ei pakollinen."
+    )
+
+
+class ErrorHandlerForm(forms.Form):
+    HANDLE_CHOICES = [
+        ("delete", "Poista tehtävä ja siihen liittyvät arvostelut"),
+        ("keep", "Säilytä tehtävä ja ohita virheilmoitus")
+    ]
+
+    handle_error = forms.ChoiceField(
+        label="", widget=forms.RadioSelect, choices=HANDLE_CHOICES
     )
