@@ -118,8 +118,7 @@ def get_exercises(course):
                 except Exercise.DoesNotExist:
                     exercise = Exercise(course=course,
                                         exercise_id=details["id"],
-                                        module_id=sub_module["id"],
-                                        api_url=details["url"])
+                                        module_id=sub_module["id"])
                                     
                 exercise.name = details["display_name"]
                 exercise.save()
