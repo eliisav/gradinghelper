@@ -60,7 +60,7 @@ def feedback_base_path(instance, filename):
     :param filename: (str) name of uploaded file
     :return: (str) path to save uploaded file
     """
-    course = f"course_{instance.course.course_id}"
+    course = f"course_{instance.course.id}_{instance.course.course_id}"
     exercise = f"exercise_{instance.exercise_id}"
     return f"{course}/{exercise}/{filename}/"
 
