@@ -54,7 +54,7 @@ AUTHENTICATION_BACKENDS = [
     'django_lti_login.backends.LTIAuthBackend'
 ]
 
-LOGIN_URL = '/submissions/auth/login/'
+LOGIN_URL = '/auth/login/'
 
 ROOT_URLCONF = 'gradinghelper.urls'
 

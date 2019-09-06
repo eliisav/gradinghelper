@@ -5,7 +5,7 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Omat arvosteltavat" "submissions:grading" exercise.exercise_id %}
+  {% breadcrumb "Omat arvosteltavat" "submissions:grading" exercise.id exercise.exercise_id %}
 {% endblock %}
 
 {% block content %}
@@ -49,7 +49,7 @@
               {% for sub in gradinglist %}
               <tr>
                 <td class="align-middle">
-                  <a href="{%url 'submissions:feedback' sub.exercise.exercise_id sub.sub_id %}">
+                  <a href="{%url 'submissions:feedback' sub.exercise.id sub.exercise.exercise_id sub.id sub.sub_id %}">
                     {{ sub }}
                   </a>
                 </td>
@@ -105,7 +105,7 @@
             Joukkoarvostelu
           </button>
           {% endif %}
-          <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">
+          <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.id exercise.exercise_id %}" role="button">
             Hae uusimmat palautukset
           </a>
         </div> <!-- data-toggle buttons -->
@@ -118,7 +118,7 @@
             kestää kauan, jos julkaistavaa on paljon.
             Jatka valitsemalla "Julkaise".
           </div>
-          <form method="post" action="{% url 'submissions:release' exercise.exercise_id %}">
+          <form method="post" action="{% url 'submissions:release' exercise.id exercise.exercise_id %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-primary">
               Julkaise
@@ -138,7 +138,7 @@
             vastuuhenkilöltä kumpi tapa on käytössä ja mikä pistemäärä alla
             olevaan lomakkeeseen tulee kirjata.
           </div>
-          <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.exercise_id %}">
+          <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.id exercise.exercise_id %}">
             {% csrf_token %}
             {% bootstrap_form batch_assess_form %}
             <input type="submit" value="Joukkoarvostele">
@@ -156,7 +156,7 @@
         <!-- formset.total_form_count saadaan lomakkeen objektien määrä-->
 
         {% if formset.forms %}
-          <form method="post" action="{% url 'submissions:set_grader' exercise.exercise_id %}">
+          <form method="post" action="{% url 'submissions:set_grader' exercise.id exercise.exercise_id %}">
             {% csrf_token %}
             {{ formset.management_form }}
 

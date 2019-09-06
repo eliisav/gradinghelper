@@ -42,8 +42,8 @@ def store_course_info(sender, **kwargs):
 
     if request and user and oauth:
         required_fields = ["context_label", "context_title", "roles",
-                           "custom_context_api", "custom_context_api_id",
-                           "custom_user_api_token"]
+                           "custom_context_api", "tool_consumer_instance_guid",
+                           "custom_user_api_token", "custom_context_api_id"]
         accepted_roles = ["Instructor", "TA,TeachingAssistant"]
         login_info = {}
 

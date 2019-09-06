@@ -5,7 +5,7 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Palaute" "submissions:feedback" exercise.exercise_id form.instance.sub_id %}
+  {% breadcrumb "Palaute" "submissions:feedback" exercise.id exercise.exercise_id form.instance.sub_id %}
 {% endblock %}
 
 {% block title %}{{ form.instance.sub_id }}{% endblock %}
@@ -89,7 +89,7 @@
     <form method="post" style="position: sticky;top: 50px;">
       {% csrf_token %}
       {% bootstrap_form form %}
-      <a class="btn btn-warning" href="{% url referer_url feedback.exercise.exercise_id %}" role="button">Peruuta</a>
+      <a class="btn btn-warning" href="{% url referer_url exercise.id exercise.exercise_id %}" role="button">Peruuta</a>
       <button type="submit" class="btn btn-success float-right">Tallenna</button>
     </form>
 

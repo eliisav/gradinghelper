@@ -21,26 +21,26 @@
     <div class="d-flex justify-content-around m-4">
     {% if user_is_teacher %}
       {% if form.forms %}
-        <form method="post" action="{% url 'submissions:json' exercise.exercise_id %}">
+        <form method="post" action="{% url 'submissions:json' exercise.id exercise.exercise_id %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-primary">
             Luo json julkaisua varten
           </button>
         </form>
-        <form method="post" action="{% url 'submissions:undo' exercise.exercise_id %}">
+        <form method="post" action="{% url 'submissions:undo' exercise.id exercise.exercise_id%}">
           {% csrf_token %}
           <button type="submit" class="btn btn-primary">
             Peruuta edellinen julkaisu
           </button>
         </form>
 
-        <a class="btn btn-primary" href="{% url 'submissions:csv' exercise.exercise_id %}" role="button">
+        <a class="btn btn-primary" href="{% url 'submissions:csv' exercise.id exercise.exercise_id %}" role="button">
           Arvostelutilanne csv -tiedostona
         </a>
 
       {% endif %}
 
-      <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.exercise_id %}" role="button">
+      <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.id exercise.exercise_id %}" role="button">
         Hae uusimmat palautukset
       </a>
 
@@ -49,7 +49,7 @@
 
 
     {% if form.forms %}
-        <form method="post" action="{% url 'submissions:submissions' exercise.exercise_id %}">
+        <form method="post" action="{% url 'submissions:submissions' exercise.id exercise.exercise_id %}">
           {% csrf_token %}
           {{ form.management_form }}
 
@@ -68,7 +68,7 @@
               <tr>
                 <td>
                   {{ sub_form.id }}
-                  <a href="{%url 'submissions:feedback' exercise.exercise_id sub_form.instance.sub_id %}">
+                  <a href="{%url 'submissions:feedback' exercise.id exercise.exercise_id sub_form.instance.id sub_form.instance.sub_id %}">
                     {{ sub_form.instance.sub_id }}
                   </a>
                 </td>

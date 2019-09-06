@@ -9,18 +9,30 @@ class User(AbstractUser):
         return self.email
 
 
-class Course(models.Model):
-    course_id = models.PositiveIntegerField(unique=True)
-    name = models.CharField(max_length=255)
-    api_root = models.URLField(null=True, blank=True)
-    api_token = models.CharField(max_length=255)
-    api_url = models.URLField(null=True)
-    data_url = models.URLField(null=True)
-    #exercise_url = models.URLField(null=True)
+class BaseCourse(models.Model):
+    label = models.CharField(max_length=255)
+    lms_instance_id = models.CharField(max_length=255)
+   
     teachers = models.ManyToManyField(User, related_name="courses_teacher",
                                       blank=True)
     assistants = models.ManyToManyField(User, related_name="courses_assistant",
                                         blank=True)
+                                        
+    class Meta:
+        unique_together = ["label", "lms_instance_id"]
+
+
+class Course(models.Model):
+    base_course = models.ForeignKey(BaseCourse, on_delete=models.CASCADE)
+    course_id = models.PositiveIntegerField()
+    name = models.CharField(max_length=255)
+    api_root = models.URLField(null=True, blank=True)
+    api_token = models.CharField(max_length=255)
+    api_url = models.URLField(unique=True)
+    data_url = models.URLField()
+    exercise_url = models.URLField()
+    #teachers = models.ManyToManyField(User, related_name="courses_t",blank=True)
+    #assistants = models.ManyToManyField(User, related_name="courses_a",blank=True)
 
     def save(self, *args, **kwargs):
         if not self.api_root:
@@ -31,10 +43,14 @@ class Course(models.Model):
         return self.name
         
     def is_teacher(self, user):
-        return user in self.teachers.all()
+        return user.is_superuser or self.base_course.teachers.filter(
+            id=user.id
+        ).exists()
 
     def is_staff(self, user):
-        return self.is_teacher(user) or user in self.assistants.all()
+        return self.is_teacher(user) or self.base_course.assistants.filter(
+            id=user.id
+        ).exists()
 
 
 def feedback_base_path(instance, filename):
@@ -61,9 +77,9 @@ class Exercise(models.Model):
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     exercise_id = models.PositiveIntegerField(unique=True)
-    module_id = models.PositiveIntegerField()
+    module = models.URLField()
     name = models.CharField(max_length=255)
-    #api_url = models.URLField(null=True)
+    api_url = models.URLField()
     min_points = models.PositiveSmallIntegerField(default=1)
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -91,15 +107,9 @@ class Exercise(models.Model):
     class Meta:
         ordering = ["grading_ready", "name"]
 
-
-
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
-        return reverse(
-           "submissions:exercises", kwargs={"course_id": self.course.course_id}
-        )
 
     def set_defaults(self):
         # self.consent_exercise = None  # Ei ole enää tarpeellinen
@@ -115,11 +125,15 @@ class Exercise(models.Model):
 
 
 class Student(models.Model):
-    email = models.EmailField(unique=True)
+    aplus_user_id = models.CharField(max_length=255)
+    lms_instance_id = models.CharField(max_length=255)
+    email = models.EmailField()
     student_id = models.CharField(max_length=255, unique=True,
                                   default=None, null=True)
-    aplus_user_id = models.IntegerField(unique=True, null=True)
-    
+
+    class Meta:
+        unique_together = ["aplus_user_id", "lms_instance_id"]
+
     def __str__(self):
         if self.student_id:
             return f"{self.student_id} {self.email}"

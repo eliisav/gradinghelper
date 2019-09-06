@@ -58,9 +58,9 @@ class ExerciseUpdateForm(forms.ModelForm):
             """
             self.fields["graders"].queryset = User.objects.filter(
                 Q(
-                    courses_assistant=self.course
+                    courses_assistant=self.course.base_course
                 ) | Q(
-                    courses_teacher=self.course
+                    courses_teacher=self.course.base_course
                 )
             ).distinct()
 
@@ -116,7 +116,11 @@ class ChangeGraderForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         course = kwargs["instance"].exercise.course
         self.fields["grader"].queryset = User.objects.filter(
-            Q(courses_assistant=course) | Q(courses_teacher=course)
+            Q(
+                courses_assistant=course.base_course
+            ) | Q(
+                courses_teacher=course.base_course
+            )
         ).distinct()
 
 

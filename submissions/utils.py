@@ -17,7 +17,7 @@ from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
 from pygments.formatters.html import HtmlFormatter
 
-from .models import Course, Exercise, Feedback, Student
+from .models import BaseCourse, Course, Exercise, Feedback, Student
 from django.core.cache import cache
 
 util_logger = logging.getLogger(__name__)
@@ -45,35 +45,49 @@ def add_user_to_course(user, login_info):
 
     try:
         course = Course.objects.get(
-            course_id=login_info["custom_context_api_id"]
+            api_url=login_info["custom_context_api"]
         )
     except Course.DoesNotExist:
         if login_info["roles"] != "Instructor":
             return False
 
         course = create_course(
-            login_info["custom_context_api_id"],
             login_info["custom_context_api"],
+            login_info["custom_context_api_id"],
             login_info["context_label"],
             login_info["context_title"],
-            login_info["custom_user_api_token"]
+            login_info["custom_user_api_token"],
+            login_info["tool_consumer_instance_guid"]
         )
 
     if login_info["roles"] == "Instructor":
-        course.teachers.add(user)
+        course.base_course.teachers.add(user)
     if login_info["roles"] == "TA,TeachingAssistant":
-        course.assistants.add(user)
+        course.base_course.assistants.add(user)
 
     return True
 
 
-def create_course(api_id, api_url, course_label, course_name, token):
+def create_course(api_url, api_id, label, name, token, lms_instance_id):
+    try:
+        base_course = BaseCourse.objects.get(
+            label=label, lms_instance_id=lms_instance_id
+        )
+    except BaseCourse.DoesNotExist:
+        base_course = BaseCourse(
+            label=label, lms_instance_id=lms_instance_id
+        )
+        base_course.save()
+
     course_instance = get_json(api_url, token)
     instance_name = course_instance["instance_name"]
     data_url = course_instance["data"]
-    name = f"{course_label} {course_name} {instance_name}"
-    course = Course(course_id=api_id, name=name, data_url=data_url,
-                    api_url=api_url, api_token=token)
+    exercise_url = course_instance["exercises"]
+    name = f"{label} {name} {instance_name}"
+    course = Course(
+        course_id=api_id, name=name, api_token=token, api_url=api_url,
+        data_url=data_url, exercise_url=exercise_url, base_course=base_course
+    )
     course.save()
     return course
 
@@ -92,7 +106,7 @@ def get_exercises(course):
         return
     """
 
-    modules = get_json(f"{course.api_url}exercises/", course.api_token)["results"]
+    modules = get_json(course.exercise_url, course.api_token)["results"]
 
     # cache.set(course.course_id, modules)
 
@@ -118,7 +132,8 @@ def get_exercises(course):
                 except Exercise.DoesNotExist:
                     exercise = Exercise(course=course,
                                         exercise_id=details["id"],
-                                        module_id=sub_module["id"])
+                                        module=sub_module["url"],
+                                        api_url=details["url"])
                                     
                 exercise.name = details["display_name"]
                 exercise.save()
@@ -194,7 +209,10 @@ def update_submissions(exercise):
             feedback.save()
 
         for student in accepted[sub]["students"]:
-            if not add_student(student, feedback):
+            if not add_student(
+                    student, feedback,
+                    exercise.course.base_course.lms_instance_id
+            ):
                 break
 
     if exercise.work_div == Exercise.EVEN_DIV:
@@ -202,10 +220,8 @@ def update_submissions(exercise):
 
 
 def check_deadline(exercise):
-    module_url = f"{exercise.course.api_url}exercises/{exercise.module_id}"
-
     # Get info related to exercise module and check if module is open or not
-    if get_json(module_url, exercise.course.api_token)["is_open"]:
+    if get_json(exercise.module, exercise.course.api_token)["is_open"]:
         util_logger.debug(f"{exercise} moduuli on vielä auki!")
         return False
         
@@ -306,7 +322,7 @@ def add_feedback_base(exercise, feedback):
         feedback.save()
 
 
-def add_student(student_dict, new_feedback):
+def add_student(student_dict, new_feedback, lms_instance_id):
     """
     Liitetään opiskelija palautukseen. Jos opiskelijalla on edellinen palautus 
     samaan tehtävään, se poistetaan mikäli arviointia ei ole aloitettu.
@@ -315,15 +331,15 @@ def add_student(student_dict, new_feedback):
     :return: (bool) False, jos opiskelijalla on jo palautus arvostelussa.
     """
     try:
-        #student_obj = Student.objects.get(email=student_dict["email"])
-        student_obj = Student.objects.get(aplus_user_id=student_dict["user_id"])
+        student_obj = Student.objects.get(
+            aplus_user_id=student_dict["user_id"],
+            lms_instance_id=lms_instance_id
+        )
 
         # Update student_id and email. Email can change and student_id
         # is sometimes given later
         student_obj.student_id = student_dict["student_id"]
         student_obj.email = student_dict["email"]
-
-        #student_obj.aplus_user_id = student_dict["user_id"]
 
         student_obj.save()
 
@@ -367,9 +383,11 @@ def add_student(student_dict, new_feedback):
             
     except Student.DoesNotExist:
         student_obj = Student(
+            aplus_user_id=student_dict["user_id"],
+            lms_instance_id=lms_instance_id,
             email=student_dict["email"],
-            student_id=student_dict["student_id"],
-            aplus_user_id=student_dict["user_id"]
+            student_id=student_dict["student_id"]
+
         )
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
@@ -420,8 +438,7 @@ def divide_submissions(exercise):
 def choose_grader(exercise, graders, max_sub_count=None):
     """
     Jonkinlainen algoritmi töiden jakamiseen. Jakaa työ tasan kaikkien 
-    kurssiin liitettyjen assareiden kesken. Ei ole kunnolla testattu ja 
-    saattaa toimia väärin. 
+    kurssiin liitettyjen assareiden kesken.
     HUOM! Tämä ottaa nyt arvosteluun kaiken, myös assarien omat sekä 
     testitunnuksilla tehdyt palautukset.
     """
@@ -458,13 +475,13 @@ def choose_grader(exercise, graders, max_sub_count=None):
 
 
 def get_submission_data(feedback):
-    # TODO: Pitäisikö kuitenkin yrittää tehtävän api urli  kaivaa apista ja
-    # tallentaa tietokantaan, sen sijaan että askarrelleen näin?!?!
-    api_root = feedback.exercise.course.api_root
-    exercise_url = f"{api_root}exercises/{feedback.exercise.exercise_id}/"
     api_token = feedback.exercise.course.api_token
-    form_spec = get_json(exercise_url, api_token)["exercise_info"]["form_spec"]
 
+    form_spec = get_json(
+        feedback.exercise.api_url, api_token
+    )["exercise_info"]["form_spec"]
+
+    api_root = feedback.exercise.course.api_root
     sub_url = f"{api_root}submissions/{feedback.sub_id}/"
     sub_info = get_json(sub_url, api_token)
 
@@ -658,7 +675,7 @@ def create_json_to_batch_assess(feedbacks):
         }
 
         object_list.append(obj)
-        feedback.exercise.latest_release.append(feedback.sub_id)
+        feedback.exercise.latest_release.append(feedback.id)
         feedback.released = True
         feedback.save()
 

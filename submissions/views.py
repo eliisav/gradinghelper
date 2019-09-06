@@ -28,9 +28,7 @@ class ExerciseMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if "exercise_id" in self.kwargs:
-            exercise = get_object_or_404(
-                Exercise, exercise_id=self.kwargs["exercise_id"]
-            )
+            exercise = get_object_or_404(Exercise, pk=self.kwargs["pk"])
             context["exercise"] = exercise
             context["course"] = exercise.course
             context["user_is_teacher"] = exercise.course.is_teacher(
@@ -63,7 +61,11 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     def get(self, request, *args, **kwargs):
        
         self.object_list = Course.objects.filter(
-            Q(assistants=request.user) | Q(teachers=request.user)
+            Q(
+                base_course__assistants=request.user
+            ) | Q(
+                base_course__teachers=request.user
+            )
         ).distinct()
 
         return self.render_to_response(self.get_context_data())
@@ -78,7 +80,7 @@ class ExerciseListView(LoginRequiredMixin, generic.ListView):
     context_object_name = "exercises"
     
     def get(self, request, *args, **kwargs):
-        course = get_object_or_404(Course, course_id=kwargs["course_id"])
+        course = get_object_or_404(Course, pk=kwargs["pk"])
 
         if not course.is_staff(request.user):
             raise PermissionDenied
@@ -135,7 +137,7 @@ class GetExercisesRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:exercises"
 
     def post(self, request, *args, **kwargs):
-        course = get_object_or_404(Course, course_id=kwargs["course_id"])
+        course = get_object_or_404(Course, pk=kwargs["pk"])
 
         # TODO: voiko jotain mennä pieleen, että tehtäviä ei päivitetäkään?
         # get exercises from Plussa and save them to database
@@ -155,10 +157,7 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
 
     # TODO: muuttaa tietokannan tilaa, joten muuta postiksi
     def get(self, request, *args, **kwargs):
-        exercise = get_object_or_404(
-            Exercise,
-            exercise_id=kwargs["exercise_id"]
-        )
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
         try:
             utils.update_submissions(exercise)
             messages.success(request, "Palautukset päivitetty.")
@@ -219,9 +218,19 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     Handle the request to update exercise grading settings.
     """
     model = Exercise
+    pk_url_kwarg = "pk_e"
     slug_field = "exercise_id"
     slug_url_kwarg = "exercise_id"
+    query_pk_and_slug = True
     form_class = forms.ExerciseUpdateForm
+
+    def get_success_url(self):
+        return reverse(
+            "submissions:exercises", kwargs={
+                "pk": self.kwargs["pk"],
+                "course_id": self.kwargs["course_id"]
+            }
+        )
 
     def form_valid(self, form):
         self.object = form.save()
@@ -259,7 +268,7 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
 
         messages.error(self.request, f"{message} Muutoksia ei tallennettu.")
 
-        return HttpResponseRedirect(self.object.get_absolute_url())
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class DisableExerciseGradingRedirectView(LoginRequiredMixin,
@@ -270,10 +279,7 @@ class DisableExerciseGradingRedirectView(LoginRequiredMixin,
     pattern_name = "submissions:exercises"
 
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(
-            Exercise,
-            exercise_id=kwargs.pop("exercise_id")
-        )
+        exercise = get_object_or_404(Exercise, pk=kwargs.pop("pk_e"))
 
         if exercise.not_found_error:
             exercise.delete()
@@ -293,10 +299,7 @@ class HandleExerciseErrorRedirectView(LoginRequiredMixin,
     pattern_name = "submissions:exercises"
 
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(
-            Exercise,
-            exercise_id=kwargs.pop("exercise_id")
-        )
+        exercise = get_object_or_404(Exercise, pk=kwargs.pop("pk_e"))
 
         form = forms.ErrorHandlerForm(request.POST)
 
@@ -345,8 +348,7 @@ class GradingListView(ExerciseMixin, LoginRequiredMixin,
         return context
     
     def get(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
 
         if not exercise.course.is_staff(request.user):
             raise PermissionDenied
@@ -410,19 +412,18 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
         return self.render_to_response(self.get_context_data())
 
     def get_form_kwargs(self):
-        # Päivitetään palautukset rajapinnasta, tämä on huono paikka,
-        # homma hidasta.
-        # update_submissions(exercise)
-
         kwargs = super().get_form_kwargs()
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=self.kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=self.kwargs["pk"])
         kwargs["queryset"] = exercise.feedback_set.all()
         return kwargs
-    
+
     def get_success_url(self):
-        exercise_id = self.kwargs["exercise_id"]
-        return reverse_lazy("submissions:submissions", args=(exercise_id,))
+        return reverse(
+            "submissions:submissions", kwargs={
+                "pk": self.kwargs["pk"],
+                "exercise_id": self.kwargs["exercise_id"]
+            }
+        )
 
 
 class FeedbackView(ExerciseMixin, LoginRequiredMixin,
@@ -434,6 +435,8 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
     model = Feedback
     slug_field = "sub_id"
     slug_url_kwarg = "sub_id"
+    pk_url_kwarg = "pk_s"
+    query_pk_and_slug = True
     form_class = forms.FeedbackForm
     initial = {
         "status": Feedback.READY
@@ -469,8 +472,12 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
         return context
 
     def get_success_url(self):
-        exercise_id = self.object.exercise.exercise_id
-        return reverse("submissions:grading", args=(exercise_id,))
+        return reverse(
+            "submissions:grading", kwargs={
+                "pk": self.kwargs["pk"],
+                "exercise_id": self.kwargs["exercise_id"]
+            }
+        )
 
     def post(self, request, *args, **kwargs):
         try:
@@ -501,8 +508,7 @@ class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
 
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
 
         if not exercise.course.is_staff(request.user):
             raise PermissionDenied
@@ -544,8 +550,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:grading"
 
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
 
         if not exercise.course.is_staff(request.user):
             raise PermissionDenied
@@ -553,8 +558,8 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
         feedbacks = exercise.feedback_set.filter(grader=request.user,
                                                  status=Feedback.READY,
                                                  released=False)
-        api_root = exercise.course.api_root
-        url = f"{api_root}exercises/{exercise.exercise_id}/submissions/"
+
+        url = f"{exercise.api_url}submissions/"
         auth = {"Authorization": f"Token {exercise.course.api_token}"}
         
         if feedbacks:
@@ -601,8 +606,7 @@ class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
     template_name = "submissions/json.html"
 
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
         feedbacks = exercise.feedback_set.filter(status=Feedback.READY,
                                                  released=False)
         context = super().get_context_data()
@@ -621,15 +625,14 @@ class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
     pattern_name = "submissions:submissions"
 
     def post(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
 
         if not exercise.course.is_staff(request.user):
             raise PermissionDenied
 
         if len(exercise.latest_release) > 0:
-            for sub_id in exercise.latest_release:
-                feedback = get_object_or_404(Feedback, sub_id=sub_id)
+            for id in exercise.latest_release:
+                feedback = get_object_or_404(Feedback, pk=id)
                 feedback.released = False
                 feedback.save()
 
@@ -645,8 +648,7 @@ class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
 
 class DownloadCsvView(LoginRequiredMixin, generic.View):
     def get(self, request, *args, **kwargs):
-        exercise = get_object_or_404(Exercise,
-                                     exercise_id=kwargs["exercise_id"])
+        exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
 
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="grading.csv"'
