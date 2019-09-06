@@ -5,7 +5,7 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Kaikki palautukset" "submissions:submissions" exercise.exercise_id %}
+  {% breadcrumb "Kaikki palautukset" "submissions:submissions" exercise.id exercise.exercise_id %}
 {% endblock %}
 
 {% block content %}
