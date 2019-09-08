@@ -1,5 +1,4 @@
 from django.db import models
-from django.urls import reverse
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
 
@@ -83,6 +82,7 @@ class Exercise(models.Model):
     min_points = models.PositiveSmallIntegerField(default=1)
     # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
+    total_max_points = models.PositiveSmallIntegerField(default=100)
     add_penalty = models.BooleanField(default=True)
     add_auto_grade = models.BooleanField(default=True)
     feedback_base = models.FileField(null=True, blank=True,

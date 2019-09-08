@@ -1,6 +1,8 @@
 from django import forms
 from .models import Exercise, Feedback, User
 from django.db.models import Q
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _
 
 
 class ExerciseUpdateForm(forms.ModelForm):
@@ -145,6 +147,33 @@ class FeedbackForm(ChangeGraderForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["students"].queryset = kwargs["instance"].get_students()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        points = cleaned_data.get("staff_grade")
+        auto_grade = self.instance.auto_grade
+        max_points = self.instance.exercise.total_max_points
+
+        if self.instance.exercise.add_auto_grade:
+            if points + auto_grade > max_points:
+                self.add_error(
+                    "staff_grade",
+                    ValidationError(
+                        _("Points exceeds the exercise max points"),
+                        code="max_points_exceeded"
+                    )
+                )
+        else:
+            if points > max_points:
+                self.add_error(
+                    "staff_grade",
+                    ValidationError(
+                        _("Points exceeds the exercise max points"),
+                        code="max_points_exceeded"
+                    )
+                )
+
+        return cleaned_data
 
 
 class SetGraderMeForm(forms.ModelForm):

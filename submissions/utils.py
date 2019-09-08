@@ -136,6 +136,7 @@ def get_exercises(course):
                                         api_url=details["url"])
                                     
                 exercise.name = details["display_name"]
+                exercise.total_max_points = details["max_points"]
                 exercise.save()
                 current_exercises.append(exercise.exercise_id)
 
