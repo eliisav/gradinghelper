@@ -32,9 +32,9 @@ class ExerciseUpdateForm(forms.ModelForm):
                                "through this service"
             }),
             "num_of_graders": forms.NumberInput(attrs={
-                "placeholder": "Needed only for equal division if final number "
-                               "of graders is greater than currently selected"
-
+                "placeholder": "Needed only for equal division if the final "
+                               "number of graders is greater than currently "
+                               "selected"
             }),
             "feedback_base": forms.FileInput(attrs={"accept": ".txt"})
         }
@@ -206,7 +206,8 @@ class BatchAssessForm(forms.Form):
         label="Points",
         min_value=0,
         help_text="Amount of points to be added to all of the submissions "
-                  "with status TEMPLATE / Joukkoarvostele kaikki TEMPLATE"
+                  "with status TEMPLATE"
+                  "<p>Joukkoarvostele kaikki TEMPLATE"
                   "-tilassa olevat palautukset tällä pistemäärällä."
     )
     feedback = forms.CharField(

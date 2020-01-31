@@ -141,7 +141,7 @@
           <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.id exercise.exercise_id %}">
             {% csrf_token %}
             {% bootstrap_form batch_assess_form %}
-            <input type="submit" value="Joukkoarvostele">
+            <input type="submit" value="Batch assess">
           </form>
         </div> <!-- collapse mass_grading -->
 

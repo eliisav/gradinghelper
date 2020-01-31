@@ -19,10 +19,10 @@
       <div class="card-header">
         <ul class="nav nav-pills card-header-pills">
           <li class="nav-item">
-            <a class="nav-link active" data-toggle="collapse" data-target="#sub_info">Palauttajat</a>
+            <a class="nav-link active" data-toggle="collapse" data-target="#sub_info">Submitters</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ inspect_url }}" target="_blank">Tarkastele Plussassa</a>
+            <a class="nav-link" href="{{ inspect_url }}" target="_blank">Plussa inspect view</a>
           </li>
         </ul>
       </div> <!-- card-header -->
@@ -63,7 +63,7 @@
         {% endautoescape %}
       {% endif %}
       {% if obj.style %}
-        <h5>PEP8 tyylitarkastuksen tulokset</h5>
+        <h5>PEP8 style check results</h5>
         <pre>{{ obj.style }}</pre>
       {% endif %}
 
@@ -89,8 +89,8 @@
     <form method="post" style="position: sticky;top: 50px;">
       {% csrf_token %}
       {% bootstrap_form form %}
-      <a class="btn btn-warning" href="{% url referer_url exercise.id exercise.exercise_id %}" role="button">Peruuta</a>
-      <button type="submit" class="btn btn-success float-right">Tallenna</button>
+      <a class="btn btn-warning" href="{% url referer_url exercise.id exercise.exercise_id %}" role="button">Cancel</a>
+      <button type="submit" class="btn btn-success float-right">Save</button>
     </form>
 
   </div>

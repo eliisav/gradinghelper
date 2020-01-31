@@ -253,7 +253,7 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
         ).delete()
 
         # Maximum points for auto grade have been decreased.
-        # Remove submissions with points grater than new limit but
+        # Remove submissions with points greater than new limit but
         # only if the feedback status is still template.
         if self.object.max_points is not None:
             self.object.feedback_set.filter(
@@ -539,8 +539,8 @@ class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):
 
                 messages.success(
                     request,
-                    f"Joukkoarvosteltiin {feedbacks.count()} palautusta "
-                    f"pistemäärällä {points}."
+                    f"{feedbacks.count()} submissions assessed with "
+                    f"{points} points"
                 )
             else:
                 messages.info(request, "No feedbacks with status TEMPLATE")
@@ -599,7 +599,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                     break
             else:
                 messages.success(request,
-                                 f"Released {feedbacks.count()} "
+                                 f"Released {feedbacks.count()} feedbacks"
                                  f"with status READY")
         else:
             messages.info(request, "No feedbacks with status READY")
@@ -621,7 +621,7 @@ class CreateJsonFromFeedbacksView(LoginRequiredMixin, generic.TemplateView):
             context["json"] = utils.create_json_to_batch_assess(feedbacks)
             exercise.save()
         else:
-            context["json"] = "JULKAISTAVIA PALAUTTEITA EI LÖYTYNYT!"
+            context["json"] = "NO FEEDBACKS WITH STATUS READY"
 
         return self.render_to_response(context)
 
