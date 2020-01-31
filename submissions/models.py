@@ -70,8 +70,8 @@ class Exercise(models.Model):
     NO_DIV = 1
 
     DIV_CHOICES = (
-        (EVEN_DIV, "Automaattinen tasajako"),
-        (NO_DIV, "Henkilökunta valitsee työt manuaalisesti"),
+        (EVEN_DIV, "Automated equal division"),
+        (NO_DIV, "Allow staff pick submissions manually"),
     )
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -97,6 +97,8 @@ class Exercise(models.Model):
                                                 default=EVEN_DIV)
     graders = models.ManyToManyField(User, blank=True,
                                      related_name="my_gradings")
+    graders_en = models.ManyToManyField(User, blank=True,
+                                        related_name="my_gradings_en")
     num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
     latest_release = ArrayField(models.IntegerField(), default=list)
 
@@ -109,7 +111,6 @@ class Exercise(models.Model):
 
     def __str__(self):
         return self.name
-
 
     def set_defaults(self):
         # self.consent_exercise = None  # Ei ole enää tarpeellinen
@@ -147,14 +148,15 @@ class Feedback(models.Model):
     READY = 2
     
     STATUS_CHOICES = (
-        (BASE, "Palautepohja"),
-        (DRAFT, "Luonnos"),
-        (READY, "Valmis"),
+        (BASE, "Template"),
+        (DRAFT, "Draft"),
+        (READY, "Ready"),
     )
     
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     sub_id = models.IntegerField(unique=True)
     grading_time = models.DateTimeField(null=True)
+    grader_lang_en = models.BooleanField(default=False)
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
     grader = models.ForeignKey(User, on_delete=models.CASCADE,
                                null=True, blank=True)

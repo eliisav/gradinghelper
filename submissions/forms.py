@@ -9,39 +9,39 @@ class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
         fields = ["min_points", "max_points", "add_penalty", "add_auto_grade",
-                  "work_div", "graders", "num_of_graders", "feedback_base",
-                  "grading_ready"]
+                  "work_div", "graders", "graders_en", "num_of_graders",
+                  "feedback_base", "grading_ready"]
         labels = {
-            "min_points": "Pisteet, joilla palautus hyväksytään arvosteluun:",
-            "max_points": "Automaattitarkastuksen maksimipisteet:",
+            "min_points": "Minimum points to accept submission for grading:",
+            "max_points": "Maximum points of Plussa automated evaluation:",
             # "consent_exercise": "Arvostelulupa annetaan tehtävässä:",
-            "add_penalty": "Arvostelijan antamista pisteistä "
-                           "vähennetään myöhästymissakko",
-            "add_auto_grade": "Automaatin pisteet ja arvostelijan pisteet "
-                              "lasketaan yhteen",
-            "work_div": "Työnjako:",
-            "graders": "Valitse arvostelijat:",
-            "num_of_graders": "Arvostelijoiden kokonaislukumäärä:",
-            "feedback_base": "Palautepohja:",
-            "grading_ready": "Arvostelu valmis, "
-                             "lopetetaan palautusten hakeminen"
+            "add_penalty": "Late penalty is deducted from staff points",
+            "add_auto_grade": "Plussa points and staff points are added "
+                              "together",
+            "work_div": "Work division:",
+            "graders": "Graders Finnish/English:",
+            "graders_en": "Graders English only:",
+            "num_of_graders": "Total number of graders:",
+            "feedback_base": "Feedback template:",
+            "grading_ready": "Grading ready, stop polling new submissions"
         }
         widgets = {
             "work_div": forms.RadioSelect,
             "max_points": forms.NumberInput(attrs={
-                "placeholder": "Tarvitaan, jos osa palautuksista on arvioitu "
-                               "jotenkin muuten kuin tämän palvelun kautta"
+                "placeholder": "Needed only if grading is not completely done "
+                               "through this service"
             }),
             "num_of_graders": forms.NumberInput(attrs={
-                "placeholder": "Tarvitaan tasajakoa varten, jos suurempi kuin "
-                               "edellä valittujen määrä"
+                "placeholder": "Needed only for equal division if final number "
+                               "of graders is greater than currently selected"
+
             }),
             "feedback_base": forms.FileInput(attrs={"accept": ".txt"})
         }
         help_texts = {
-            "graders": "Kaikki arvostelijat eivät välttämättä näy listassa, "
-                       "jos he eivät ole vielä kirjautuneet kurssille.",
-            "feedback_base": "Tiedoston tulee olla tekstitiedosto (.txt)"
+            "graders_en": "If the desired user is not available in the lists "
+                          "above, ask him/her to log in once",
+            "feedback_base": "Only text (.txt) files are accepted"
         }
 
     def __init__(self, *args, **kwargs):
@@ -66,31 +66,46 @@ class ExerciseUpdateForm(forms.ModelForm):
                 )
             ).distinct()
 
-    def is_valid(self):
-        valid = super().is_valid()
+            self.fields["graders_en"].queryset = User.objects.filter(
+                Q(
+                    courses_assistant=self.course.base_course
+                ) | Q(
+                    courses_teacher=self.course.base_course
+                )
+            ).distinct()
 
-        if not valid:
-            return valid
-
+    def clean_feedback_base(self):
         fileobject = self.cleaned_data["feedback_base"]
 
         # It's ok if there is no file
         if not fileobject:
-            return True
+            return fileobject
         # Let's assume that it is a textfile if extension is .txt and
         # file size is less than 500 kB
         elif fileobject.name.endswith("txt") and fileobject.size < 500000:
-            return True
+            return fileobject
         else:
-            self._errors["file_error"] = "Tiedosto ei ollut tekstitiedosto."
-            return False
+            raise ValidationError(_("File is not a text file"))
+
+    def clean_graders_en(self):
+        graders_en_only = self.cleaned_data["graders_en"]
+        graders_fi_en = self.cleaned_data["graders"]
+
+        for grader in graders_en_only:
+            if grader in graders_fi_en:
+                raise ValidationError(
+                    _("Grader cannot belong to both categories Fi/En and "
+                      "En only")
+                )
+
+        return graders_en_only
 
 
 class ExerciseSetGradingForm(ExerciseUpdateForm):
     class Meta(ExerciseUpdateForm.Meta):
         fields = ["name", "min_points", "max_points", "add_penalty",
-                  "add_auto_grade", "work_div", "graders", "num_of_graders",
-                  "feedback_base"]
+                  "add_auto_grade", "work_div", "graders", "graders_en",
+                  "num_of_graders", "feedback_base"]
 
     def __init__(self, *args, **kwargs):
 
@@ -103,7 +118,7 @@ class ExerciseSetGradingForm(ExerciseUpdateForm):
                 ).filter(
                     in_grading=False)
             )
-            self.fields["name"].label = "Lisättävä tehtävä:"
+            self.fields["name"].label = "Select exercise to add:"
 
 
 class ChangeGraderForm(forms.ModelForm):
@@ -111,7 +126,7 @@ class ChangeGraderForm(forms.ModelForm):
         model = Feedback
         fields = ["grader"]
         labels = {
-            "grader": "Arvostelija"
+            "grader": "Grader"
         }
 
     def __init__(self, *args, **kwargs):
@@ -130,15 +145,14 @@ class FeedbackForm(ChangeGraderForm):
     class Meta(ChangeGraderForm.Meta):
         fields = ["grader", "staff_grade", "feedback", "status", "students"]
         labels = {
-            "grader": "Arvostelija",
-            "staff_grade": "Arvostelijan antamat pisteet "
-                           "ilman myöhästymissakkoa",
-            "feedback": "Palaute",
-            "status": "Palautteen tila"
+            "grader": "Grader",
+            "staff_grade": "Points without late penalty ",
+            "feedback": "Feedback",
+            "status": "Feedback status"
         }
         widgets = {
             "staff_grade": forms.NumberInput(attrs={
-                "placeholder": "Kirjaa pisteet ilman myöhästymissakkoa"
+                "placeholder": "Points without late penalty"
             }),
             "feedback": forms.Textarea(attrs={"cols": 80, "rows": 17}),
             "students": forms.MultipleHiddenInput()
@@ -159,7 +173,7 @@ class FeedbackForm(ChangeGraderForm):
                 self.add_error(
                     "staff_grade",
                     ValidationError(
-                        _("Points exceeds the exercise max points"),
+                        _("Points exceed maximum points"),
                         code="max_points_exceeded"
                     )
                 )
@@ -168,7 +182,7 @@ class FeedbackForm(ChangeGraderForm):
                 self.add_error(
                     "staff_grade",
                     ValidationError(
-                        _("Points exceeds the exercise max points"),
+                        _("Points exceed maximum points"),
                         code="max_points_exceeded"
                     )
                 )
@@ -183,28 +197,29 @@ class SetGraderMeForm(forms.ModelForm):
         model = Feedback
         fields = ["check_this"]
         help_texts = {
-            "check_this": "Valitse arvosteltavaksi.",
+            "check_this": "Select for grading",
         }
 
 
 class BatchAssessForm(forms.Form):
     points = forms.IntegerField(
-        label="Pisteet",
+        label="Points",
         min_value=0,
-        help_text="Joukkoarvostele kaikki 'Ei aloitettu'-tilassa olevat "
-                  "palautukset tällä pistemäärällä."
+        help_text="Amount of points to be added to all of the submissions "
+                  "with status TEMPLATE / Joukkoarvostele kaikki TEMPLATE"
+                  "-tilassa olevat palautukset tällä pistemäärällä."
     )
     feedback = forms.CharField(
-        label="Palauteteksti",
+        label="Feedback",
         required=False,
-        help_text="Lyhyt palauteteksi, ei pakollinen."
+        help_text="Brief feedback text, can be left blank"
     )
 
 
 class ErrorHandlerForm(forms.Form):
     HANDLE_CHOICES = [
-        ("delete", "Poista tehtävä ja siihen liittyvät arvostelut"),
-        ("keep", "Säilytä tehtävä ja ohita virheilmoitus")
+        ("delete", "Delete this exercise and all submissions related to it"),
+        ("keep", "Ignore warning (and keep the exercise)")
     ]
 
     handle_error = forms.ChoiceField(

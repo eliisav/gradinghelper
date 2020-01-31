@@ -5,7 +5,7 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Omat arvosteltavat" "submissions:grading" exercise.id exercise.exercise_id %}
+  {% breadcrumb "My grading list" "submissions:grading" exercise.id exercise.exercise_id %}
 {% endblock %}
 
 {% block content %}
@@ -15,13 +15,13 @@
     <ul class="nav nav-tabs m-4">
       <li class="nav-item">
         <a class="nav-link active" data-toggle="tab" href="#my_grading_list">
-          Omat arvosteltavat
+          My grading list
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link " data-toggle="tab"
            href="#no_grader">
-          Palautukset joilla ei vielä ole arvostelijaa
+          Submissions without grader
         </a>
       </li>
     </ul>
@@ -30,17 +30,17 @@
       <div class="tab-pane fade show active" id="my_grading_list">
         <h4> {{ exercise.name }} </h4>
 
-        <h6> Omat arvostelut: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
-        <h6> Kaikki arvostelut: {{ ready_count }} / {{ feedback_count }} </h6>
+        <h6> My work count: {{ my_ready_count }} / {{ my_feedback_count }} </h6>
+        <h6> Total work count: {{ ready_count }} / {{ feedback_count }} </h6>
 
         {% if gradinglist %}
           <table class="table table-bordered table-sm table-hover my-4">
             <thead class="thead-light">
               <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Opiskelijanro ja s-posti</th>
-                <th scope="col">Arvostelun tila</th>
-                <th scope="col">Pisteet</th>
+                <th scope="col">Submission Id</th>
+                <th scope="col">Student Id and email</th>
+                <th scope="col">Status</th>
+                <th scope="col">Grade</th>
 
               </tr>
             </thead>
@@ -63,19 +63,19 @@
                 <td class="align-middle">
                   {% if sub.released %}
                     <div class="alert alert-success" role="alert">
-                      JULKAISTU
+                      RELEASED
                     </div>
                   {% elif sub.status == sub.READY %}
                     <div class="alert alert-warning" role="alert">
-                      VALMIS
+                      READY
                     </div>
                   {% elif sub.status == sub.DRAFT %}
                     <div class="alert alert-danger" role="alert">
-                      LUONNOS
+                      DRAFT
                     </div>
                   {% else %}
                     <div class="alert alert-info" role="alert">
-                      EI ALOITETTU
+                      TEMPLATE
                     </div>
                   {% endif %}
                 </td>
@@ -91,7 +91,7 @@
           </table>
         {% else %}
           <div class="alert alert-info" role="alert">
-            Työlistallasi ei ole arvosteltavaa.
+            Grading list is empty
           </div>
         {% endif %}
 
@@ -99,44 +99,44 @@
         <div class="d-flex justify-content-around mt-2">
           {% if gradinglist %}
           <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#release">
-            Julkaise "VALMIS"-tilassa olevat arvostelut
+            Post assessments to Plussa
           </button>
           <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#mass_grading">
-            Joukkoarvostelu
+            Batch assess
           </button>
           {% endif %}
           <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.id exercise.exercise_id %}" role="button">
-            Hae uusimmat palautukset
+            Get latest submissions
           </a>
         </div> <!-- data-toggle buttons -->
 
         <div class="collapse mt-4" id="release">
           <div class="alert alert-danger" role="alert">
-            Kaikki "VALMIS"-tilassa olevat palautteet lähetetään Plussaan.
+            <p>All assessments with status READY will be posted to Plussa.
+            Feedbacks and grades will become visible to students. THIS CANNOT
+            BE CANCELLED. This could take a while if there are a lot of
+            assessments to post. Choose RELEASE to continue.
+
+            <p>Kaikki READY-tilassa olevat palautteet lähetetään Plussaan.
             Tämän jälkeen palautteet ja pisteet ovat opiskelijoiden nähtävillä
             Plussassa. Toimintoa ei voi peruuttaa. Toiminnon suorittaminen
             kestää kauan, jos julkaistavaa on paljon.
-            Jatka valitsemalla "Julkaise".
+            Jatka valitsemalla RELEASE.
           </div>
           <form method="post" action="{% url 'submissions:release' exercise.id exercise.exercise_id %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-primary">
-              Julkaise
+              RELEASE
             </button>
           </form>
         </div> <!-- collapse release -->
         
         <div class="collapse mt-4" id="mass_grading">
           <div class="alert alert-info" role="alert">
-            Joukkoarvostele kaikki "EI ALOITETTU"-tilassa olevat palautukset.
-            Kaikille palautuksille annetaan sama pistemäärä ja jos halutaan,
-            myös lyhyt palauteteksti. Toiminto muuttaa palautteet tilaan
-            "VALMIS".
-            HUOM 1. Tätä ei voi peruuttaa.
-            HUOM 2. Opettaja voi valita tehtävän asetuksista lasketaanko
-            automaatin ja arvostelijan antamat pisteet yhteen. Varmista
-            vastuuhenkilöltä kumpi tapa on käytössä ja mikä pistemäärä alla
-            olevaan lomakkeeseen tulee kirjata.
+            Assess all submissions with the same grade. Grade is applied only
+            if the status of the assessment is TEMPLATE. A brief feedback can
+            also be added but it is optional. Status of the assessment will
+            be set to READY. THIS CANNOT BE CANCELLED.
           </div>
           <form class="form-control" method="post" action="{% url 'submissions:batch_assess' exercise.id exercise.exercise_id %}">
             {% csrf_token %}
@@ -163,9 +163,9 @@
             <table class="table table-bordered table-sm table-hover">
               <thead class="thead-light">
                 <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Opiskelijanro ja s-posti</th>
-                    <th scope="col">Valitse</th>
+                    <th scope="col">Submission Id</th>
+                    <th scope="col">Student Id and email</th>
+                    <th scope="col">Select</th>
                 </tr>
               </thead>
 
@@ -194,14 +194,14 @@
               </tbody>
             </table>
 
-            <button type="submit" class="btn btn-primary">Lisää omalle listalle</button>
+            <button type="submit" class="btn btn-primary">Add to my grading list</button>
 
           </form>
 
         {% else %}
 
           <div class="alert alert-info" role="alert">
-            Ei palautuksia.
+            No submissions available
           </div>
 
         {% endif %}

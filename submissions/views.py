@@ -59,7 +59,8 @@ class CourseListView(LoginRequiredMixin, generic.ListView):
     context_object_name = "courses"
     
     def get(self, request, *args, **kwargs):
-       
+
+        #TODO: Show all courses if user is superuser
         self.object_list = Course.objects.filter(
             Q(
                 base_course__assistants=request.user
@@ -145,7 +146,7 @@ class GetExercisesRedirectView(LoginRequiredMixin, generic.RedirectView):
 
         # Information passed to template which tab to show
         request.session["show_set_grading"] = True
-        messages.success(request, "Kurssin sisältö päivitetty.")
+        messages.success(request, "Course content updated")
 
         return self.get(request, *args, **kwargs)
 
@@ -160,9 +161,9 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
         exercise = get_object_or_404(Exercise, pk=kwargs["pk"])
         try:
             utils.update_submissions(exercise)
-            messages.success(request, "Palautukset päivitetty.")
+            messages.success(request, "Submissions updated")
         except requests.HTTPError:
-            messages.error(request, "Tehtävää ei löydy Plussasta!")
+            messages.error(request, "Exercise not available in Plussa!")
 
         return super().get(request, *args, **kwargs)
 
@@ -181,31 +182,31 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
     def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, pk=request.POST["name"])
         form = forms.ExerciseSetGradingForm(request.POST, request.FILES,
-                                      instance=exercise)
+                                            instance=exercise)
 
         if form.is_valid():
             exercise = form.save(commit=False)
             exercise.in_grading = True
             form.save_m2m()
+            graders_all = \
+                exercise.graders.count() + exercise.graders_en.count()
 
             if exercise.num_of_graders is None or \
-                    exercise.num_of_graders < exercise.graders.count():
-                exercise.num_of_graders = exercise.graders.count()
+                    exercise.num_of_graders < graders_all:
+                exercise.num_of_graders = graders_all
 
             exercise.save(update_fields=["min_points", "max_points",
                                          "add_penalty", "add_auto_grade",
                                          "work_div", "num_of_graders",
                                          "feedback_base", "in_grading"])
 
-            messages.success(request, "Tehtävän lisääminen onnistui.")
+            messages.success(request, "Exercise added for grading")
 
         else:
-            message = "Virheellinen kenttä."
+            messages.error(self.request, "Invalid fields:")
 
-            if "file_error" in form.errors:
-                message = form.errors["file_error"]
-
-            messages.error(self.request, f"{message} Muutoksia ei tallennettu.")
+            for error in form.errors:
+                messages.error(self.request, form.errors[error])
 
             # Information passed to template which tab to show
             request.session["show_set_grading"] = True
@@ -235,16 +236,25 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
     def form_valid(self, form):
         self.object = form.save()
 
+        all_graders = \
+            self.object.graders.count() + self.object.graders_en.count()
+
         if self.object.num_of_graders is None or \
-                self.object.num_of_graders < self.object.graders.count():
-            self.object.num_of_graders = self.object.graders.count()
+                self.object.num_of_graders < all_graders:
+            self.object.num_of_graders = all_graders
             self.object.save()
 
+        # Minimum points of accepted submission have been increased.
+        # Remove submissions with points lesser than new limit but
+        # only if the feedback status is still template.
         self.object.feedback_set.filter(
             status=Feedback.BASE,
             auto_grade__lt=self.object.min_points
         ).delete()
 
+        # Maximum points for auto grade have been decreased.
+        # Remove submissions with points grater than new limit but
+        # only if the feedback status is still template.
         if self.object.max_points is not None:
             self.object.feedback_set.filter(
                 status=Feedback.BASE,
@@ -257,16 +267,14 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
             for feedback in self.object.feedback_set.all():
                 utils.add_feedback_base(self.object, feedback)
 
-        messages.success(self.request, "Muutokset tallennettu.")
+        messages.success(self.request, "Changes saved successfully")
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        message = "Virheellinen kenttä."
+        messages.error(self.request, "Invalid fields:")
 
-        if "file_error" in form.errors:
-            message = form.errors["file_error"]
-
-        messages.error(self.request, f"{message} Muutoksia ei tallennettu.")
+        for error in form.errors:
+            messages.error(self.request, form.errors[error])
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -289,7 +297,7 @@ class DisableExerciseGradingRedirectView(LoginRequiredMixin,
             exercise.feedback_set.all().delete()
             exercise.save()
 
-        messages.success(request, "Tehtävä poistettu tarkastuslistalta.")
+        messages.success(request, "Exercise removed")
         return self.get(request, *args, **kwargs)
 
 
@@ -309,10 +317,10 @@ class HandleExerciseErrorRedirectView(LoginRequiredMixin,
             if handle_exercise == "keep":
                 exercise.not_found_error = False
                 exercise.save()
-                messages.success(request, "Tehtävä ok")
+                messages.success(request, "Warning ignored")
             elif handle_exercise == "delete":
                 exercise.delete()
-                messages.success(request, "Tehtävä poistettu")
+                messages.success(request, "Exercise removed")
 
         return self.get(request, *args, **kwargs)
 
@@ -379,10 +387,9 @@ class SetGraderRedirectView(LoginRequiredMixin, generic.RedirectView):
                     feedback_obj.grader = request.user
                     feedback_obj.save()
 
-            messages.success(request, "Palautukset lisätty "
-                                      "tarkastuslistalle.")
+            messages.success(request, "Submissions added to my grading list")
         else:
-            messages.error(request, "Virheellinen lomake!")
+            messages.error(request, "Invalid form")
 
         return self.get(request, *args, **kwargs)
 
@@ -401,7 +408,7 @@ class SubmissionsFormView(ExerciseMixin, LoginRequiredMixin,
         for sub_form in form:
             if sub_form.has_changed():
                 sub_form.save()
-        messages.success(self.request, "Muutokset tallennettu.")
+        messages.success(self.request, "Changes saved successfully")
         return super().form_valid(form)
 
     def get(self, request, *args, **kwargs):
@@ -449,7 +456,7 @@ class FeedbackView(ExerciseMixin, LoginRequiredMixin,
             raise PermissionDenied
 
         if request.user != self.object.grader:
-            messages.warning(request, "Palautus ei ole omalla työlistallasi!")
+            messages.warning(request, "Submission is not on your grading list!")
 
         return self.render_to_response(self.get_context_data())
 
@@ -536,10 +543,10 @@ class BatchAssessRedirectView(LoginRequiredMixin, generic.RedirectView):
                     f"pistemäärällä {points}."
                 )
             else:
-                messages.info(request, "Arvosteltavia palautuksia ei löytynyt.")
+                messages.info(request, "No feedbacks with status TEMPLATE")
 
         else:
-            messages.error(request, "Virheellinen lomake.")
+            messages.error(request, "Invalid form")
 
         return self.get(request, *args, **kwargs)
 
@@ -573,31 +580,29 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                     view_logger.debug(e)
                     messages.error(
                         request,
-                        f"{e}\nJulkaistiin {i} VALMIS-tilassa ollutta "
-                        f"palautetta.\nJulkaisematta jäi "
-                        f"{feedbacks.count()-i} palautetta."
+                        f"{e}\nReleased {i} feedbacks with status READY"
+                        f"\n{feedbacks.count()-i} left unreleased"
                     )
                     break
 
                 if resp.status_code == 201:
-                    view_logger.debug(f"Onnistui, tallennetaan {i}")
+                    view_logger.debug(f"Success, saved {i}")
                     feedbacks[i].released = True
                     feedbacks[i].save()
                 else:
                     messages.error(
                         request,
                         f"{resp.status_code} {resp.text}\n"
-                        f"Julkaistiin {i} VALMIS-tilassa ollutta "
-                        f"palautetta.\nJulkaisematta jäi "
-                        f"{feedbacks.count()-i} palautetta."
+                        f"Released {i} feedbacks with status READY"
+                        f"\n{feedbacks.count()-i} left unreleased"
                     )
                     break
             else:
                 messages.success(request,
-                                 f"Julkaistiin {feedbacks.count()} "
-                                 f"VALMIS-tilassa ollutta palautetta.")
+                                 f"Released {feedbacks.count()} "
+                                 f"with status READY")
         else:
-            messages.info(request, "Julkaistavia palautteita ei löytynyt.")
+            messages.info(request, "No feedbacks with status READY")
             
         return self.get(request, *args, **kwargs)
 
@@ -638,10 +643,10 @@ class UndoLatestReleaseRedirectView(LoginRequiredMixin, generic.RedirectView):
 
             exercise.latest_release.clear()
             exercise.save()
-            messages.success(request, "Julkaisu peruutettu.")
+            messages.success(request, "Status restored")
 
         else:
-            messages.info(request, "Edellistä julkaisua ei löytynyt.")
+            messages.info(request, "Previous json data couldn't be found")
 
         return self.get(request, *args, **kwargs)
 

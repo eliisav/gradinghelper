@@ -5,14 +5,14 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Kurssit" "submissions:courses" %}
+  {% breadcrumb "Courses" "submissions:courses" %}
 {% endblock %}
 
 {% block content %}
 
   <div class="col-md-6 offset-md-3">
 
-    <h1>Omat kurssit</h1>
+    <h1>My courses</h1>
     
     {% if courses %}
       <ul class="list-group">
@@ -33,7 +33,7 @@
       </ul>
     {% else %}
       <div class="alert alert-info" role="alert">
-        Käyttäjälle {{ user }} ei löytynyt yhtään kurssia.
+        No courses available for the user {{ user }}
       </div>
     {% endif %}
     

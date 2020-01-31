@@ -9,6 +9,7 @@ import json
 import datetime
 import logging
 import pep8
+import random
 import requests
 import sys
 
@@ -200,6 +201,7 @@ def update_submissions(exercise):
                 exercise=exercise,
                 sub_id=sub,
                 auto_grade=accepted[sub]["grade"],
+                grader_lang_en=accepted[sub]["grader_lang_en"]
             )
             if accepted[sub]["penalty"]:
                 feedback.penalty = accepted[sub]["penalty"]
@@ -264,6 +266,7 @@ def sort_submissions(submissions, exercise, deadline_passed):
             accepted[sub["SubmissionID"]] = {
                 "grade": sub["Grade"],
                 "penalty": sub["Penalty"],
+                "grader_lang_en": False,
                 "students": [
                     {
                         "email": sub["Email"],
@@ -272,6 +275,9 @@ def sort_submissions(submissions, exercise, deadline_passed):
                     }
                 ]
             }
+
+            if "__grader_lang" in sub and sub["__grader_lang"] == "en":
+                accepted[sub["SubmissionID"]]["grader_lang_en"] = True
         else:
             accepted[sub["SubmissionID"]]["students"].append(
                 {
@@ -317,7 +323,7 @@ def add_feedback_base(exercise, feedback):
                 "utf-8"
             )
         except ValueError as e:
-            feedback.feedback = f"Virhe luettaessa palautepohjaa: {e}"
+            feedback.feedback = f"Feedback template cannot be read: {e}"
 
         exercise.feedback_base.close()
         feedback.save()
@@ -355,8 +361,12 @@ def add_student(student_dict, new_feedback, lms_instance_id):
                 util_logger.debug(f"tehtävään: {new_feedback.exercise}")
 
                 if old_feedback.status == Feedback.BASE:
-                    new_feedback.grader = old_feedback.grader
-                    new_feedback.save()
+                    # Allocate new submission to same grader
+                    # Not in use because of language selection feature
+                    # If student has changed the language then we want
+                    # to change grader too
+                    # new_feedback.grader = old_feedback.grader
+                    # new_feedback.save()
 
                     util_logger.debug(f"poistetaan vanha: {old_feedback} "
                                  f"{old_feedback.grader}")
@@ -366,7 +376,7 @@ def add_student(student_dict, new_feedback, lms_instance_id):
                     util_logger.debug(f"lisätään uusi: {new_feedback} "
                                  f"{new_feedback.grader}")
 
-                    debug_feedbacks.append(new_feedback)
+                    # debug_feedbacks.append(new_feedback)
 
                     student_obj.my_feedbacks.add(new_feedback)
                 else:
@@ -405,7 +415,11 @@ def divide_submissions(exercise):
     if exercise.num_of_graders == 0:
         return
 
-    graders = exercise.graders.all()
+    graders_fi_en = list(exercise.graders.all())
+    random.shuffle(graders_fi_en)
+    graders_en_only = list(exercise.graders_en.all())
+    random.shuffle(graders_en_only)
+    grader_count = len(graders_fi_en) + len(graders_en_only)
     subs = exercise.feedback_set.all()
     grader_max_now = subs.count() // exercise.num_of_graders
     no_grader = []
@@ -413,27 +427,47 @@ def divide_submissions(exercise):
     for sub in subs:
         if sub.grader is None:
             if sub in debug_feedbacks:
-                util_logger.debug(f"TÄLLÄ PITI OLLA JO GRADER: {sub} {sub.grader}")
+                util_logger.debug(f"TÄLLÄ PITI OLLA JO GRADER: "
+                                  f"{sub} {sub.grader}")
 
-            grader = choose_grader(exercise, graders, grader_max_now)
+            grader = None
+
+            if sub.grader_lang_en:
+                grader = choose_grader(exercise, graders_en_only,
+                                       grader_max_now)
+
+            # If still no grader, try to get any grader
+            if grader is None:
+                grader = choose_grader(exercise, graders_fi_en, grader_max_now)
 
             if grader:
                 grader.feedback_set.add(sub)
-            elif graders.count() == exercise.num_of_graders:
+            elif grader_count == exercise.num_of_graders:
                 no_grader.append(sub)
             else:
+                # Rest of the submissions are left pending more graders
                 break
 
+    all_graders = graders_fi_en + graders_en_only
+    random.shuffle(all_graders)
+
     for sub in no_grader:
-        grader = choose_grader(exercise, graders)
-        grader.feedback_set.add(sub)
+        if sub.grader_lang_en:
+            grader = choose_grader(exercise, all_graders)
+        else:
+            grader = choose_grader(exercise, graders_fi_en)
+
+        if grader:
+            grader.feedback_set.add(sub)
 
     util_logger.debug(f"Arvosteltavia palautuksia: {subs.count()}")
     util_logger.debug(f"Palautusta per assari: "
-                 f"{subs.count()/exercise.num_of_graders}")
+                      f"{subs.count()/exercise.num_of_graders}")
     util_logger.debug("Assareilla arvostelussa:")
-    for grader in graders:
-        util_logger.debug(f"{grader.feedback_set.filter(exercise=exercise).count()}")
+    for grader in graders_fi_en:
+        util_logger.debug(
+            f"{grader.feedback_set.filter(exercise=exercise).count()}"
+        )
 
 
 def choose_grader(exercise, graders, max_sub_count=None):
@@ -518,7 +552,7 @@ def get_git_url(sub_data, url):
         {
             "title": None,
             "url": url,
-            "text": "Siirry opiskelijan repositorioon oheisesta linkistä",
+            "text": "Follow the link to student's repository",
             "code": None
         }
     )
@@ -569,7 +603,7 @@ def get_filecontent(sub_data, form_field, files, token):
 
             elif code is None:
                 title = form_field["title"]
-                text = "Lataa tiedosto oheisesta linkistä"
+                text = "Follow the link to download file"
 
             sub_data.append(
                 {
@@ -616,7 +650,7 @@ def get_text(sub_data, form_field, textareas):
             {
                 "title": None,
                 "url": None,
-                "text": "Tekstiä ei löytynyt, tarkastele palautusta Plussassa",
+                "text": "Text could not be found. Follow the link to Plussa",
                 "code": None
             }
         )

@@ -5,17 +5,17 @@
 {% load django_bootstrap_breadcrumbs %}
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Kaikki palautukset" "submissions:submissions" exercise.id exercise.exercise_id %}
+  {% breadcrumb "All submissions" "submissions:submissions" exercise.id exercise.exercise_id %}
 {% endblock %}
 
 {% block content %}
 
   <div class="col-md-8 offset-md-2">
 
-    <h2> Kaikki arvosteltavat palautukset </h2>
+    <h2> All submissions </h2>
     <h4> {{ exercise.name }} </h4>
 
-    <h6> Arvosteltu: {{ ready_count }} / {{ feedback_count }} </h6>
+    <h6> Work count: {{ ready_count }} / {{ feedback_count }} </h6>
 
 
     <div class="d-flex justify-content-around m-4">
@@ -24,24 +24,24 @@
         <form method="post" action="{% url 'submissions:json' exercise.id exercise.exercise_id %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-primary">
-            Luo json julkaisua varten
+            Create json for Plussa batch assess tool
           </button>
         </form>
         <form method="post" action="{% url 'submissions:undo' exercise.id exercise.exercise_id%}">
           {% csrf_token %}
           <button type="submit" class="btn btn-primary">
-            Peruuta edellinen julkaisu
+            Restore status RELEASED -> READY
           </button>
         </form>
 
         <a class="btn btn-primary" href="{% url 'submissions:csv' exercise.id exercise.exercise_id %}" role="button">
-          Arvostelutilanne csv -tiedostona
+          Work list as csv file
         </a>
 
       {% endif %}
 
       <a class="btn btn-primary" href="{% url 'submissions:update_submissions' exercise.id exercise.exercise_id %}" role="button">
-        Hae uusimmat palautukset
+        Get latest submissions
       </a>
 
     {% endif %}
@@ -56,10 +56,10 @@
           <table class="table table-bordered table-hover table-sm">
             <thead class="thead-light">
               <tr>
-                  <th scope="col">ID</th>
-                  <th scope="col">Opiskelijanro ja s-posti</th>
-                  <th scope="col">Arvostelun tila</th>
-                  <th scope="col">Arvostelija</th>
+                  <th scope="col">Submission Id</th>
+                  <th scope="col">Student Id and email</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Grader</th>
               </tr>
             </thead>
 
@@ -85,20 +85,20 @@
                 <td>
                     {% if sub_form.instance.released %}
                       <div class="alert alert-success" role="alert">
-                        JULKAISTU
+                        RELEASED
                       </div>
                     {% elif sub_form.instance.status == sub_form.instance.READY %}
                       <div class="alert alert-warning" role="alert">
-                        VALMIS
+                        READY
                       </div>
                     {% elif sub_form.instance.status == sub_form.instance.DRAFT %}
                       <div class="alert alert-danger" role="alert">
-                        LUONNOS
+                        DRAFT
                       </div>
 
                     {% else %}
                       <div class="alert alert-info" role="alert">
-                        EI ALOITETTU
+                        TEMPLATE
                       </div>
                     {% endif %}
                 </td>
@@ -112,7 +112,7 @@
             </tbody>
           </table>
 
-          <button type="submit" class="btn btn-primary">Tallenna muutokset</button>
+          <button type="submit" class="btn btn-primary">Save</button>
         </form>
 
     {% endif %}

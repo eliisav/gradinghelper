@@ -5,7 +5,7 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb "Tehtävät" "submissions:exercises" course.id course.course_id %}
+  {% breadcrumb "Execises" "submissions:exercises" course.id course.course_id %}
 {% endblock %}
 
 {% block coursename %} {{ course.name }} {% endblock %}
@@ -18,14 +18,14 @@
       <li class="nav-item">
         <a class="nav-link {% if not show_set_grading %} active {% endif %}"
            data-toggle="tab" href="#exercises">
-          Arvosteltavat tehtävät
+          Exercises for grading
         </a>
       </li>
       {% if user_is_teacher %}
         <li class="nav-item">
           <a class="nav-link {% if show_set_grading %} active {% endif %}" data-toggle="tab"
              href="#set_grading">
-            Lisää tehtäviä arvosteluun
+            Add exercises
           </a>
         </li>
       {% endif %}
@@ -50,16 +50,16 @@
                   <div class="ml-auto">
 
                     <a class="btn btn-primary btn-sm" href="{% url 'submissions:grading' exercise.id exercise.exercise_id %}" role="button">
-                      Omat arvosteltavat
+                      My grading list
                     </a>
 
                     <a class="btn btn-primary btn-sm" href="{% url 'submissions:submissions' exercise.id exercise.exercise_id %}" role="button">
-                      Kaikki arvosteltavat
+                      All submissions
                     </a>
 
                 {% if user_is_teacher %}
                     <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
-                      Asetukset
+                      Settings
                       {% if exercise.not_found_error %}
                         <span class="badge badge-danger">Virhe</span>
                       {% endif %}
@@ -74,8 +74,8 @@
                     {% if exercise.not_found_error %}
                     <div class="card card-body bg-light">
                       <div class="alert alert-danger" role="alert">
-                        Tehtävä on virhetilassa. Tehtävää ei enää löydy
-                        Plussasta tai kyse on tilapäisestä häiriöstä.
+                        Something went wrong. Does this exercise still
+                        exist in Plussa?
                       </div>
                       <form action="{% url 'submissions:handle_error' course.id course.course_id exercise.id %}" method="post">
                         {% csrf_token %}
@@ -93,10 +93,10 @@
                       {% csrf_token %}
                       {% bootstrap_form exercise.form %}
                       <button class="btn btn-danger" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
-                        Poista tehtävä
+                        Delete
                       </button>
                       <button type="submit" class="btn btn-success float-right">
-                        Tallenna muutokset
+                        Save
                       </button>
                     </form>
 
@@ -107,16 +107,17 @@
                 <div class="collapse mt-4" id="delete {{ exercise.exercise_id }}">
 
                   <div class="alert alert-danger" role="alert">
-                    Tehtävä ja siihen liittyvät arvostelut poistetaan. Oletko varma, että haluat jatkaa?
+                    This exercise and all assessments related to it will be
+                    removed. Are you sure?
                   </div>
 
                   <form action="{% url 'submissions:grading_off' course.id course.course_id exercise.id %}" method="post">
                     {% csrf_token %}
                     <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
-                      Peruuta
+                      Cancel
                     </button>
                     <button type="submit" class="btn btn-danger float-right">
-                      Poista
+                      Delete
                     </button>
                   </form>
 
@@ -129,7 +130,7 @@
 
           {% empty %}
             <div class="alert alert-info" role="alert">
-              Kurssille ei ole asetettu arvosteltavia tehtäviä.
+              No exercises added yet
             </div>
           {% endfor %}
 
@@ -142,14 +143,14 @@
 
             <form action="{% url 'submissions:get_exercises' course.id course.course_id %}" method="post" class="form">
               {% csrf_token %}
-              <button type="submit" class="btn btn-primary btn-lg m-4">Päivitä kurssin sisältö</button>
-              <small>Kurssin sisältöä ei haeta automaattisesti. Alla oleva tehtävävalikko päivittyy viereisestä napista.</small>
+              <button type="submit" class="btn btn-primary btn-lg m-4">Update course content</button>
+              <small>Course content is not updated automatically. Click the button to update exercise list.</small>
             </form>
 
             <form action="{% url 'submissions:grading_on' course.id course.course_id %}" method="post" class="form" enctype="multipart/form-data">
               {% csrf_token %}
               {% bootstrap_form form %}
-              <button type="submit" class="btn btn-primary">Lisää</button>
+              <button type="submit" class="btn btn-primary">Add</button>
             </form>
 
           </div> <!-- tab-pane -->
