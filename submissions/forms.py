@@ -206,8 +206,8 @@ class BatchAssessForm(forms.Form):
         label="Points",
         min_value=0,
         help_text="Amount of points to be added to all of the submissions "
-                  "with status TEMPLATE"
-                  "<p>Joukkoarvostele kaikki TEMPLATE"
+                  "with status UNSTARTED"
+                  "<p>Joukkoarvostele kaikki UNSTARTED"
                   "-tilassa olevat palautukset tällä pistemäärällä."
     )
     feedback = forms.CharField(
