@@ -219,10 +219,13 @@ class BatchAssessForm(forms.Form):
 
 class ErrorHandlerForm(forms.Form):
     HANDLE_CHOICES = [
-        ("delete", "Delete this exercise and all submissions related to it"),
-        ("keep", "Ignore warning (and keep the exercise)")
+        ("keep", "Ignore warning and keep the exercise"),
+        ("delete", "Delete this exercise including all "
+                   "submissions and feedbacks related to it"
+)
     ]
 
     handle_error = forms.ChoiceField(
-        label="", widget=forms.RadioSelect, choices=HANDLE_CHOICES
+        label="", widget=forms.RadioSelect,
+        choices=HANDLE_CHOICES, initial="keep"
     )

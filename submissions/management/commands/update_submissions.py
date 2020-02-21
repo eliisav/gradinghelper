@@ -20,7 +20,7 @@ class Command(BaseCommand):
         ).filter(
             grading_ready=False
         ).filter(
-            not_found_error=False
+            error_state=None
         )
         for exercise in exercises:
             try:

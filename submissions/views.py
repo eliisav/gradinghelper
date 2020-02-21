@@ -162,8 +162,8 @@ class UpdateSubmissionsRedirectView(LoginRequiredMixin, generic.RedirectView):
         try:
             utils.update_submissions(exercise)
             messages.success(request, "Submissions updated")
-        except requests.HTTPError:
-            messages.error(request, "Exercise not available in Plussa!")
+        except requests.HTTPError as e:
+            messages.error(request, f"Failed to retrieve submissions: {e}")
 
         return super().get(request, *args, **kwargs)
 
@@ -315,7 +315,7 @@ class HandleExerciseErrorRedirectView(LoginRequiredMixin,
             handle_exercise = form.cleaned_data["handle_error"]
 
             if handle_exercise == "keep":
-                exercise.not_found_error = False
+                exercise.error_state = None
                 exercise.save()
                 messages.success(request, "Warning ignored")
             elif handle_exercise == "delete":

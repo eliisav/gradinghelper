@@ -89,7 +89,7 @@ class Exercise(models.Model):
                                      upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
     grading_ready = models.BooleanField(default=False)
-    not_found_error = models.BooleanField(default=False)
+    error_state = models.CharField(max_length=255, default=None, null=True)
 
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
     # auto_div=False => assari valitsee itse tehtävät tarkastukseen.

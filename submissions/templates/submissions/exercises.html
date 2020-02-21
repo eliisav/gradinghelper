@@ -60,7 +60,7 @@
                 {% if user_is_teacher %}
                     <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
                       Settings
-                      {% if exercise.not_found_error %}
+                      {% if exercise.error_state %}
                         <span class="badge badge-danger">Error</span>
                       {% endif %}
                     </button>
@@ -71,11 +71,18 @@
 
                 <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
 
-                    {% if exercise.not_found_error %}
+                    {% if exercise.error_state %}
                     <div class="card card-body bg-light">
                       <div class="alert alert-danger" role="alert">
-                        Something went wrong. Does this exercise still
-                        exist in Plussa?
+                        <p>{{ exercise.error_state }}</p>
+                        <hr>
+                        <p>This is probably caused by a temporary problem if
+                        you have not modified exercise configuration in
+                        Plussa. Select "Ignore warning...".
+                        <hr>
+                        <p>Sometimes reason could be that this particular
+                        exercise ID doesn't exist in Plussa anymore. If you
+                        are sure about it, select "Delete this exercise..."
                       </div>
                       <form action="{% url 'submissions:handle_error' course.id course.course_id exercise.id %}" method="post">
                         {% csrf_token %}

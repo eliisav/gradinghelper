@@ -170,19 +170,18 @@ def update_submissions(exercise):
     if submissiondata:
         return
     """
+    util_logger.debug(f"{datetime.datetime.now()} updating submissions: "
+                      f"{exercise}")
 
     try:
         submissiondata = get_json(
             exercise.course.data_url, exercise.course.api_token,
             {"exercise_id": exercise.exercise_id, "format": "json"}
         )
-    except requests.HTTPError:
-        exercise.not_found_error = True
+    except requests.HTTPError as e:
+        exercise.error_state = e
         exercise.save()
-        raise
-
-    util_logger.debug(f"{datetime.datetime.now()} updating submissions: "
-                      f"{exercise}")
+        raise e
 
     deadline_passed = check_deadline(exercise)
 
