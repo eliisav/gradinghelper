@@ -289,7 +289,7 @@ class DisableExerciseGradingRedirectView(LoginRequiredMixin,
     def post(self, request, *args, **kwargs):
         exercise = get_object_or_404(Exercise, pk=kwargs.pop("pk_e"))
 
-        if exercise.not_found_error:
+        if exercise.error_state:
             exercise.delete()
         else:
             exercise.set_defaults()
