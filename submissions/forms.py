@@ -211,6 +211,7 @@ class BatchAssessForm(forms.Form):
                   "-tilassa olevat palautukset tällä pistemäärällä."
     )
     feedback = forms.CharField(
+        widget=forms.Textarea,
         label="Feedback",
         required=False,
         help_text="Brief feedback text, can be left blank"
