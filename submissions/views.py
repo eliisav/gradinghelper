@@ -38,6 +38,9 @@ class ExerciseMixin:
             context["ready_count"] = exercise.feedback_set.filter(
                 status=Feedback.READY
             ).count()
+            context["grader_lang_en"] = exercise.feedback_set.filter(
+                grader_lang_en=True
+            ).count()
 
         return context
 
@@ -198,12 +201,13 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
             exercise.save(update_fields=["min_points", "max_points",
                                          "add_penalty", "add_auto_grade",
                                          "work_div", "num_of_graders",
-                                         "feedback_base", "in_grading"])
+                                         "feedback_base_fi", "feedback_base_en",
+                                         "in_grading"])
 
             messages.success(request, "Exercise added for grading")
 
         else:
-            messages.error(self.request, "Invalid fields:")
+            #messages.error(self.request, "Invalid fields:")
 
             for error in form.errors:
                 messages.error(self.request, form.errors[error])
@@ -263,7 +267,7 @@ class UpdateExerciseInGradingView(LoginRequiredMixin, generic.edit.UpdateView):
 
         # Update feedback base if it exists. Update is done only
         # if Feedback object's status is Feedback.BASE
-        if self.object.feedback_base:
+        if self.object.feedback_base_fi or self.object.feedback_base_en:
             for feedback in self.object.feedback_set.all():
                 utils.add_feedback_base(self.object, feedback)
 
@@ -293,7 +297,8 @@ class DisableExerciseGradingRedirectView(LoginRequiredMixin,
             exercise.delete()
         else:
             exercise.set_defaults()
-            exercise.feedback_base.delete()
+            exercise.feedback_base_fi.delete()
+            exercise.feedback_base_en.delete()
             exercise.feedback_set.all().delete()
             exercise.save()
 
@@ -600,7 +605,7 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
             else:
                 messages.success(request,
                                  f"Released {feedbacks.count()} feedbacks"
-                                 f"with status READY")
+                                 f" with status READY")
         else:
             messages.info(request, "No feedbacks with status READY")
             

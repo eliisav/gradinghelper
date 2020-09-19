@@ -5,12 +5,24 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
 
+def is_textfile(fileobject):
+    # It's ok if there is no file
+    if not fileobject:
+        return fileobject
+    # Let's assume that it is a textfile if extension is .txt and
+    # file size is less than 500 kB
+    elif fileobject.name.endswith("txt") and fileobject.size < 500000:
+        return fileobject
+    else:
+        raise ValidationError(_(f"{fileobject.name} is not a text file"))
+
+
 class ExerciseUpdateForm(forms.ModelForm):
     class Meta:
         model = Exercise
         fields = ["min_points", "max_points", "add_penalty", "add_auto_grade",
                   "work_div", "graders", "graders_en", "num_of_graders",
-                  "feedback_base", "grading_ready"]
+                  "feedback_base_fi", "feedback_base_en", "grading_ready"]
         labels = {
             "min_points": "Minimum points to accept submission for grading:",
             "max_points": "Maximum points of Plussa automated evaluation:",
@@ -22,7 +34,8 @@ class ExerciseUpdateForm(forms.ModelForm):
             "graders": "Graders Finnish/English:",
             "graders_en": "Graders English only:",
             "num_of_graders": "Total number of graders:",
-            "feedback_base": "Feedback template:",
+            "feedback_base_fi": "Feedback template Finnish:",
+            "feedback_base_en": "Feedback template English:",
             "grading_ready": "Grading ready, stop polling new submissions"
         }
         widgets = {
@@ -36,12 +49,12 @@ class ExerciseUpdateForm(forms.ModelForm):
                                "number of graders is greater than currently "
                                "selected"
             }),
-            "feedback_base": forms.FileInput(attrs={"accept": ".txt"})
         }
         help_texts = {
             "graders_en": "If the desired user is not available in the lists "
                           "above, ask him/her to log in once",
-            "feedback_base": "Only text (.txt) files are accepted"
+            "feedback_base_fi": "Only text (.txt) files are accepted",
+            "feedback_base_en": "Only text (.txt) files are accepted"
         }
 
     def __init__(self, *args, **kwargs):
@@ -74,18 +87,11 @@ class ExerciseUpdateForm(forms.ModelForm):
                 )
             ).distinct()
 
-    def clean_feedback_base(self):
-        fileobject = self.cleaned_data["feedback_base"]
+    def clean_feedback_base_fi(self):
+        return is_textfile(self.cleaned_data["feedback_base_fi"])
 
-        # It's ok if there is no file
-        if not fileobject:
-            return fileobject
-        # Let's assume that it is a textfile if extension is .txt and
-        # file size is less than 500 kB
-        elif fileobject.name.endswith("txt") and fileobject.size < 500000:
-            return fileobject
-        else:
-            raise ValidationError(_("File is not a text file"))
+    def clean_feedback_base_en(self):
+        return is_textfile(self.cleaned_data["feedback_base_en"])
 
     def clean_graders_en(self):
         graders_en_only = self.cleaned_data["graders_en"]
@@ -94,8 +100,8 @@ class ExerciseUpdateForm(forms.ModelForm):
         for grader in graders_en_only:
             if grader in graders_fi_en:
                 raise ValidationError(
-                    _("Grader cannot belong to both categories Fi/En and "
-                      "En only")
+                    _(f"{grader} cannot belong to both categories Fi/En and "
+                       "En only")
                 )
 
         return graders_en_only
@@ -105,7 +111,7 @@ class ExerciseSetGradingForm(ExerciseUpdateForm):
     class Meta(ExerciseUpdateForm.Meta):
         fields = ["name", "min_points", "max_points", "add_penalty",
                   "add_auto_grade", "work_div", "graders", "graders_en",
-                  "num_of_graders", "feedback_base"]
+                  "num_of_graders", "feedback_base_fi", "feedback_base_en"]
 
     def __init__(self, *args, **kwargs):
 

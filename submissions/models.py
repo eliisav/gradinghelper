@@ -33,6 +33,9 @@ class Course(models.Model):
     #teachers = models.ManyToManyField(User, related_name="courses_t",blank=True)
     #assistants = models.ManyToManyField(User, related_name="courses_a",blank=True)
 
+    class Meta:
+        ordering = ["name", "course_id"]
+
     def save(self, *args, **kwargs):
         if not self.api_root:
             self.api_root = "/".join(str(self.api_url).split("/")[:-3]) + "/"
@@ -85,8 +88,10 @@ class Exercise(models.Model):
     total_max_points = models.PositiveSmallIntegerField(default=100)
     add_penalty = models.BooleanField(default=True)
     add_auto_grade = models.BooleanField(default=True)
-    feedback_base = models.FileField(null=True, blank=True,
-                                     upload_to=feedback_base_path)
+    feedback_base_fi = models.FileField(null=True, blank=True,
+                                        upload_to=feedback_base_path)
+    feedback_base_en = models.FileField(null=True, blank=True,
+                                        upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
     grading_ready = models.BooleanField(default=False)
     error_state = models.CharField(max_length=255, default=None, null=True)

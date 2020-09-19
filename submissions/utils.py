@@ -275,8 +275,13 @@ def sort_submissions(submissions, exercise, deadline_passed):
                 ]
             }
 
-            if "__grader_lang" in sub and sub["__grader_lang"] == "en":
+            if "feedback_lang" in sub:
+                if sub["feedback_lang"] == "en":
+                    accepted[sub["SubmissionID"]]["grader_lang_en"] = True
+
+            elif "__grader_lang" in sub and sub["__grader_lang"] == "en":
                 accepted[sub["SubmissionID"]]["grader_lang_en"] = True
+
         else:
             accepted[sub["SubmissionID"]]["students"].append(
                 {
@@ -317,14 +322,19 @@ def add_feedback_base(exercise, feedback):
     :param feedback: (Feedback model object)
     """
     if feedback.status == feedback.BASE:
+        if feedback.grader_lang_en and exercise.feedback_base_en:
+            feedback_base = exercise.feedback_base_en
+        elif exercise.feedback_base_fi:
+            feedback_base = exercise.feedback_base_fi
+        else:
+            feedback_base = exercise.feedback_base_en
+
         try:
-            feedback.feedback = exercise.feedback_base.open().read().decode(
-                "utf-8"
-            )
+            feedback.feedback = feedback_base.open().read().decode("utf-8")
         except ValueError as e:
             feedback.feedback = f"Feedback template cannot be read: {e}"
 
-        exercise.feedback_base.close()
+        feedback_base.close()
         feedback.save()
 
 
@@ -539,8 +549,21 @@ def get_submission_data(feedback):
     return {
         "inspect_url": inspect_url,
         "sub_data": sub_data,
-        "grading_data": sub_info["grading_data"]
+        "grading_data": sub_info["grading_data"],
+        "feedback_lang": get_feedback_lang(sub_info["submission_data"])
     }
+
+
+def get_feedback_lang(sub_data):
+    if sub_data:
+        for field in sub_data:
+            try:
+                if field[0] == "feedback_lang":
+                    return field[1]
+            except IndexError:
+                return None
+
+    return None
 
 
 def get_git_url(sub_data, url):
