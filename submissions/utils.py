@@ -189,16 +189,19 @@ def update_submissions(exercise):
             feedback = Feedback(
                 exercise=exercise,
                 sub_id=sub,
-                auto_grade=accepted[sub]["grade"],
                 grader_lang_en=accepted[sub]["grader_lang_en"]
             )
-            if accepted[sub]["penalty"]:
-                feedback.penalty = accepted[sub]["penalty"]
 
-            if exercise.feedback_base:
+            if exercise.feedback_base_fi or exercise.feedback_base_en:
                 add_feedback_base(exercise, feedback)
 
-            feedback.save()
+        if accepted[sub]["penalty"]:
+            feedback.penalty = accepted[sub]["penalty"]
+        else:
+            feedback.penalty = 0.0
+
+        feedback.auto_grade = accepted[sub]["grade"]
+        feedback.save()
 
         for student in accepted[sub]["students"]:
             if not add_student(
