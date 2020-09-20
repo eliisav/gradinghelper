@@ -113,39 +113,27 @@ def get_exercises(course):
 
     current_exercises = []
 
-    # Module consists of material pages and exercises
     for sub_module in modules:
-        # Loop through "exercises" list and check if an exercise really is
-        # submittable exercise.
         for exercise in sub_module["exercises"]:
             try:
-                details = get_json(exercise["url"], course.api_token)
-            except requests.HTTPError:
-                # It's not a submittable exercise if details are not found.
-                continue
+                exercise_obj = Exercise.objects.get(exercise_id=exercise["id"])
 
-            # print(details)
-            # Make sure that we really got a submittable exercise
-            if "is_submittable" in details and details["is_submittable"]:
-                try:
-                    exercise = Exercise.objects.get(exercise_id=details["id"])
-                    
-                except Exercise.DoesNotExist:
-                    exercise = Exercise(course=course,
-                                        exercise_id=details["id"],
+            except Exercise.DoesNotExist:
+                exercise_obj = Exercise(course=course,
+                                        exercise_id=exercise["id"],
                                         module=sub_module["url"],
-                                        api_url=details["url"])
-                                    
-                exercise.name = details["display_name"]
-                exercise.total_max_points = details["max_points"]
-                exercise.save()
-                current_exercises.append(exercise.exercise_id)
+                                        api_url=exercise["url"])
+
+            exercise_obj.name = exercise["display_name"]
+            #exercise.total_max_points = details["max_points"]
+            exercise_obj.save()
+            current_exercises.append(exercise_obj.exercise_id)
 
     # Check that exercises in database are still found in Plussa
     for exercise in course.exercise_set.all():
         if exercise.exercise_id not in current_exercises:
             if exercise.in_grading:
-                exercise.not_found_error = True
+                exercise.error_state = "Exercise not found"
                 exercise.save()
             else:
                 exercise.delete()
@@ -178,6 +166,8 @@ def update_submissions(exercise):
             exercise.course.data_url, exercise.course.api_token,
             {"exercise_id": exercise.exercise_id, "format": "json"}
         )
+        exercise.error_state = None
+        exercise.save()
     except requests.HTTPError as e:
         exercise.error_state = e
         exercise.save()
@@ -521,9 +511,12 @@ def choose_grader(exercise, graders, max_sub_count=None):
 def get_submission_data(feedback):
     api_token = feedback.exercise.course.api_token
 
-    form_spec = get_json(
-        feedback.exercise.api_url, api_token
-    )["exercise_info"]["form_spec"]
+    exercise_details = get_json(feedback.exercise.api_url, api_token)
+
+    # Update exercise max_point
+    feedback.exercise.total_max_points = exercise_details["max_points"]
+
+    form_spec = exercise_details["exercise_info"]["form_spec"]
 
     api_root = feedback.exercise.course.api_root
     sub_url = f"{api_root}submissions/{feedback.sub_id}/"
