@@ -113,18 +113,20 @@ def get_exercises(course):
 
     current_exercises = []
 
-    for sub_module in modules:
-        for exercise in sub_module["exercises"]:
+    for module in modules:
+        for exercise in module["exercises"]:
             try:
                 exercise_obj = Exercise.objects.get(exercise_id=exercise["id"])
 
             except Exercise.DoesNotExist:
                 exercise_obj = Exercise(course=course,
                                         exercise_id=exercise["id"],
-                                        module=sub_module["url"],
+                                        module=module["url"],
                                         api_url=exercise["url"])
 
-            exercise_obj.name = exercise["display_name"]
+            exercise_obj.name = exercise["display_name"].strip("|").replace(
+                "|fi:", "").replace("en:", "")
+
             #exercise.total_max_points = details["max_points"]
             exercise_obj.save()
             current_exercises.append(exercise_obj.exercise_id)
@@ -137,19 +139,6 @@ def get_exercises(course):
                 exercise.save()
             else:
                 exercise.delete()
-
-
-"""
-def get_submissions(exercise):
-    
-    Askarrellaan kurssin ja tehtävän id:n perusteella url, jolla saadaan 
-    pyydettyä tiedot kyseisen tehtävän viimeisimmistä/parhaista palautuksista.
-    param exercise: (models.Exercise) tehtäväobjekti
-    
-    data_url = f"{exercise.course.api_url}submissiondata/"
-    query_url = f"{data_url}?exercise_id={exercise.exercise_id}&format=json"
-    return get_json(query_url, exercise.course.api_token)
-"""
 
 
 def update_submissions(exercise):
@@ -204,11 +193,9 @@ def update_submissions(exercise):
         feedback.save()
 
         for student in accepted[sub]["students"]:
-            if not add_student(
-                    student, feedback,
-                    exercise.course.base_course.lms_instance_id
-            ):
-                break
+            add_student(
+                student, feedback, exercise.course.base_course.lms_instance_id
+            )
 
     if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
@@ -371,12 +358,12 @@ def add_student(student_dict, new_feedback, lms_instance_id):
                     # new_feedback.save()
 
                     util_logger.debug(f"poistetaan vanha: {old_feedback} "
-                                 f"{old_feedback.grader}")
+                                      f"{old_feedback.grader}")
 
                     old_feedback.delete()
 
                     util_logger.debug(f"lisätään uusi: {new_feedback} "
-                                 f"{new_feedback.grader}")
+                                    f"{new_feedback.grader}")
 
                     # debug_feedbacks.append(new_feedback)
 
@@ -389,7 +376,6 @@ def add_student(student_dict, new_feedback, lms_instance_id):
 
                     # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
                     new_feedback.delete()
-                    return False
 
         except Feedback.DoesNotExist:
             student_obj.my_feedbacks.add(new_feedback)
@@ -405,8 +391,6 @@ def add_student(student_dict, new_feedback, lms_instance_id):
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
         util_logger.debug(f"Luotiin uusi opiskelija: {student_obj}")
-
-    return True
 
 
 def divide_submissions(exercise):
