@@ -101,7 +101,7 @@ class ExerciseUpdateForm(forms.ModelForm):
             if grader in graders_fi_en:
                 raise ValidationError(
                     _(f"{grader} cannot belong to both categories Fi/En and "
-                       "En only")
+                      f"En only")
                 )
 
         return graders_en_only
@@ -160,7 +160,10 @@ class FeedbackForm(ChangeGraderForm):
             "staff_grade": forms.NumberInput(attrs={
                 "placeholder": "Points without late penalty"
             }),
-            "feedback": forms.Textarea(attrs={"cols": 80, "rows": 17}),
+            "feedback": forms.Textarea(attrs={
+                "cols": 80, "rows": 17,
+                "style": "font-family:Courier,monospace;"
+            }),
             "students": forms.MultipleHiddenInput()
         }
 
