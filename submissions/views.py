@@ -198,11 +198,15 @@ class EnableExerciseGradingRedirectView(LoginRequiredMixin,
                     exercise.num_of_graders < graders_all:
                 exercise.num_of_graders = graders_all
 
+            exercise.total_max_points = utils.get_json(
+                exercise.api_url, exercise.course.api_token
+            )["max_points"]
+
             exercise.save(update_fields=["min_points", "max_points",
-                                         "add_penalty", "add_auto_grade",
-                                         "work_div", "num_of_graders",
-                                         "feedback_base_fi", "feedback_base_en",
-                                         "in_grading"])
+                                         "total_max_points", "add_penalty",
+                                         "add_auto_grade", "work_div",
+                                         "num_of_graders", "feedback_base_fi",
+                                         "feedback_base_en", "in_grading"])
 
             messages.success(request, "Exercise added for grading")
 
