@@ -503,8 +503,10 @@ def get_submission_data(feedback):
     # Update exercise max_point
     feedback.exercise.total_max_points = exercise_details["max_points"]
 
-    form_spec = []
+    form_spec = None
 
+    # If exercise is not handled by Plussa but PRP instead
+    # the exercise_info is null
     if exercise_details["exercise_info"]:
         form_spec = exercise_details["exercise_info"]["form_spec"]
 
@@ -515,19 +517,20 @@ def get_submission_data(feedback):
     inspect_url = sub_info["html_url"] + "inspect"
     sub_data = []
 
-    # Kun palautetaan git-url, "form_spec" näyttää jäävän tyhjäksi
-    if len(form_spec) == 0 and sub_info["submission_data"]:
-        get_git_url(sub_data, sub_info["submission_data"][0][1])
+    if form_spec is not None:
+        # In case of git url the form_spec field exists but it's empty
+        if len(form_spec) == 0 and sub_info["submission_data"]:
+            get_git_url(sub_data, sub_info["submission_data"][0][1])
 
-    # Jos palautus ei ole git-url, se voi olla tekstiä tai tiedosto
-    # (tai monivalintatehtävän valintavaihtoehto ("option_n"), joita ei
-    # yleensä arvioida käsin, joten jätetään tyyppi "radio" huomiotta).
-    for field in form_spec:
-        if field["type"] == "file":
-            get_filecontent(sub_data, field, sub_info["files"], api_token)
+        # In addition to the git url, submission can be text, code file or
+        # questionnaire. Questionnaires are not handled at all
+        # because usually there is no need to inspect them manually.
+        for field in form_spec:
+            if field["type"] == "file":
+                get_filecontent(sub_data, field, sub_info["files"], api_token)
 
-        elif field["type"] == "textarea":
-            get_text(sub_data, field, sub_info["submission_data"])
+            elif field["type"] == "textarea":
+                get_text(sub_data, field, sub_info["submission_data"])
 
     return {
         "inspect_url": inspect_url,
