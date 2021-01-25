@@ -503,7 +503,10 @@ def get_submission_data(feedback):
     # Update exercise max_point
     feedback.exercise.total_max_points = exercise_details["max_points"]
 
-    form_spec = exercise_details["exercise_info"]["form_spec"]
+    form_spec = []
+
+    if exercise_details["exercise_info"]:
+        form_spec = exercise_details["exercise_info"]["form_spec"]
 
     api_root = feedback.exercise.course.api_root
     sub_url = f"{api_root}submissions/{feedback.sub_id}/"
