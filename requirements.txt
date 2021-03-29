@@ -11,7 +11,7 @@ idna==2.6
 oauthlib==2.1.0
 pep8==1.7.1
 psycopg2-binary==2.7.5
-Pygments==2.2.0
+Pygments==2.7.4
 pytz==2017.3
 requests==2.18.4
 sentry-sdk==0.4.3
