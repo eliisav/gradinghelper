@@ -193,9 +193,10 @@ def update_submissions(exercise):
         feedback.save()
 
         for student in accepted[sub]["students"]:
-            add_student(
+            if not add_student(
                 student, feedback, exercise.course.base_course.lms_instance_id
-            )
+            ):
+                break
 
     if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
@@ -363,7 +364,7 @@ def add_student(student_dict, new_feedback, lms_instance_id):
                     old_feedback.delete()
 
                     util_logger.debug(f"lisätään uusi: {new_feedback} "
-                                    f"{new_feedback.grader}")
+                                      f"{new_feedback.grader}")
 
                     # debug_feedbacks.append(new_feedback)
 
@@ -376,6 +377,7 @@ def add_student(student_dict, new_feedback, lms_instance_id):
 
                     # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
                     new_feedback.delete()
+                    return False
 
         except Feedback.DoesNotExist:
             student_obj.my_feedbacks.add(new_feedback)
@@ -391,6 +393,8 @@ def add_student(student_dict, new_feedback, lms_instance_id):
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
         util_logger.debug(f"Luotiin uusi opiskelija: {student_obj}")
+
+    return True
 
 
 def divide_submissions(exercise):
