@@ -127,7 +127,6 @@ def get_exercises(course):
             exercise_obj.name = exercise["display_name"].strip("|").replace(
                 "|fi:", "").replace("en:", "")
 
-            #exercise.total_max_points = details["max_points"]
             exercise_obj.save()
             current_exercises.append(exercise_obj.exercise_id)
 
@@ -500,8 +499,9 @@ def get_submission_data(feedback):
 
     exercise_details = get_json(feedback.exercise.api_url, api_token)
 
-    # Update exercise max_point
+    # Update exercise max_points
     feedback.exercise.total_max_points = exercise_details["max_points"]
+    feedback.exercise.save()
 
     form_spec = None
 
