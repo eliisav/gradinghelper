@@ -8,7 +8,7 @@ import io
 import json
 import datetime
 import logging
-import pep8
+import pycodestyle
 import random
 import requests
 import sys
@@ -591,7 +591,7 @@ def get_filecontent(sub_data, form_field, files, token):
             try:
                 lexer = get_lexer_for_filename(file["filename"])
                 code = highlight(resp.text, lexer,
-                                 HtmlFormatter(linenos="inline"))
+                                 HtmlFormatter(linenos=True))
             except ClassNotFound:
                 code = None
 
@@ -599,7 +599,10 @@ def get_filecontent(sub_data, form_field, files, token):
             if code and file["filename"].endswith(".py"):
                 lines = resp.text.rstrip("\n").split("\n")
                 lines = [line + "\n" for line in lines]
-                style_checker = pep8.Checker(lines=lines, show_source=True)
+                style_checker = pycodestyle.Checker(
+                    lines=lines,
+                    show_source=True
+                )
 
                 # check_all -metodi printtaa tulokset stdouttiin,
                 # joten luodaan bufferi, johon saadaan tulokset talteen
