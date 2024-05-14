@@ -3,7 +3,6 @@ Module for various utility functions
 """
 
 
-# import filetype, jos käytät tätä muista lisätä tiedostoon requirements.txt
 import io
 import json
 import datetime
@@ -19,7 +18,6 @@ from pygments.util import ClassNotFound
 from pygments.formatters.html import HtmlFormatter
 
 from .models import BaseCourse, Course, Exercise, Feedback, Student
-from django.core.cache import cache
 
 util_logger = logging.getLogger(__name__)
 debug_feedbacks = []
@@ -43,7 +41,6 @@ def add_user_to_course(user, login_info):
     :param user: (User) User object
     :param login_info: (dict) required fields from LTI login
     """
-
     try:
         course = Course.objects.get(
             api_url=login_info["custom_context_api"]
@@ -100,38 +97,40 @@ def get_exercises(course):
     in Plussa anymore.
     param course: (Course) model object
     """
-
-    """
-    modules = cache.get(course.course_id)
-    if modules:
-        return
-    """
-
     modules = get_json(course.exercise_url, course.api_token)["results"]
-
-    # cache.set(course.course_id, modules)
-
     current_exercises = []
 
     for module in modules:
         for exercise in module["exercises"]:
             try:
-                exercise_obj = Exercise.objects.get(exercise_id=exercise["id"])
+                exercise_obj = Exercise.objects.get(api_url=exercise["url"])
 
             except Exercise.DoesNotExist:
-                exercise_obj = Exercise(course=course,
-                                        exercise_id=exercise["id"],
-                                        module=module["url"],
-                                        api_url=exercise["url"])
+                exercise_obj = Exercise(
+                    course=course,
+                    exercise_id=exercise["id"],
+                    module=module["url"],
+                    api_url=exercise["url"],
+                )
 
+            # Clarify the name
             exercise_obj.name = exercise["display_name"].strip("|").replace(
-                "|fi:", "").replace("en:", "")
+                "|fi:", "").replace("sv:", "").replace("en:", "")
 
+            # Hack for numerical ordering
+            chapter_num = exercise_obj.name.split()[0].split(".")
+            for i in range(0, len(chapter_num)):
+                if chapter_num[i].isdigit():
+                    chapter_num[i] = int(chapter_num[i])
+                else:
+                    chapter_num[i] = 0
+
+            exercise_obj.chapter_num = chapter_num
             exercise_obj.save()
             current_exercises.append(exercise_obj.exercise_id)
 
     # Check that exercises in database are still found in Plussa
-    for exercise in course.exercise_set.all():
+    for exercise in course.exercise_set.all().order_by("chapter_num"):
         if exercise.exercise_id not in current_exercises:
             if exercise.in_grading:
                 exercise.error_state = "Exercise not found"
@@ -142,9 +141,9 @@ def get_exercises(course):
 
 def update_submissions(exercise):
     """
-    submissiondata = cache.get(exercise.exercise_id)
-    if submissiondata:
-        return
+
+    :param exercise:
+    :return:
     """
     util_logger.debug(f"{datetime.datetime.now()} updating submissions: "
                       f"{exercise}")
@@ -162,11 +161,6 @@ def update_submissions(exercise):
         raise e
 
     deadline_passed = check_deadline(exercise)
-
-    # print(submissiondata)
-
-    # cache.set(exercise.exercise_id, submissiondata)
-
     accepted = sort_submissions(submissiondata, exercise, deadline_passed)
 
     for sub in accepted:

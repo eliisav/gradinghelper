@@ -30,8 +30,6 @@ class Course(models.Model):
     api_url = models.URLField(unique=True)
     data_url = models.URLField()
     exercise_url = models.URLField()
-    #teachers = models.ManyToManyField(User, related_name="courses_t",blank=True)
-    #assistants = models.ManyToManyField(User, related_name="courses_a",blank=True)
 
     class Meta:
         ordering = ["name", "course_id"]
@@ -68,7 +66,6 @@ def feedback_base_path(instance, filename):
 
 
 class Exercise(models.Model):
-
     EVEN_DIV = 0
     NO_DIV = 1
 
@@ -80,10 +77,13 @@ class Exercise(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     exercise_id = models.PositiveIntegerField(unique=True)
     module = models.URLField()
+    chapter_num = ArrayField(models.IntegerField(), default=list)
     name = models.CharField(max_length=255)
     api_url = models.URLField()
     min_points = models.PositiveSmallIntegerField(default=1)
-    # Tarvitaan vain, jos arvostelu tapahtuu osittain muilla työkaluilla
+
+    # Possible maximum points from automated tests.
+    # Needed only if some part of grading is done outside of this service.
     max_points = models.PositiveSmallIntegerField(null=True, blank=True)
     total_max_points = models.PositiveSmallIntegerField(null=True)
     add_penalty = models.BooleanField(default=True)
@@ -93,7 +93,7 @@ class Exercise(models.Model):
     feedback_base_en = models.FileField(null=True, blank=True,
                                         upload_to=feedback_base_path)
     in_grading = models.BooleanField(default=False)
-    grading_ready = models.BooleanField(default=False)
+    stop_polling = models.BooleanField(default=False)
     error_state = models.CharField(max_length=255, default=None, null=True)
 
     # Mahdollisuus valita tehtävien automaattinen jako assareille.
@@ -107,12 +107,8 @@ class Exercise(models.Model):
     num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
     latest_release = ArrayField(models.IntegerField(), default=list)
 
-    # Tätä ei enää tarvita
-    # consent_exercise = models.ForeignKey("self", on_delete=models.CASCADE,
-    #                                      null=True, blank=True)
-
     class Meta:
-        ordering = ["grading_ready", "name"]
+        ordering = ["stop_polling", "chapter_num", "name"]
 
     def __str__(self):
         return self.name
@@ -124,7 +120,7 @@ class Exercise(models.Model):
         self.add_penalty = True
         self.add_auto_grade = True
         self.in_grading = False
-        self.grading_ready = False
+        self.stop_polling = False
         self.work_div = self.EVEN_DIV
         self.graders.all = None
         self.num_of_graders = None

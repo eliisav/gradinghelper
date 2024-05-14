@@ -1,9 +1,9 @@
 __pycache__/
 .idea
 create_key.py
-db.sqlite3
 local_settings.py
 local_templates/
 logfiles/*
 /media/
 /static/
+venv

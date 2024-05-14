@@ -22,7 +22,7 @@ class ExerciseUpdateForm(forms.ModelForm):
         model = Exercise
         fields = ["min_points", "max_points", "add_penalty", "add_auto_grade",
                   "work_div", "graders", "graders_en", "num_of_graders",
-                  "feedback_base_fi", "feedback_base_en", "grading_ready"]
+                  "feedback_base_fi", "feedback_base_en", "stop_polling"]
         labels = {
             "min_points": "Minimum points to accept submission for grading:",
             "max_points": "Maximum points of Plussa automated evaluation:",
@@ -36,7 +36,7 @@ class ExerciseUpdateForm(forms.ModelForm):
             "num_of_graders": "Total number of graders:",
             "feedback_base_fi": "Feedback template Finnish:",
             "feedback_base_en": "Feedback template English:",
-            "grading_ready": "Grading ready, stop polling new submissions"
+            "stop_polling": "Grading ready, stop polling new submissions"
         }
         widgets = {
             "work_div": forms.RadioSelect,
