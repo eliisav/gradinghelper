@@ -18,7 +18,7 @@ class Command(BaseCommand):
         exercises = Exercise.objects.all().filter(
             in_grading=True
         ).filter(
-            grading_ready=False
+            stop_polling=False
         )
         for exercise in exercises:
             try:
