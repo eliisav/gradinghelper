@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
+import os
 
 
 class User(AbstractUser):
@@ -62,7 +63,7 @@ def feedback_base_path(instance, filename):
     """
     course = f"course_{instance.course.id}_{instance.course.course_id}"
     exercise = f"exercise_{instance.exercise_id}"
-    return f"{course}/{exercise}/{filename}/"
+    return os.path.join(course, exercise, filename)
 
 
 class Exercise(models.Model):
