@@ -99,7 +99,7 @@
                     <form action="{% url 'submissions:update_exercise' course.id course.course_id exercise.id %}" method="post" class="form" enctype="multipart/form-data">
                       {% csrf_token %}
                       {% bootstrap_form exercise.form %}
-                      <button class="btn btn-danger" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
+                      <button class="btn btn-danger" type="button" data-toggle="collapse" data-target="#delete_{{ exercise.exercise_id }}">
                         Delete
                       </button>
                       <button type="submit" class="btn btn-success float-right">
@@ -111,7 +111,7 @@
                 </div> <!-- collapse -->
 
 
-                <div class="collapse mt-4" id="delete {{ exercise.exercise_id }}">
+                <div class="collapse mt-4" id="delete_{{ exercise.exercise_id }}">
 
                   <div class="alert alert-danger" role="alert">
                     This exercise and all assessments related to it will be
@@ -120,7 +120,7 @@
 
                   <form action="{% url 'submissions:grading_off' course.id course.course_id exercise.id %}" method="post">
                     {% csrf_token %}
-                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#delete {{ exercise.exercise_id }}">
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#delete_{{ exercise.exercise_id }}">
                       Cancel
                     </button>
                     <button type="submit" class="btn btn-danger float-right">
@@ -169,42 +169,3 @@
   </div> <!-- column -->
 
 {% endblock %}
-
-    <!--
-      {% if other_exercises %}
-        <ul class="list-group all_exercises">
-          {% for exercise in other_exercises%}
-            <li class="list-group-item {{ exercise.exercise_id }}">
-            
-            
-              <div class="d-flex align-items-center">
-                <div class="flex-grow-1">
-                 {{ exercise }}
-                </div>
-                <div class="ml-auto">
-                  <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
-                    Lisää tehtävä arvosteluun
-                  </button>
-                </div>
-              </div> <!-- d-flex -->
-               
-              <!--
-              <div class="collapse mt-4" id="{{ exercise.exercise_id }}">
-                <div class="card card-body">
-                  <form action="{% url 'submissions:grading_on' course_id exercise.exercise_id %}" method="post" class="form" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    {% bootstrap_form exercise.form %}
-                    <button type="submit" class="btn btn-primary">Lisää</button>
-                  </form>
-                </div>
-              </div> <!-- collapse -->
-              
-       <!--
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <div class="alert alert-info" role="alert">
-          Yhtään tehtävää ei löytynyt. Hae tehtäviä valitsemalla "Päivitä kurssin sisältö".
-        </div>
-      {% endif %} -->
