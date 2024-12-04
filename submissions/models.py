@@ -145,6 +145,8 @@ class Student(models.Model):
 
 
 class Feedback(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
     BASE = 0
     DRAFT = 1
     READY = 2
