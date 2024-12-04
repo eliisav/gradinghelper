@@ -198,7 +198,7 @@ def update_submissions(exercise):
 def check_deadline(exercise):
     # Get info related to exercise module and check if module is open or not
     if get_json(exercise.module, exercise.course.api_token)["is_open"]:
-        util_logger.debug(f"{exercise} moduuli on vielä auki!")
+        util_logger.debug(f"{exercise} module is still open, consent needed to retrieve submissions")
         return False
         
     return True
@@ -340,8 +340,8 @@ def add_student(student_dict, new_feedback, lms_instance_id):
             
             if old_feedback != new_feedback:
 
-                util_logger.debug(f"Uudempi palautus tulossa: {student_obj}")
-                util_logger.debug(f"tehtävään: {new_feedback.exercise}")
+                # util_logger.debug(f"Uudempi palautus tulossa: {student_obj}")
+                # util_logger.debug(f"tehtävään: {new_feedback.exercise}")
 
                 if old_feedback.status == Feedback.BASE:
                     # Allocate new submission to same grader
@@ -351,13 +351,13 @@ def add_student(student_dict, new_feedback, lms_instance_id):
                     # new_feedback.grader = old_feedback.grader
                     # new_feedback.save()
 
-                    util_logger.debug(f"poistetaan vanha: {old_feedback} "
-                                      f"{old_feedback.grader}")
+                    # util_logger.debug(f"poistetaan vanha: {old_feedback} "
+                    #                   f"{old_feedback.grader}")
 
                     old_feedback.delete()
 
-                    util_logger.debug(f"lisätään uusi: {new_feedback} "
-                                      f"{new_feedback.grader}")
+                    # util_logger.debug(f"lisätään uusi: {new_feedback} "
+                    #                   f"{new_feedback.grader}")
 
                     # debug_feedbacks.append(new_feedback)
 
@@ -366,7 +366,7 @@ def add_student(student_dict, new_feedback, lms_instance_id):
                     # TODO: huomautus arvostelijalle siitä, että uudempi
                     # palautus olisi olemassa.
 
-                    util_logger.debug(f"Arvostelu oli aloitettu, poistetaan uusi.")
+                    # util_logger.debug(f"Arvostelu oli aloitettu, poistetaan uusi.")
 
                     # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
                     new_feedback.delete()
@@ -385,7 +385,7 @@ def add_student(student_dict, new_feedback, lms_instance_id):
         )
         student_obj.save()
         student_obj.my_feedbacks.add(new_feedback)
-        util_logger.debug(f"Luotiin uusi opiskelija: {student_obj}")
+        # util_logger.debug(f"Luotiin uusi opiskelija: {student_obj}")
 
     return True
 
