@@ -198,7 +198,7 @@ def update_submissions(exercise):
 def check_deadline(exercise):
     # Get info related to exercise module and check if module is open or not
     if get_json(exercise.module, exercise.course.api_token)["is_open"]:
-        util_logger.debug(f"{exercise} module is still open, consent needed to retrieve submissions")
+        # util_logger.debug(f"{exercise} module is still open, consent needed to retrieve submissions")
         return False
         
     return True
