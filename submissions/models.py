@@ -83,7 +83,7 @@ class Exercise(BigAutoIDModel):
     )
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    exercise_id = models.PositiveIntegerField(unique=True)
+    exercise_id = models.BigIntegerField(unique=True)
     module = models.URLField()
     chapter_num = ArrayField(models.IntegerField(), default=list)
     name = models.CharField(max_length=255)
@@ -152,8 +152,6 @@ class Student(BigAutoIDModel):
 
 
 class Feedback(BigAutoIDModel):
-    id = models.BigAutoField(primary_key=True)
-
     BASE = 0
     DRAFT = 1
     READY = 2
@@ -165,7 +163,7 @@ class Feedback(BigAutoIDModel):
     )
     
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    sub_id = models.IntegerField(unique=True)
+    sub_id = models.BigIntegerField(unique=True)
     grading_time = models.DateTimeField(null=True)
     grader_lang_en = models.BooleanField(default=False)
     students = models.ManyToManyField(Student, related_name="my_feedbacks")
