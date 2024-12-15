@@ -4,12 +4,19 @@ from django.contrib.postgres.fields import ArrayField
 import os
 
 
+class BigAutoIDModel(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    class Meta:
+        abstract = True
+
+
 class User(AbstractUser):
     def __str__(self):
         return self.email
 
 
-class BaseCourse(models.Model):
+class BaseCourse(BigAutoIDModel):
     label = models.CharField(max_length=255)
     lms_instance_id = models.CharField(max_length=255)
    
@@ -22,7 +29,7 @@ class BaseCourse(models.Model):
         unique_together = ["label", "lms_instance_id"]
 
 
-class Course(models.Model):
+class Course(BigAutoIDModel):
     base_course = models.ForeignKey(BaseCourse, on_delete=models.CASCADE)
     course_id = models.PositiveIntegerField()
     name = models.CharField(max_length=255)
@@ -66,7 +73,7 @@ def feedback_base_path(instance, filename):
     return os.path.join(course, exercise, filename)
 
 
-class Exercise(models.Model):
+class Exercise(BigAutoIDModel):
     EVEN_DIV = 0
     NO_DIV = 1
 
@@ -127,7 +134,7 @@ class Exercise(models.Model):
         self.num_of_graders = None
 
 
-class Student(models.Model):
+class Student(BigAutoIDModel):
     aplus_user_id = models.CharField(max_length=255)
     lms_instance_id = models.CharField(max_length=255)
     email = models.EmailField()
@@ -144,7 +151,7 @@ class Student(models.Model):
             return self.email
 
 
-class Feedback(models.Model):
+class Feedback(BigAutoIDModel):
     id = models.BigAutoField(primary_key=True)
 
     BASE = 0
