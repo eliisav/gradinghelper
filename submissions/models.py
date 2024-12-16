@@ -113,7 +113,7 @@ class Exercise(BigAutoIDModel):
     graders_en = models.ManyToManyField(User, blank=True,
                                         related_name="my_gradings_en")
     num_of_graders = models.PositiveSmallIntegerField(null=True, blank=True)
-    latest_release = ArrayField(models.IntegerField(), default=list)
+    latest_release = ArrayField(models.BigIntegerField(), default=list)
 
     class Meta:
         ordering = ["stop_polling", "chapter_num", "name"]
