@@ -15,14 +15,16 @@ LOGGER = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        exercises = Exercise.objects.all().filter(
-            in_grading=True
-        ).filter(
-            stop_polling=False
-        )
-        for exercise in exercises:
+        exercises = Exercise.objects.values_list("id", flat=True)
+
+        for pk in exercises:
             try:
-                update_submissions(exercise)
+                # Retrieve and update if query matching exercise exists
+                obj = Exercise.objects.get(id=pk, in_grading=True, stop_polling=False)
+                update_submissions(obj)
+                # print("Updated", obj.name)
+            except Exercise.DoesNotExist:
+                continue
             except Exception as e:
                 LOGGER.debug(e)
                 continue
