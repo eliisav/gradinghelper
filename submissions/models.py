@@ -38,6 +38,8 @@ class Course(BigAutoIDModel):
     api_url = models.URLField(unique=True)
     data_url = models.URLField()
     exercise_url = models.URLField()
+    ending_time = models.DateTimeField(null=True)
+    archived = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["name", "course_id"]
@@ -122,7 +124,6 @@ class Exercise(BigAutoIDModel):
         return self.name
 
     def set_defaults(self):
-        # self.consent_exercise = None  # Ei ole enää tarpeellinen
         self.min_points = 1
         self.max_points = None
         self.add_penalty = True

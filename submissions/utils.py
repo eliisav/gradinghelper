@@ -5,13 +5,14 @@ Module for various utility functions
 
 import io
 import json
-import datetime
 import logging
 import pycodestyle
 import random
 import requests
 import sys
 
+from datetime import datetime, timedelta
+from django.utils import timezone
 from pygments import highlight
 from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
@@ -79,24 +80,42 @@ def create_course(api_url, api_id, label, name, token, lms_instance_id):
 
     course_instance = get_json(api_url, token)
     instance_name = course_instance["instance_name"]
-    data_url = course_instance["data"]
+    data_url = course_instance["data"]  # submission data
     exercise_url = course_instance["exercises"]
     name = f"{label} {name} {instance_name}"
     course = Course(
         course_id=api_id, name=name, api_token=token, api_url=api_url,
-        data_url=data_url, exercise_url=exercise_url, base_course=base_course
+        data_url=data_url, exercise_url=exercise_url, base_course=base_course,
+        ending_time=course_instance["ending_time"]
     )
     course.save()
     return course
+
+
+def update_course_details(course):
+    util_logger.debug(f"{datetime.now()} updating course: "
+                      f"{course}")
+
+    course_details = get_json(course.api_url, course.api_token)
+    course.ending_time = datetime.fromisoformat(course_details["ending_time"])
+    storage_time = timedelta(days=2*365)
+
+    if course.ending_time < timezone.now() - storage_time:
+        course.archived = True
+
+    course.save()
 
 
 def get_exercises(course):
     """
     Get the exercises of the specified course from Plussa. Remove or mark
     as "not found" if there are exercises in database which are not found
-    in Plussa anymore.
+    in Plussa anymore. Update exercise details.
     param course: (Course) model object
     """
+    util_logger.debug(f"{datetime.now()} getting exercises: "
+                      f"{course}")
+
     modules = get_json(course.exercise_url, course.api_token)["results"]
     current_exercises = []
 
@@ -126,6 +145,13 @@ def get_exercises(course):
                     chapter_num[i] = 0
 
             exercise_obj.chapter_num = chapter_num
+
+            # Stop polling submissions if course ending time is passed
+            if exercise_obj.in_grading:
+                safety_period = timedelta(days=30)
+                if course.ending_time < timezone.now() - safety_period:
+                    exercise_obj.stop_polling = True
+
             exercise_obj.save()
             current_exercises.append(exercise_obj.exercise_id)
 
@@ -134,6 +160,7 @@ def get_exercises(course):
         if exercise.exercise_id not in current_exercises:
             if exercise.in_grading:
                 exercise.error_state = "Exercise not found"
+                exercise.stop_polling = True
                 exercise.save()
             else:
                 exercise.delete()
@@ -145,7 +172,7 @@ def update_submissions(exercise):
     :param exercise:
     :return:
     """
-    util_logger.debug(f"{datetime.datetime.now()} updating submissions: "
+    util_logger.debug(f"{datetime.now()} updating submissions: "
                       f"{exercise}")
 
     try:
@@ -714,7 +741,7 @@ def create_json_to_batch_assess(feedbacks):
             "students_by_email": students,
             "feedback": f"<pre>{info}{feedback.feedback}</pre>",
             "exercise_id": feedback.exercise.exercise_id,
-            "submission_time": f"{datetime.datetime.now()}",
+            "submission_time": f"{datetime.now()}",
             "points": points  # TODO: pyöristys?
         }
 
