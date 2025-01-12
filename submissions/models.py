@@ -138,7 +138,7 @@ class Exercise(BigAutoIDModel):
 class Student(BigAutoIDModel):
     aplus_user_id = models.CharField(max_length=255)
     lms_instance_id = models.CharField(max_length=255)
-    email = models.EmailField()
+    email = models.EmailField(default=None)
     student_id = models.CharField(max_length=255, unique=True,
                                   default=None, null=True)
 

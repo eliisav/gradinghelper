@@ -93,6 +93,11 @@ def create_course(api_url, api_id, label, name, token, lms_instance_id):
 
 
 def update_course_details(course):
+    """
+
+    :param course:
+    :return:
+    """
     util_logger.debug(f"{datetime.now()} updating course: "
                       f"{course}")
 
@@ -168,13 +173,15 @@ def get_exercises(course):
 
 def update_submissions(exercise):
     """
-
+    Request Plussa api to retrieve recent list of submissions. Create Feedback
+    objects for new submissions and delete the old ones.
     :param exercise:
     :return:
     """
     util_logger.debug(f"{datetime.now()} updating submissions: "
                       f"{exercise}")
 
+    # TODO: Following code block should be in its own function
     try:
         submissiondata = get_json(
             exercise.course.data_url, exercise.course.api_token,
@@ -187,36 +194,65 @@ def update_submissions(exercise):
         exercise.save()
         raise e
 
+    # TODO: Move deadline check to the sort_submissions function
     deadline_passed = check_deadline(exercise)
     accepted = sort_submissions(submissiondata, exercise, deadline_passed)
+    old_feedbacks = []
 
     for sub in accepted:
-        try:
-            feedback = Feedback.objects.get(sub_id=sub)
-
-        except Feedback.DoesNotExist:
-            feedback = Feedback(
-                exercise=exercise,
-                sub_id=sub,
-                grader_lang_en=accepted[sub]["grader_lang_en"]
+        for student_info in accepted[sub]["students"]:
+            student, st_created = Student.objects.get_or_create(
+                    aplus_user_id=student_info["user_id"],
+                    lms_instance_id=exercise.course.base_course.lms_instance_id,
+                    student_id=student_info["student_id"],
+                    email=student_info["email"]
             )
+            # student may have previous submission, only one per exercise
+            old_fb = student.my_feedbacks.filter(exercise=exercise).first()
+            feedback = None
 
-            if exercise.feedback_base_fi or exercise.feedback_base_en:
-                add_feedback_base(exercise, feedback)
+            if old_fb:
+                if old_fb.sub_id != sub and old_fb.status != Feedback.BASE:
+                    # Assessment have been started, keep the old feedback
+                    continue
+                elif old_fb.sub_id != sub and old_fb.status == Feedback.BASE:
+                    old_fb.students.remove(student)
+                    if old_fb.sub_id not in old_feedbacks:
+                        old_feedbacks.append(old_fb.sub_id)
+                elif old_fb.sub_id == sub:
+                    feedback = old_fb
 
-        if accepted[sub]["penalty"]:
-            feedback.penalty = accepted[sub]["penalty"]
-        else:
-            feedback.penalty = 0.0
+            if not feedback:
+                feedback, fb_created = Feedback.objects.get_or_create(
+                    exercise=exercise,
+                    sub_id=sub,
+                    grader_lang_en=accepted[sub]["grader_lang_en"]
+                )
+                # TODO: This check should be in the function add_feedback_base
+                if fb_created:
+                    if exercise.feedback_base_fi or exercise.feedback_base_en:
+                        add_feedback_base(exercise, feedback)
+                    if old_fb and feedback.grader_lang_en == old_fb.grader_lang_en:
+                        feedback.grader = old_fb.grader
 
-        feedback.auto_grade = accepted[sub]["grade"]
-        feedback.save()
+            # Add or update other details
+            if accepted[sub]["penalty"]:
+                feedback.penalty = accepted[sub]["penalty"]
+            else:
+                feedback.penalty = 0.0
 
-        for student in accepted[sub]["students"]:
-            if not add_student(
-                student, feedback, exercise.course.base_course.lms_instance_id
-            ):
-                break
+            feedback.auto_grade = accepted[sub]["grade"]
+            feedback.save()
+
+            feedback.students.add(student)
+
+    for sub_id in old_feedbacks:
+        try:
+            fb = Feedback.objects.get(sub_id=sub_id)
+            if not fb.students.exists():
+                fb.delete()
+        except Feedback.DoesNotExist:
+            continue
 
     if exercise.work_div == Exercise.EVEN_DIV:
         divide_submissions(exercise)
@@ -337,84 +373,6 @@ def add_feedback_base(exercise, feedback):
 
         feedback_base.close()
         feedback.save()
-
-
-def add_student(student_dict, new_feedback, lms_instance_id):
-    """
-    Liitetään opiskelija palautukseen. Jos opiskelijalla on edellinen palautus 
-    samaan tehtävään, se poistetaan mikäli arviointia ei ole aloitettu.
-    :param student_dict: (dict) opiskelijan s-posti ja opiskelijanumero
-    :param new_feedback: (Feedback model object)
-    :return: (bool) False, jos opiskelijalla on jo palautus arvostelussa.
-    """
-    try:
-        student_obj = Student.objects.get(
-            aplus_user_id=student_dict["user_id"],
-            lms_instance_id=lms_instance_id
-        )
-
-        # Update student_id and email. Email can change and student_id
-        # is sometimes given later
-        student_obj.student_id = student_dict["student_id"]
-        student_obj.email = student_dict["email"]
-
-        student_obj.save()
-
-        try:
-            old_feedback = student_obj.my_feedbacks.get(
-                exercise=new_feedback.exercise
-            )
-            
-            if old_feedback != new_feedback:
-
-                # util_logger.debug(f"Uudempi palautus tulossa: {student_obj}")
-                # util_logger.debug(f"tehtävään: {new_feedback.exercise}")
-
-                if old_feedback.status == Feedback.BASE:
-                    # Allocate new submission to same grader
-                    # Not in use because of language selection feature
-                    # If student has changed the language then we want
-                    # to change grader too
-                    # new_feedback.grader = old_feedback.grader
-                    # new_feedback.save()
-
-                    # util_logger.debug(f"poistetaan vanha: {old_feedback} "
-                    #                   f"{old_feedback.grader}")
-
-                    old_feedback.delete()
-
-                    # util_logger.debug(f"lisätään uusi: {new_feedback} "
-                    #                   f"{new_feedback.grader}")
-
-                    # debug_feedbacks.append(new_feedback)
-
-                    student_obj.my_feedbacks.add(new_feedback)
-                else:
-                    # TODO: huomautus arvostelijalle siitä, että uudempi
-                    # palautus olisi olemassa.
-
-                    # util_logger.debug(f"Arvostelu oli aloitettu, poistetaan uusi.")
-
-                    # Uutta palautusta ei hyväksytä jos arvostelu aloitettu
-                    new_feedback.delete()
-                    return False
-
-        except Feedback.DoesNotExist:
-            student_obj.my_feedbacks.add(new_feedback)
-            
-    except Student.DoesNotExist:
-        student_obj = Student(
-            aplus_user_id=student_dict["user_id"],
-            lms_instance_id=lms_instance_id,
-            email=student_dict["email"],
-            student_id=student_dict["student_id"]
-
-        )
-        student_obj.save()
-        student_obj.my_feedbacks.add(new_feedback)
-        # util_logger.debug(f"Luotiin uusi opiskelija: {student_obj}")
-
-    return True
 
 
 def divide_submissions(exercise):
