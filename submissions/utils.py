@@ -211,8 +211,10 @@ def update_submissions(exercise):
             student, st_created = Student.objects.get_or_create(
                     aplus_user_id=student_info["user_id"],
                     lms_instance_id=exercise.course.base_course.lms_instance_id,
-                    student_id=student_info["student_id"],
-                    email=student_info["email"]
+                    defaults={
+                        "student_id": student_info["student_id"],
+                        "email": student_info["email"],
+                    }
             )
             # student may have previous submission, only one per exercise
             old_fb = student.my_feedbacks.filter(exercise=exercise).first()
@@ -233,7 +235,9 @@ def update_submissions(exercise):
                 feedback, fb_created = Feedback.objects.get_or_create(
                     exercise=exercise,
                     sub_id=sub,
-                    grader_lang_en=accepted[sub]["grader_lang_en"]
+                    defaults={
+                        "grader_lang_en": accepted[sub]["grader_lang_en"],
+                    }
                 )
                 # TODO: This check should be in the function add_feedback_base
                 if fb_created:
