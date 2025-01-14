@@ -20,7 +20,11 @@ class Command(BaseCommand):
         for pk in exercises:
             try:
                 # Retrieve and update if query matching exercise exists
-                obj = Exercise.objects.get(id=pk, in_grading=True, stop_polling=False)
+                obj = Exercise.objects.get(
+                    id=pk,
+                    in_grading=True,
+                    stop_polling=False
+                )
                 update_submissions(obj)
             except Exercise.DoesNotExist:
                 continue
