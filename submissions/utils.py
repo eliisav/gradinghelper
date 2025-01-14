@@ -61,6 +61,7 @@ def add_user_to_course(user, login_info):
 
     if login_info["roles"] == "Instructor":
         course.base_course.teachers.add(user)
+        get_exercises(course)
     if login_info["roles"] == "TA,TeachingAssistant":
         course.base_course.assistants.add(user)
 

@@ -151,7 +151,7 @@
             <form action="{% url 'submissions:get_exercises' course.id course.course_id %}" method="post" class="form">
               {% csrf_token %}
               <button type="submit" class="btn btn-primary btn-lg m-4">Update course content</button>
-              <small>Click the button to update exercise list. Automated update occurs only once a day at midnight. </small>
+              <small>Click the button to update exercise list if something seems to be missing.</small>
             </form>
 
             <form action="{% url 'submissions:grading_on' course.id course.course_id %}" method="post" class="form" enctype="multipart/form-data">
