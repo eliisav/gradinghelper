@@ -44,11 +44,6 @@ class Course(BigAutoIDModel):
     class Meta:
         ordering = ["name", "course_id"]
 
-    def save(self, *args, **kwargs):
-        if not self.api_root:
-            self.api_root = "/".join(str(self.api_url).split("/")[:-3]) + "/"
-        return super().save(*args, **kwargs)
-
     def __str__(self):
         return self.name
         

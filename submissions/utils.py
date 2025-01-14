@@ -68,15 +68,19 @@ def add_user_to_course(user, login_info):
 
 
 def create_course(api_url, api_id, label, name, token, lms_instance_id):
-    try:
-        base_course = BaseCourse.objects.get(
+    """
+    Create new Course (and BaseCourse if needed) with given arguments.
+    :param api_url:
+    :param api_id:
+    :param label:
+    :param name:
+    :param token:
+    :param lms_instance_id:
+    :return:
+    """
+    base_course, created = BaseCourse.objects.get_or_create(
             label=label, lms_instance_id=lms_instance_id
-        )
-    except BaseCourse.DoesNotExist:
-        base_course = BaseCourse(
-            label=label, lms_instance_id=lms_instance_id
-        )
-        base_course.save()
+    )
 
     course_instance = get_json(api_url, token)
     instance_name = course_instance["instance_name"]
@@ -86,9 +90,11 @@ def create_course(api_url, api_id, label, name, token, lms_instance_id):
     course = Course(
         course_id=api_id, name=name, api_token=token, api_url=api_url,
         data_url=data_url, exercise_url=exercise_url, base_course=base_course,
-        ending_time=course_instance["ending_time"]
+        ending_time=course_instance["ending_time"],
+        api_root="/".join(api_url.rstrip("/").split("/")[:-2]) + "/"
     )
     course.save()
+
     return course
 
 
