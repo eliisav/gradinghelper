@@ -667,27 +667,29 @@ def calculate_points(feedback):
     :param feedback: (models.Feedback) database object
     :return: (int) points, (str) info
     """
+
+    penalty = 0
+    penalty_info = ""
+
     if feedback.exercise.add_penalty:
         penalty = int(feedback.staff_grade * feedback.penalty)
-        penalty_info = f"Late penalty for grader points: -{penalty}\n"
-    else:
-        penalty = 0
-        penalty_info = ""
+        if penalty:
+            penalty_info = f"Late penalty for the assessor score: -{penalty}\n"
+
+    points = feedback.staff_grade - penalty
+    auto_grade = ""
+    staff_grade = ""
 
     if feedback.exercise.add_auto_grade:
-        points = feedback.auto_grade + feedback.staff_grade - penalty
-        auto_grade = f"Automatic evaluation: {feedback.auto_grade}\n"
-        total = f"Total points: {points}\n"
-    else:
-        points = feedback.staff_grade - penalty
-        auto_grade = ""
-        total = ""
+        points = feedback.auto_grade + points
+        auto_grade = f"Automatic assessment: {feedback.auto_grade}\n"
+        staff_grade = f"Assessor score: {feedback.staff_grade}\n"
 
-    grader = f"Grader: {feedback.grader}\n\n"
-    staff_grade = f"Grader points: {feedback.staff_grade}\n"
-    info = f"{grader}{auto_grade}{staff_grade}{penalty_info}{total}\n"
+    grader = f"Assessor: {feedback.grader}\n\n"
+    total = f"Total score: {points}\n"
+    info_text = f"{grader}{auto_grade}{staff_grade}{penalty_info}{total}\n"
 
-    return points, info
+    return points, info_text
 
 
 def create_json_to_batch_assess(feedbacks):
