@@ -575,12 +575,12 @@ class ReleaseFeedbacksRedirectView(LoginRequiredMixin, generic.RedirectView):
                                                  status=Feedback.READY,
                                                  released=False)
 
-        url = f"{exercise.api_url}submissions/"
+        url = f"{exercise.api_url}/submissions/"
         auth = {"Authorization": f"Token {exercise.course.api_token}"}
         
         if feedbacks:
             for i in range(0, len(feedbacks)):
-                json_object = utils.create_json_to_post(feedbacks[i])
+                json_object = utils.create_json_object(feedbacks[i])
 
                 try:
                     view_logger.debug(f"POST {i}")

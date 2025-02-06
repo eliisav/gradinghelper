@@ -701,22 +701,7 @@ def create_json_to_batch_assess(feedbacks):
     object_list = []
 
     for feedback in feedbacks:
-        students = []
-
-        for student in feedback.students.all():
-            students.append(student.email)
-
-        points, info = calculate_points(feedback)
-
-        obj = {
-            "students_by_email": students,
-            "feedback": f"<pre>{info}{feedback.feedback}</pre>",
-            "exercise_id": feedback.exercise.exercise_id,
-            "submission_time": f"{datetime.now()}",
-            "points": points  # TODO: pyöristys?
-        }
-
-        object_list.append(obj)
+        object_list.append(create_json_object(feedback))
         feedback.exercise.latest_release.append(feedback.id)
         feedback.released = True
         feedback.save()
@@ -725,23 +710,25 @@ def create_json_to_batch_assess(feedbacks):
     return json.dumps(objects, indent=2)
 
 
-def create_json_to_post(feedback):
+def create_json_object(feedback):
     """
-    Form a json object to create a new submission by POST
+    Form a json object to create a new submission by POST or batch assess tool
     :param feedback: (models.Feedback) database object
     :return: (dict) information needed to form a submission by POST
     """
     students = []
 
     for student in feedback.students.all():
-        students.append(student.email)
+        students.append(student.aplus_user_id)
 
     points, info = calculate_points(feedback)
 
     json_object = {
-        "students_by_email": students,
+        "students_by_user_id": students,
         "feedback": f"<pre>{info}{feedback.feedback}</pre>",
-        "points": points  # TODO: pyöristys?
+        "exercise_id": feedback.exercise.exercise_id,
+        "submission_time": f"{datetime.now()}",
+        "points": points
     }
 
     return json_object
