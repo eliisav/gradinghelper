@@ -581,7 +581,7 @@ def get_filecontent(sub_data, form_field, files, token):
             try:
                 lexer = get_lexer_for_filename(file["filename"])
                 code = highlight(resp.text, lexer,
-                                 HtmlFormatter(linenos=True))
+                                 HtmlFormatter(linenos="table"))
             except ClassNotFound:
                 code = None
 

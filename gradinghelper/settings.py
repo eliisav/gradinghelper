@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
-    'bootstrap4',
+    'bootstrap5',
     'django_bootstrap_breadcrumbs',
     'django_lti_login',
 ]
@@ -135,3 +135,5 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
