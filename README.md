@@ -31,14 +31,11 @@ pip install -r requirements.txt
 ### Local Settings
 
 Projektihakemistoon tulee lisätä tiedosto local_settings.py, jossa
-määritellään ```SECRET_KEY```, ```TOKEN``` sekä ```DATABASES```. Esim:
+määritellään ```SECRET_KEY``` ja ```DATABASES```. Esim:
 
 ```
 # Unique secret key for Django project
 SECRET_KEY = 'abc123defg45hij678klm90nop'
-
-# API token for A+ user. Needed to make API requests.
-TOKEN = "Token abc123defg45hij678klm90nop"
 
 # Database settings
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -72,8 +69,11 @@ python3 manage.py add_lti_key -d "my_lms"
 Luodut tunnukset sekä arviointityökalun kirjautumislinkki tulee lisätä
 käytössä olevalle A+ -oppimisalustalle uutena LTI -palveluna.
 
-### Crontab
-
-Arviointityökalu ei hae harjoitustehtävien palautuksia automaattisesti.
-Jos palautusten hakemisen haluaa automatisoida, niin sen voi tehdä crontabilla
-kutsumalla management -komentoa update_submissions
+### Custom management commands for crontab
+Updating some course details, exercises and submissions can be automated with 
+crontab.
+#### update_submissions
+If it's needed to poll new submissions freaquently, create a cronjob to call the
+management function ```update_submissions```.
+#### update_courses
+This function updates some course details and exercise list.
