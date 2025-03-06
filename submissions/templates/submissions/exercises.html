@@ -17,13 +17,13 @@
     <ul class="nav nav-tabs m-4">
       <li class="nav-item">
         <a class="nav-link {% if not show_set_grading %} active {% endif %}"
-           data-toggle="tab" href="#exercises">
+           data-bs-toggle="tab" href="#exercises">
           Exercises for grading
         </a>
       </li>
       {% if user_is_teacher %}
         <li class="nav-item">
-          <a class="nav-link {% if show_set_grading %} active {% endif %}" data-toggle="tab"
+          <a class="nav-link {% if show_set_grading %} active {% endif %}" data-bs-toggle="tab"
              href="#set_grading">
             Add exercises
           </a>
@@ -58,10 +58,10 @@
                     </a>
 
                 {% if user_is_teacher %}
-                    <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#{{ exercise.exercise_id }}">
+                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#{{ exercise.exercise_id }}">
                       Settings
                       {% if exercise.error_state %}
-                        <span class="badge badge-danger">Error</span>
+                        <span class="badge bg-danger">Error</span>
                       {% endif %}
                     </button>
 
@@ -99,7 +99,7 @@
                     <form action="{% url 'submissions:update_exercise' course.id course.course_id exercise.id %}" method="post" class="form" enctype="multipart/form-data">
                       {% csrf_token %}
                       {% bootstrap_form exercise.form %}
-                      <button class="btn btn-danger" type="button" data-toggle="collapse" data-target="#delete_{{ exercise.exercise_id }}">
+                      <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#delete_{{ exercise.exercise_id }}">
                         Delete
                       </button>
                       <button type="submit" class="btn btn-success float-right">
@@ -120,7 +120,7 @@
 
                   <form action="{% url 'submissions:grading_off' course.id course.course_id exercise.id %}" method="post">
                     {% csrf_token %}
-                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#delete_{{ exercise.exercise_id }}">
+                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#delete_{{ exercise.exercise_id }}">
                       Cancel
                     </button>
                     <button type="submit" class="btn btn-danger float-right">
